@@ -30,6 +30,9 @@ class TestLoadWfData(unittest.TestCase):
         cls.wf_file_path, cls.file = TempFile("""1.7403104935329927E-009   1.0000000195414812E-024
         3.4806209870659854E-009  -1.9548053418115215E-023
         5.2209314805989781E-009  -1.4871093191296816E-023)""")
+    @classmethod
+    def tearDownClass(cls):
+        cls.file.close()
 
     def test_file_load_success(self):
         """
