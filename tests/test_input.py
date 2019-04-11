@@ -22,14 +22,15 @@ def TempFile(content: str) -> Tuple[Path, TextIO]:
     return Path(f.name), f
 
 
-
 class TestLoadWfData(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.wf_file_path, cls.file = TempFile("""1.7403104935329927E-009   1.0000000195414812E-024
-        3.4806209870659854E-009  -1.9548053418115215E-023
-        5.2209314805989781E-009  -1.4871093191296816E-023)""")
+        content = """1.7403104935329927E-009   1.0000000195414812E-024
+                     3.4806209870659854E-009  -1.9548053418115215E-023
+                     5.2209314805989781E-009  -1.4871093191296816E-023"""
+        cls.wf_file_path, cls.file = TempFile(content)
+
     @classmethod
     def tearDownClass(cls):
         cls.file.close()
@@ -37,7 +38,6 @@ class TestLoadWfData(unittest.TestCase):
     def test_file_load_success(self):
         """
         Test if loading waveform data from file works correctly
-        :return:
         """
         t = np.array([1.7403104935329927E-009, 3.4806209870659854E-009, 5.2209314805989781E-009])
         x = np.array([1.0000000195414812E-024, -1.9548053418115215E-023, -1.4871093191296816E-023])
