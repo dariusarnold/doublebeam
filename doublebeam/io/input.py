@@ -12,7 +12,7 @@ def load_wfdata_binary(filename: Path) -> (np.ndarray, np.ndarray):
 
 
 def load_wfdata(filename: Path) -> (np.ndarray, np.ndarray):
-    jumbled = np.fromfile(filename.as_posix(), sep=" ")
+    jumbled = np.fromfile(str(filename), sep=" ")
     # reading text files with fromfile is faster than genfromtxt and loadtxt.
     # But all values are read sequentially line by line into one array, so
     # we split it after reading
