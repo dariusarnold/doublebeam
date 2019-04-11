@@ -1,4 +1,5 @@
 import unittest
+from typing import TextIO, Tuple
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -8,12 +9,12 @@ from doublebeam.io.input import load_wfdata
 from doublebeam.core.models import VelocityModel1D, VelocityLayer
 
 
-def TempFile(content):
+def TempFile(content: str) -> Tuple[Path, TextIO]:
     """
     Create a temporary file with the text given in content and return it.
     The file will be kept on disk as long as variable f is alive.
     :param content: Will be written to temp file
-    :return: Path to the temporary file
+    :return: Path to the temporary file, file object
     """
     f = NamedTemporaryFile(mode="w")
     f.write(content)
