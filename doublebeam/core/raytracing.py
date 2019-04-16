@@ -87,4 +87,11 @@ if __name__ == '__main__':
 
     x, z = zip(*points)
     plt.scatter(x, z)
+    ax = plt.gca()
+    # invert y axis so positive depth values are shown downwards
+    ax.invert_yaxis()
+    # set aspect ratio to equal so angles stay true
+    ax.set_aspect("equal")
+    plt.xlabel("x (km)")
+    plt.ylabel("z (km)")
     plt.show()
