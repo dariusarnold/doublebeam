@@ -3,45 +3,67 @@ from math import sin, cos, radians
 import matplotlib.pyplot as plt
 
 
-def cartesion_to_ray_s(x, z, xm,_theta):
+def cartesian_to_ray_s(x, z, xm, _theta):
+    """Conversion of 2D cartesian coordinates x, z to ray coordinate
+    s, see eq. 14a in Hill1990 Gaussian beam migration"""
     return (x - xm) * sin(_theta) - z * cos(_theta)
 
-def cartesion_to_ray_n(x, z, xm, theta):
+
+def cartesian_to_ray_n(x, z, xm, theta):
+    """Conversion of 2D cartesian coordinates x, z to ray coordinate
+    n, see eq. 14b in Hill1990 Gaussian beam migration"""
     return (x - xm) * cos(theta) + z * sin(theta)
 
-def velocity(x, z):
-    v0 = 4.5 # km/s
-    slope = 0.5 # km/s per km depth
+
+def velocity(z):
+    """Mock 1D velocity model. Get velocity as a function of depth.
+    Can be replaced with VelocityModel1D when layers with linear velocity
+    change are implemented"""
+    boundary_depth_km = 0.4
+    if z < boundary_depth_km:
+        v0 = 3
+        slope = 0.75
+    else:
+        v0 = 4.5 # km/s
+        slope = 0.5 # km/s per km depth
     return v0 + z * slope
 
 def dvx(x, z, delta=0.0001):
     """Derivative of velocity after x"""
-    return (velocity(x+delta, z) - velocity(x-delta, z)) / delta
+    return (velocity(z) - velocity(z)) / delta
+
 
 def dvz(x, z, delta=0.0001):
-    return (velocity(x, z+delta) - velocity(x, z-delta)) / delta
+    return (velocity(z+delta) - velocity(z-delta)) / delta
 
 def diff(func, x, z, delta):
     # broken
     return (func)
 
+
 def calc_px(v, theta):
     return sin(theta) / v
+
 
 def calc_pz(v, theta):
     return cos(theta) / v
 
+
 class Ray2D:
 
     def __init__(self, pierce_point_xm: float, theta: float):
-        # x coordinate of pierce point of ray at surface in km
+        """
+        :param pierce_point_xm: x coordinate of pierce point of ray at surface in km
+        :param theta: angle of ray against vertical at the surface in rad
+        """
         self.xm = pierce_point_xm
-        # angle of ray against vertical at the surface in rad
         self.theta = theta
 
+
 if __name__ == '__main__':
-    ray = Ray2D(0, radians(45))
-    V0 = velocity(ray.xm, 0)
+    start_x, start_z = 0, 0
+    ray = Ray2D(start_x, radians(45))
+    V0 = velocity(start_z)
     px0 = calc_px(V0, ray.theta)
     pz0 = calc_pz(V0, ray.theta)
 
@@ -54,12 +76,12 @@ if __name__ == '__main__':
     theta = ray.theta
     s = 0
     points = []
-    s = cartesion_to_ray_s(x, z, ray.xm, ray.theta)
+    s = cartesian_to_ray_s(x, z, ray.xm, ray.theta)
     while s < 1:
-        x += velocity(x, z) * px * ds
-        z += velocity(x, z) * pz * ds
-        px -= (1 / velocity(x, z)**2) * dvx(x, z) * ds
-        px -= (1 / velocity(x, z)**2) * dvz(x, z) * ds
+        x += velocity(z) * px * ds
+        z += velocity(z) * pz * ds
+        px -= (1 / velocity(z)**2) * dvx(x, z) * ds
+        px -= (1 / velocity(z)**2) * dvz(x, z) * ds
         s += ds
         points.append((x, z))
 
