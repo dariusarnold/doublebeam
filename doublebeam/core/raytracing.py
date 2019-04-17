@@ -91,7 +91,7 @@ if __name__ == '__main__':
         x += vm.eval_at(z) * px * ds
         z += vm.eval_at(z) * pz * ds
         px -= (1 / vm.eval_at(z)**2) * dvx() * ds
-        pz -= (1 / vm.eval_at(z)**2) * dvz(vm, x, z) * ds
+        pz -= (1 / vm.eval_at(z)**2) * dvz(vm, z) * ds
         s += ds
         points.append((x, z))
 
