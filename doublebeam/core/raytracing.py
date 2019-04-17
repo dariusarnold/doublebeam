@@ -176,7 +176,7 @@ if __name__ == '__main__':
         points.append((x, z))
 
     x, z = zip(*points)
-    plt.scatter(x, z)
+    plt.plot(x, z)
     ax = plt.gca()
     # invert y axis so positive depth values are shown downwards
     ax.invert_yaxis()
