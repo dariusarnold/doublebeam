@@ -1,4 +1,5 @@
-from math import sin, cos, radians
+from math import sin, cos, radians, isclose
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import scipy.misc
@@ -16,27 +17,35 @@ def cartesian_to_ray_n(x, z, xm, theta):
     return (x - xm) * cos(theta) + z * sin(theta)
 
 
-def velocity(z):
-    """Mock 1D velocity model. Get velocity as a function of depth.
-    Can be replaced with VelocityModel1D when layers with linear velocity
-    change are implemented"""
-    boundary_depth_km = 0.4
-    if z < boundary_depth_km:
-        v0 = 3
-        slope = 0.75
-    else:
-        v0 = 4.5 # km/s
-        slope = 0.5 # km/s per km depth
-    return v0 + z * slope
+class MockVelocityModel1D:
 
-def dvx(x, z, delta=0.0001):
+    def __init__(self, boundary_depth_km):
+        self.boundary_depth_km = boundary_depth_km
+
+    def eval_at(self, z):
+        """Mock 1D velocity model. Get velocity as a function of depth.
+        Can be replaced with VelocityModel1D when layers with linear velocity
+        change are implemented"""
+        if z < self.boundary_depth_km:
+            v0 = 3
+            slope = 1
+        else:
+            v0 = 4.5  # km/s
+            slope = 1.5  # km/s per km depth
+        return v0 + z * slope
+
+    def at_boundary(self, z, abs_tol=0.01):
+        return isclose(z, self.boundary_depth_km, abs_tol=abs_tol)
+
+
+def dvx():
     """Derivative of velocity after x. 0 For 1D model"""
     return 0
 
 
-def dvz(x, z, delta=0.0001):
+def dvz(velocity_model, z, delta=0.0001):
     """Derivative of velocity after z"""
-    return scipy.misc.derivative(velocity, z, delta)
+    return scipy.misc.derivative(velocity_model.eval_at, z, delta)
 
 
 def calc_px(v, theta):
@@ -53,7 +62,7 @@ class Ray2D:
 
     def __init__(self, pierce_point_xm: float, theta: float):
         """
-        :param pierce_point_xm: x coordinate of pierce point of ray at surface in km
+        :param pierce_point_xm: x coordinate of start point of ray in km
         :param theta: angle of ray against vertical at the surface in rad
         """
         self.xm = pierce_point_xm
@@ -64,7 +73,8 @@ if __name__ == '__main__':
     start_x, start_z = 0, 0
     initial_angle_degrees = 45
     ray = Ray2D(start_x, radians(initial_angle_degrees))
-    V0 = velocity(start_z)
+    vm = MockVelocityModel1D(1)
+    V0 = vm.eval_at(start_z)
     px0 = calc_px(V0, ray.theta)
     pz0 = calc_pz(V0, ray.theta)
 
@@ -78,10 +88,10 @@ if __name__ == '__main__':
     points = []
     points.append((start_x, start_z))
     while s < 1:
-        x += velocity(z) * px * ds
-        z += velocity(z) * pz * ds
-        px -= (1 / velocity(z)**2) * dvx(x, z) * ds
-        pz -= (1 / velocity(z)**2) * dvz(x, z) * ds
+        x += vm.eval_at(z) * px * ds
+        z += vm.eval_at(z) * pz * ds
+        px -= (1 / vm.eval_at(z)**2) * dvx() * ds
+        pz -= (1 / vm.eval_at(z)**2) * dvz(vm, x, z) * ds
         s += ds
         points.append((x, z))
 
