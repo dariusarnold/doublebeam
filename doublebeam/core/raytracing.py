@@ -161,8 +161,7 @@ if __name__ == '__main__':
     px = px0
     pz = pz0
     s = 0
-    points = []
-    points.append((start_x, start_z))
+    points = [(start_x, start_z)]
     while s < 9 and z >= 0:
         x += vm.eval_at(z) * px * ds
         z += vm.eval_at(z) * pz * ds
