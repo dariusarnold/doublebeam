@@ -1,6 +1,7 @@
 from math import sin, cos, radians
 
 import matplotlib.pyplot as plt
+import scipy.misc
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -35,7 +36,7 @@ def dvx(x, z, delta=0.0001):
 
 def dvz(x, z, delta=0.0001):
     """Derivative of velocity after z"""
-    return (velocity(z+delta) - velocity(z-delta)) / delta
+    return scipy.misc.derivative(velocity, z, delta)
 
 
 def calc_px(v, theta):
