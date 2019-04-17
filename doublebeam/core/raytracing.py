@@ -81,7 +81,7 @@ if __name__ == '__main__':
         x += velocity(z) * px * ds
         z += velocity(z) * pz * ds
         px -= (1 / velocity(z)**2) * dvx(x, z) * ds
-        px -= (1 / velocity(z)**2) * dvz(x, z) * ds
+        pz -= (1 / velocity(z)**2) * dvz(x, z) * ds
         s += ds
         points.append((x, z))
 
