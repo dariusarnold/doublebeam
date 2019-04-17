@@ -29,23 +29,22 @@ def velocity(z):
     return v0 + z * slope
 
 def dvx(x, z, delta=0.0001):
-    """Derivative of velocity after x"""
-    return (velocity(z) - velocity(z)) / delta
+    """Derivative of velocity after x. 0 For 1D model"""
+    return 0
 
 
 def dvz(x, z, delta=0.0001):
+    """Derivative of velocity after z"""
     return (velocity(z+delta) - velocity(z-delta)) / delta
-
-def diff(func, x, z, delta):
-    # broken
-    return (func)
 
 
 def calc_px(v, theta):
+    """Calculate horizontal slowness"""
     return sin(theta) / v
 
 
 def calc_pz(v, theta):
+    """Calculate vertical slowness"""
     return cos(theta) / v
 
 
@@ -62,7 +61,8 @@ class Ray2D:
 
 if __name__ == '__main__':
     start_x, start_z = 0, 0
-    ray = Ray2D(start_x, radians(45))
+    initial_angle_degrees = 45
+    ray = Ray2D(start_x, radians(initial_angle_degrees))
     V0 = velocity(start_z)
     px0 = calc_px(V0, ray.theta)
     pz0 = calc_pz(V0, ray.theta)
@@ -70,13 +70,12 @@ if __name__ == '__main__':
     ds = 0.01
 
     x = ray.xm
-    z = 0
+    z = start_z
     px = px0
     pz = pz0
-    theta = ray.theta
     s = 0
     points = []
-    s = cartesian_to_ray_s(x, z, ray.xm, ray.theta)
+    points.append((start_x, start_z))
     while s < 1:
         x += velocity(z) * px * ds
         z += velocity(z) * pz * ds
