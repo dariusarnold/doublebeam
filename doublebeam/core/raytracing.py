@@ -5,6 +5,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.misc
+import scipy.integrate
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -178,6 +179,33 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
     return p_new
 
 
+def plot_rays(points1, points2):
+    x1, z1 = zip(*points1)
+    x2, z2 = zip(*points2)
+    plt.plot(x1, z1, label="My integration")
+    plt.plot(x2, z2, label="Scipy")
+    ax = plt.gca()
+    # invert y axis so positive depth values are shown downwards
+    ax.invert_yaxis()
+    # set aspect ratio to equal so angles stay true
+    ax.set_aspect("equal")
+    plt.xlabel("x (km)")
+    plt.ylabel("z (km)")
+    plt.legend()
+    plt.show()
+
+
+def trace(t, y):
+    x, z, px, pz = y
+    v = vm.eval_at(z)
+    dxds = v * px
+    dzds = v * pz
+    dpxds = v**-2 * dvx()
+    dpzds = v**-2 * dvz(vm, z)
+    dydt = [dxds, dzds, dpxds, dpzds]
+    return dydt
+
+
 if __name__ == '__main__':
     start_x, start_z = 0, 0
     #TODO stability of transmission not given for angles > 30°
@@ -209,13 +237,8 @@ if __name__ == '__main__':
         s += ds
         points.append((x, z))
 
-    x, z = zip(*points)
-    plt.plot(x, z)
-    ax = plt.gca()
-    # invert y axis so positive depth values are shown downwards
-    ax.invert_yaxis()
-    # set aspect ratio to equal so angles stay true
-    ax.set_aspect("equal")
-    plt.xlabel("x (km)")
-    plt.ylabel("z (km)")
-    plt.show()
+    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.xm, start_z, px0, pz0])
+    scipy_x, scipy_z= result.y[0], result.y[1]
+    scipy_points = list(zip(scipy_x, scipy_z))
+
+    plot_rays(points, scipy_points)
