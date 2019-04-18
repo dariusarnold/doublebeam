@@ -1,4 +1,5 @@
-from math import sin, cos, radians, isclose, copysign
+from math import sin, cos, asin, acos, radians, degrees, isclose, copysign
+from cmath import sqrt
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -117,6 +118,28 @@ def calc_initial_slowness3D(ray: Ray3D, v0: float) -> Tuple[float, float, float]
     return px, py, pz
 
 
+def length(vector) -> float:
+    """Calculate length of vector"""
+    return np.dot(vector, vector)**0.5
+
+
+def angle(vector1, vector2) -> float:
+    """Calculate angle between two vectors"""
+    return acos(np.dot(vector1, vector2) / (length(vector1) * length(vector2)))
+
+
+def critical_angle(v1, v2):
+    """
+    Use Snells law to calculate the critical angle at an interface
+    :param v1: velocity before interface
+    :param v2: velocity after interface
+    :return: critical angle in rad
+    """
+    if v1 < v2:
+        return asin(v1/v2)
+    return np.pi
+
+
 def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
     """
     Compute new slowness vector using Snells law
@@ -131,16 +154,27 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
     # create slowness vector p
     p = np.array((px, pz))
     # normal vector in 1D model will always be vertical
-    n = np.array((0, 1))
+    # n should be oriented to the side where the transmitted wave propagates
+    # else the minus/plus relation for transmitted/reflected waves isn't valid
+    n = np.array((0, copysign(1, pz)))
+    # look at angle to determine critical incidence
+    angle_in = angle(p, n)
+    print("Angle in", degrees(angle_in))
     eps = copysign(1, np.dot(p, n))
-    # calculate slowness vector after interface using eq. 2.4.70 from
-    # Cerveny - Seismic ray theory
     v = vm.eval_at(z)
     v_prev = vm.eval_at(z_prev)
+    angle_crit = critical_angle(v_prev, v)
+    print("Critical angle", degrees(angle_crit))
+    if angle_in > angle_crit:
+        print("Total reflection")
+        p[1] *= -1
+        return p
     pn = np.dot(p, n)
     minusplus = -1 if wave_type == "T" else 1
     #TODO not stable when using reflected wave
-    p_new = p - n * (pn + minusplus * eps * (v**-2 - v_prev**-2 + pn**2)**0.5)
+    # calculate slowness vector after interface using eq. 2.4.70 from
+    # Cerveny - Seismic ray theory
+    p_new = p - n * (pn + minusplus * eps * sqrt(v**-2 - v_prev**-2 + pn**2))
     return p_new
 
 
