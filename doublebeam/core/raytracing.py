@@ -200,8 +200,8 @@ def trace(t, y):
     v = vm.eval_at(z)
     dxds = v * px
     dzds = v * pz
-    dpxds = v**-2 * dvx()
-    dpzds = v**-2 * dvz(vm, z)
+    dpxds = -1 * v**-2 * dvx()
+    dpzds = -1 * v**-2 * dvz(vm, z)
     dydt = [dxds, dzds, dpxds, dpzds]
     return dydt
 
