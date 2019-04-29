@@ -71,12 +71,13 @@ def calc_pz(v, theta):
 
 class Ray2D:
 
-    def __init__(self, pierce_point_xm: float, theta: float):
+    def __init__(self, pierce_point_xm: float, start_z: float, theta: float):
         """
         :param pierce_point_xm: x coordinate of start point of ray in km
         :param theta: angle of ray against vertical at the surface in rad
         """
-        self.xm = pierce_point_xm
+        self.x0 = pierce_point_xm
+        self.z0 = start_z
         self.theta = theta
         self.layer_boundaries_crossed_depths = [-99]
 
@@ -142,7 +143,7 @@ def critical_angle(v1, v2):
     return np.pi
 
 
-def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
+def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model, wave_type="T"):
     """
     Compute new slowness vector using Snells law
     :param px: x component of slowness vector before interface
@@ -163,8 +164,8 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
     angle_in = angle(p, n)
     print("Angle in", degrees(angle_in))
     eps = copysign(1, np.dot(p, n))
-    v = vm.eval_at(z)
-    v_prev = vm.eval_at(z_prev)
+    v = velocity_model.eval_at(z)
+    v_prev = velocity_model.eval_at(z_prev)
     angle_crit = critical_angle(v_prev, v)
     print("Critical angle", degrees(angle_crit))
     if angle_in > angle_crit:
@@ -198,75 +199,72 @@ def plot_rays(points1, points2):
 
 def trace(t, y):
     x, z, px, pz = y
-    v = vm.eval_at(z)
+    v = vm1.eval_at(z)
     dxds = v * px
     dzds = v * pz
     dpxds = -1 * v**-2 * dvx()
-    dpzds = -1 * v**-2 * dvz(vm, z)
+    dpzds = -1 * v**-2 * dvz(vm1, z)
     dydt = [dxds, dzds, dpxds, dpzds]
     return dydt
 
 
-if __name__ == '__main__':
-    start_x, start_z = 0, 0
-    #TODO stability of transmission not given for angles > 30°
-    initial_angle_degrees = 29
-    ray = Ray2D(start_x, radians(initial_angle_degrees))
-    boundary_depth_km = 1
-    vm = MockVelocityModel1D(boundary_depth_km)
-    V0 = vm.eval_at(start_z)
-    px0 = calc_px(V0, ray.theta)
-    pz0 = calc_pz(V0, ray.theta)
-
-    ds = 0.01
-
-    x = ray.xm
-    z = start_z
-    px = px0
-    pz = pz0
+def ray_trace_euler(ray, velocity_model, s_end, ds=0.01):
     s = 0
-    s_end = 20
-    points = [(start_x, start_z)]
+    x = ray.x0
+    z = ray.z0
+    v0 = velocity_model.eval_at(z)
+    px = calc_px(v0, ray.theta)
+    pz = calc_pz(v0, ray.theta)
+    points = [(x, z)]
     while s < s_end and z >= 0:
-        x += vm.eval_at(z) * px * ds
-        z += vm.eval_at(z) * pz * ds
-        if vm.boundary_crossed(points[-1][1], z):
+        v = velocity_model.eval_at(z)
+        x += v * px * ds
+        z += v * pz * ds
+        if velocity_model.boundary_crossed(points[-1][1], z):
             z_prev = points[-1][1]
-            px, pz = snells_law(px, pz, z, z_prev)
+            px, pz = snells_law(px, pz, z, z_prev, velocity_model)
         else:
-            px -= (1 / vm.eval_at(z)**2) * dvx() * ds
-            pz -= (1 / vm.eval_at(z)**2) * dvz(vm, z) * ds
+            px -= (1 / v**2) * dvx() * ds
+            pz -= (1 / v**2) * dvz(velocity_model, z) * ds
         s += ds
         points.append((x, z))
+    return points
 
 
-    def crossed(t, y):
-        """
-        Function which has a zero crossing at the boundary depth
-        """
-        x, z, px, pz = y
-        return z - boundary_depth_km
+def ray_trace_scipy(ray, velocity_model, s_end, ds=0.01):
+    # Function which has a zero crossing at the boundary depth
+    crossed = lambda t, y: y[1] - velocity_model.boundary_depth_km
     # set to True to stop integration at the boundary so we can apply Snells law
     crossed.terminal = True
 
     # return z coordinate which has a natural zero crossing at the surface
     surfaced = lambda t, y: y[1]
+    # set True to stop integration once the ray reaches the surface
     surfaced.terminal = True
+
+    global vm1
+    vm1 = velocity_model
+
+    start_z = ray.z0
+    V0 = velocity_model.eval_at(start_z)
+    px0 = calc_px(V0, ray.theta)
+    pz0 = calc_pz(V0, ray.theta)
+    ds = 0.01
 
     min_float_step = np.finfo(float).eps
     scipy_x = []
     scipy_z = []
     # move z slightly below surface so event wont trigger immediately
-    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.xm, start_z+np.finfo(float).eps, px0, pz0], max_step=ds, events=[crossed, surfaced])
+    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.x0, start_z+min_float_step, px0, pz0], max_step=ds, events=[crossed, surfaced])
     while result.status == 1:
         # stop integration when surface was reached
-        if result.t_events[1]:
+        if result.t_events[1].size > 0:
             break
         s_event = result.t_events[0][0]
         _x, _z, _px, _pz = result.y
         scipy_x.append(_x)
         scipy_z.append(_z)
-        px, pz = snells_law(_px[-1], _pz[-1], _z[-1], _z[-2])
+        px, pz = snells_law(_px[-1], _pz[-1], _z[-1], _z[-2], velocity_model)
         # move z behind the interface just passed by the ray so the event wont
         # trigger again. Increase z (positive step) when ray goes down, decrease
         # z (negative step) when ray goes up
@@ -280,5 +278,19 @@ if __name__ == '__main__':
     scipy_z = list(itertools.chain.from_iterable(scipy_z))
     # for plotting, create
     scipy_points = list(zip(scipy_x, scipy_z))
+    return scipy_points
+
+
+
+if __name__ == '__main__':
+    start_x, start_z = 0, 0
+    initial_angle_degrees = 20
+    ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
+    boundary_depth_km = 1
+    vm = MockVelocityModel1D(boundary_depth_km)
+    s_end = 20
+
+    points = ray_trace_euler(ray, vm, s_end)
+    scipy_points = ray_trace_scipy(ray, vm, s_end)
 
     plot_rays(points, scipy_points)
