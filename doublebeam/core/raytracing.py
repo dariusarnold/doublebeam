@@ -1,12 +1,13 @@
 from math import sin, cos, asin, acos, radians, degrees, isclose, copysign, sqrt
 from cmath import sqrt as csqrt
 import itertools
-from typing import Tuple
+from typing import Tuple, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.misc
 import scipy.integrate
+import scipy as sp
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -23,7 +24,7 @@ def cartesian_to_ray_n(x, z, xm, theta):
 
 class MockVelocityModel1D:
 
-    def __init__(self, boundary_depth_km):
+    def __init__(self, boundary_depth_km: float):
         self.boundary_depth_km = boundary_depth_km
 
     def eval_at(self, z):
@@ -181,7 +182,7 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model, wa
     return p_new
 
 
-def plot_rays(points1, points2):
+def plot_rays(points1: Sequence[Tuple[float, float]], points2: Sequence[Tuple[float, float]]):
     x1, z1 = zip(*points1)
     x2, z2 = zip(*points2)
     plt.plot(x1, z1, label="My integration")
@@ -198,12 +199,18 @@ def plot_rays(points1, points2):
 
 
 def trace(t, y):
+    """
+    Standard raypath equations Hill1990 Gaussian beam migration eq. 2a-2d
+    :param t:
+    :param y:
+    :return:
+    """
     x, z, px, pz = y
-    v = vm1.eval_at(z)
+    v = vm.eval_at(z)
     dxds = v * px
     dzds = v * pz
     dpxds = -1 * v**-2 * dvx()
-    dpzds = -1 * v**-2 * dvz(vm1, z)
+    dpzds = -1 * v**-2 * dvz(vm, z)
     dydt = [dxds, dzds, dpxds, dpzds]
     return dydt
 
@@ -231,7 +238,7 @@ def ray_trace_euler(ray, velocity_model, s_end, ds=0.01):
     return points
 
 
-def ray_trace_scipy(ray, velocity_model, s_end, ds=0.01):
+def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
     # Function which has a zero crossing at the boundary depth
     crossed = lambda t, y: y[1] - velocity_model.boundary_depth_km
     # set to True to stop integration at the boundary so we can apply Snells law
@@ -242,43 +249,45 @@ def ray_trace_scipy(ray, velocity_model, s_end, ds=0.01):
     # set True to stop integration once the ray reaches the surface
     surfaced.terminal = True
 
-    global vm1
-    vm1 = velocity_model
+    # This is a workaround so that trace can access the velocity model
+    # TODO find better solution
+    global vm
+    vm = velocity_model
 
-    start_z = ray.z0
-    V0 = velocity_model.eval_at(start_z)
-    px0 = calc_px(V0, ray.theta)
-    pz0 = calc_pz(V0, ray.theta)
+    z0 = ray.z0
+    v0 = velocity_model.eval_at(z0)
+    px0 = calc_px(v0, ray.theta)
+    pz0 = calc_pz(v0, ray.theta)
     ds = 0.01
 
     min_float_step = np.finfo(float).eps
-    scipy_x = []
-    scipy_z = []
+    x_values = []
+    z_values = []
     # move z slightly below surface so event wont trigger immediately
-    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.x0, start_z+min_float_step, px0, pz0], max_step=ds, events=[crossed, surfaced])
+    result = sp.integrate.solve_ivp(trace, [0, s_end], [ray.x0, z0+min_float_step, px0, pz0],
+                                    max_step=ds, events=[crossed, surfaced])  # type: scipy.integrate._ivp.ivp.OdeResult
     while result.status == 1:
         # stop integration when surface was reached
         if result.t_events[1].size > 0:
             break
         s_event = result.t_events[0][0]
         _x, _z, _px, _pz = result.y
-        scipy_x.append(_x)
-        scipy_z.append(_z)
+        x_values.append(_x)
+        z_values.append(_z)
         px, pz = snells_law(_px[-1], _pz[-1], _z[-1], _z[-2], velocity_model)
         # move z behind the interface just passed by the ray so the event wont
         # trigger again. Increase z (positive step) when ray goes down, decrease
         # z (negative step) when ray goes up
         min_float_step = copysign(min_float_step, _pz[-1])
         result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[crossed, surfaced])
-    scipy_x.append(result.y[0])
-    scipy_z.append(result.y[1])
+    x_values.append(result.y[0])
+    z_values.append(result.y[1])
     # scipy_x and scipy_z are lists of lists. Every sublist contains part of a
     # ray path between interfaces. To plot them, unpack the inner lists
-    scipy_x = list(itertools.chain.from_iterable(scipy_x))
-    scipy_z = list(itertools.chain.from_iterable(scipy_z))
-    # for plotting, create
-    scipy_points = list(zip(scipy_x, scipy_z))
-    return scipy_points
+    x_values = list(itertools.chain.from_iterable(x_values))
+    z_values = list(itertools.chain.from_iterable(z_values))
+    # create a list of (x, z) tuples where every tuple is one point of the ray
+    return list(zip(x_values, z_values))
 
 
 
