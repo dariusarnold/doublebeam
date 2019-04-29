@@ -1,5 +1,6 @@
-from math import sin, cos, asin, acos, radians, degrees, isclose, copysign
-from cmath import sqrt
+from math import sin, cos, asin, acos, radians, degrees, isclose, copysign, sqrt
+from cmath import sqrt as csqrt
+import itertools
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -172,7 +173,7 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, wave_type="T"):
         return p
     pn = np.dot(p, n)
     minusplus = -1 if wave_type == "T" else 1
-    #TODO not stable when using reflected wave
+    # TODO not stable when using reflected wave
     # calculate slowness vector after interface using eq. 2.4.70 from
     # Cerveny - Seismic ray theory
     p_new = p - n * (pn + minusplus * eps * sqrt(v**-2 - v_prev**-2 + pn**2))
@@ -211,7 +212,8 @@ if __name__ == '__main__':
     #TODO stability of transmission not given for angles > 30°
     initial_angle_degrees = 29
     ray = Ray2D(start_x, radians(initial_angle_degrees))
-    vm = MockVelocityModel1D(1)
+    boundary_depth_km = 1
+    vm = MockVelocityModel1D(boundary_depth_km)
     V0 = vm.eval_at(start_z)
     px0 = calc_px(V0, ray.theta)
     pz0 = calc_pz(V0, ray.theta)
@@ -223,7 +225,7 @@ if __name__ == '__main__':
     px = px0
     pz = pz0
     s = 0
-    s_end = 2
+    s_end = 20
     points = [(start_x, start_z)]
     while s < s_end and z >= 0:
         x += vm.eval_at(z) * px * ds
@@ -237,8 +239,46 @@ if __name__ == '__main__':
         s += ds
         points.append((x, z))
 
-    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.xm, start_z, px0, pz0])
-    scipy_x, scipy_z= result.y[0], result.y[1]
+
+    def crossed(t, y):
+        """
+        Function which has a zero crossing at the boundary depth
+        """
+        x, z, px, pz = y
+        return z - boundary_depth_km
+    # set to True to stop integration at the boundary so we can apply Snells law
+    crossed.terminal = True
+
+    # return z coordinate which has a natural zero crossing at the surface
+    surfaced = lambda t, y: y[1]
+    surfaced.terminal = True
+
+    min_float_step = np.finfo(float).eps
+    scipy_x = []
+    scipy_z = []
+    # move z slightly below surface so event wont trigger immediately
+    result = scipy.integrate.solve_ivp(trace, [0, s_end], [ray.xm, start_z+np.finfo(float).eps, px0, pz0], max_step=ds, events=[crossed, surfaced])
+    while result.status == 1:
+        # stop integration when surface was reached
+        if result.t_events[1]:
+            break
+        s_event = result.t_events[0][0]
+        _x, _z, _px, _pz = result.y
+        scipy_x.append(_x)
+        scipy_z.append(_z)
+        px, pz = snells_law(_px[-1], _pz[-1], _z[-1], _z[-2])
+        # move z behind the interface just passed by the ray so the event wont
+        # trigger again. Increase z (positive step) when ray goes down, decrease
+        # z (negative step) when ray goes up
+        min_float_step = copysign(min_float_step, _pz[-1])
+        result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[crossed, surfaced])
+    scipy_x.append(result.y[0])
+    scipy_z.append(result.y[1])
+    # scipy_x and scipy_z are lists of lists. Every sublist contains part of a
+    # ray path between interfaces. To plot them, unpack the inner lists
+    scipy_x = list(itertools.chain.from_iterable(scipy_x))
+    scipy_z = list(itertools.chain.from_iterable(scipy_z))
+    # for plotting, create
     scipy_points = list(zip(scipy_x, scipy_z))
 
     plot_rays(points, scipy_points)
