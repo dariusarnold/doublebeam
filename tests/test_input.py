@@ -31,10 +31,6 @@ class TestLoadWfData(unittest.TestCase):
                      5.2209314805989781E-009  -1.4871093191296816E-023"""
         cls.wf_file_path, cls.file = TempFile(content)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.file.close()
-
     def test_file_load_success(self):
         """
         Test if loading waveform data from file works correctly
@@ -56,9 +52,6 @@ class TestLoadVelocityModel1D(unittest.TestCase):
         cls.path, cls.f = TempFile(content)
         cls.layers = np.array([(0, 5.8, 3.36, 2.7), (10., 5.8, 3.36, 2.75), (35., 8.04, 4.47, 2.8)], dtype=VelocityLayer)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.f.close()
 
     def setUp(self):
         self.v = VelocityModel1D(self.layers)
