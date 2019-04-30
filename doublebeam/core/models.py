@@ -1,6 +1,6 @@
-import numpy as np
 from pathlib import Path
 
+import numpy as np
 
 # Layer which has a constant velocity over its depth
 ConstantVelocityLayer = np.dtype([
@@ -79,7 +79,6 @@ def evaluate_at_linear(layer: LinearVelocityLayer, depth: float, prop: str) -> f
     top_value, bottom_value = layer[top_key], layer[bottom_key]
     return eval_linear_gradient(layer["top_depth"], layer["bot_depth"],
                                 top_value, bottom_value, depth)
-
 
 
 class VelocityModel1D:
