@@ -36,7 +36,7 @@ def evaluate_at(layer: ConstantVelocityLayer, prop: str) -> float:
     """
 
     if prop == "p":
-        key = "top_density"
+        key = "top_p_velocity"
     elif prop == "s":
         key = "top_s_velocity"
     elif prop in "rd":
