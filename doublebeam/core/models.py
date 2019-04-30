@@ -108,15 +108,16 @@ class VelocityModel1D:
         Find the layer within the model that contains the depth and return
         its index in self.layers
         """
-        # Get mask: True for all layers that are above the given depth
-        layer = self.layers["top_depth"] <= depth_km
-        # get indices of all True values, meaning indices of all layers above
-        # the given depth
+        # Get mask: True for the layer in which the depth is
+        layer = np.logical_and(self.layers['top_depth'] <= depth_km,
+                               depth_km < self.layers['bot_depth'])
+        # get indices of the True value. meaning index of the wanted layer
         layer = np.where(layer)[0]
         if len(layer):
             # return the layer which top depth is directly above depth_km
-            return layer[-1]
+            return layer[0]
         else:
+            # depth must have been outside of VelocityModel since all indices were false
             raise LookupError(f"No layer found in model at depth {depth_km}")
 
     def eval_at(self, depth_km: float, prop: str) -> float:
