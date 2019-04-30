@@ -91,7 +91,16 @@ class VelocityModel1D:
 
     @classmethod
     def from_file(cls, filepath: Path):
-        raw_data = np.loadtxt(filepath, dtype=ConstantVelocityLayer, delimiter=",")
+        try:
+            # this fails if there are less than exactly 8 values, so next try
+            # to convert to ConstantVelocityLayer
+            raw_data = np.loadtxt(str(filepath), dtype=LinearVelocityLayer, delimiter=",")
+        except IndexError:
+            try:
+                raw_data = np.loadtxt(str(filepath), dtype=ConstantVelocityLayer, delimiter=",")
+            except ValueError:
+                msg = f"Error parsing velocity model file {str(filepath)}"
+                raise ValueError(msg)
         return cls(raw_data)
 
     def layer_number(self, depth_km: float) -> int:
