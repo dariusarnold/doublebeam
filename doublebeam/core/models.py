@@ -102,7 +102,7 @@ class VelocityModel1D:
                 raise ValueError(msg)
         return cls(raw_data)
 
-    def layer_number(self, depth_km: float) -> int:
+    def _layer_number(self, depth_km: float) -> int:
         """
         Find the layer within the model that contains the depth and return
         its index in self.layers
@@ -120,7 +120,7 @@ class VelocityModel1D:
             raise LookupError(f"No layer found in model at depth {depth_km}")
 
     def eval_at(self, depth_km: float, prop: str) -> float:
-        layer = self.layers[self.layer_number(depth_km)]
+        layer = self.layers[self._layer_number(depth_km)]
         if layer.dtype == ConstantVelocityLayer:
             return evaluate_at(layer, prop)
         elif layer.dtype == LinearVelocityLayer:
