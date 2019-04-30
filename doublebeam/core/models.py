@@ -67,7 +67,7 @@ def evaluate_at_linear(layer: LinearVelocityLayer, depth: float, prop: str) -> f
         :return: Value of linear gradient at x_position
         """
         slope = (y_right - y_left) / (x_right - x_left)
-        return y_left + slope * x_position
+        return y_left + slope * (x_position - x_left)
 
     if prop == "p":
         top_key, bottom_key = "top_p_velocity", "bot_p_velocity"
