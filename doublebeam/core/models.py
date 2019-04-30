@@ -1,15 +1,14 @@
 import numpy as np
+from pathlib import Path
 
 
 # Layer which has a constant velocity over its depth
+ConstantVelocityLayer = np.dtype([
     ('top_depth', np.float_),
-    #('bot_depth', np.float_),
+    ('bot_depth', np.float_),
     ('top_p_velocity', np.float_),
-    #('bot_p_velocity', np.float_),
     ('top_s_velocity', np.float_),
-    #('bot_s_velocity', np.float_),
-    ('top_density', np.float_)
-    #('bot_density', np.float_),
+    ('top_density', np.float_),
 ])
 
 # Layer which has a linear velocity gradient over its depth
@@ -92,7 +91,7 @@ class VelocityModel1D:
 
     @classmethod
     def from_file(cls, filepath: Path):
-        raw_data = np.loadtxt(filepath, dtype=VelocityLayer, delimiter=",")
+        raw_data = np.loadtxt(filepath, dtype=ConstantVelocityLayer, delimiter=",")
         return cls(raw_data)
 
     def layer_number(self, depth_km: float) -> int:

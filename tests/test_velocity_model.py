@@ -37,12 +37,12 @@ class TestLoadVelocityModel1D(unittest.TestCase):
     def setUpClass(cls):
         # create temp file with example model data
         content = """#Depth(km), vp (km/s), vs (km/s), density (g/cm^3)
-                     0.00,5.8000,3.3600,2.700
-                     10.00,5.8000,3.3600,2.750
-                     35.00,8.0400,4.4700,2.800"""
+                     0.00,10.,5.8000,3.3600,2.700
+                     10.00.35.,5.8000,3.3600,2.750
+                     35.00,50.,8.0400,4.4700,2.800"""
         cls.path, cls.f = TempFile(content)
-        cls.layers = np.array([(0, 5.8, 3.36, 2.7), (10., 5.8, 3.36, 2.75),
-                               (35., 8.04, 4.47, 2.8)], dtype=ConstantVelocityLayer)
+        cls.layers = np.array([(0, 10, 5.8, 3.36, 2.7), (10., 35, 5.8, 3.36, 2.75),
+                               (35., 50, 8.04, 4.47, 2.8)], dtype=ConstantVelocityLayer)
 
     def setUp(self):
         self.v = VelocityModel1D(self.layers)
@@ -55,7 +55,7 @@ class TestLoadVelocityModel1D(unittest.TestCase):
 
     def test_prop_access_success(self):
         """
-        Test successfull access to the models properties
+        Test successful access to the models properties
         """
         self.assertEqual(self.v.eval_at(5, "r"), 2.7)
         self.assertEqual(self.v.eval_at(555, "s"), 4.47)
