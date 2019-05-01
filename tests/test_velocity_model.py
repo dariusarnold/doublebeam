@@ -52,6 +52,9 @@ class TestVelocityModel1DLinearLayers(unittest.TestCase):
         with self.assertRaises(LookupError, msg="Model evaluation below lowest layer not raising correct exception"):
             self.v.eval_at(999.9, "p")
 
+    def test_interface_depths_correct(self):
+        assert_array_equal(self.v.interface_depths, np.array((0., 10., 35.)))
+
 
 class TestVelocityModel1DConstantLayers(unittest.TestCase):
 
@@ -100,3 +103,6 @@ class TestVelocityModel1DConstantLayers(unittest.TestCase):
             self.v.eval_at(-555, "p", )
         with self.assertRaises(LookupError, msg="Model evaluation below lowest layer not raising correct exception"):
             self.v.eval_at(999, "s")
+
+    def test_interface_depths_correct(self):
+        assert_array_equal(self.v.interface_depths, np.array((0., 10., 35., 50.)))

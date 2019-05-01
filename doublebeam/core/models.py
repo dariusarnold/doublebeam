@@ -87,6 +87,9 @@ class VelocityModel1D:
 
     def __init__(self, layers):
         self.layers = layers
+        depths = layers["top_depth"]
+        depths = np.append(depths, layers["bot_depth"][-1])
+        self.interface_depths = depths
 
     @classmethod
     def from_file(cls, filepath: Path):
