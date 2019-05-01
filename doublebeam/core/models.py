@@ -93,6 +93,8 @@ class VelocityModel1D:
 
     @classmethod
     def from_file(cls, filepath: Path):
+        # Load model from file. Formatting and content of file is described
+        # in README..md
         try:
             # this fails if there are less than exactly 8 values, so next try
             # to convert to ConstantVelocityLayer
@@ -102,6 +104,23 @@ class VelocityModel1D:
                 raw_data = np.loadtxt(str(filepath), dtype=ConstantVelocityLayer, delimiter=",")
             except ValueError:
                 msg = f"Error parsing velocity model file {str(filepath)}"
+                raise ValueError(msg)
+        return cls(raw_data)
+
+    @classmethod
+    def from_string(cls, model: str):
+        """
+        Create model from string description. The same rules as for model files
+        apply for creation from string
+        """
+        # np.loadtxt also takes generators, so create one
+        try:
+            raw_data = np.loadtxt((line for line in model.split("\n")), dtype=LinearVelocityLayer, delimiter=",")
+        except IndexError:
+            try:
+                raw_data = np.loadtxt((line for line in model.split("\n")), dtype=ConstantVelocityLayer, delimiter=",")
+            except ValueError:
+                msg =f"Error parsing velocity model string {model}"
                 raise ValueError(msg)
         return cls(raw_data)
 
