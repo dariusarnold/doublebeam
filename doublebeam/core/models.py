@@ -148,5 +148,13 @@ class VelocityModel1D:
         elif layer.dtype == LinearVelocityLayer:
             return evaluate_at_linear(layer, depth_km, prop)
 
+    def interface_crossed(self, z1: float, z2: float) -> bool:
+        """Return true if at least one interface is between the depths z1 and z2."""
+        z_upper = min(z1, z2)  # higher point
+        z_lower = max(z1, z2)  # lower point
+        # get mask: true for all interfaces which lay between the two points
+        interfaces_between = np.logical_and(self.interface_depths < z_lower, self.interface_depths > z_upper )
+        return np.any(interfaces_between)
+
     def __len__(self):
         return len(self.layers)

@@ -59,6 +59,34 @@ class TestVelocityModel1DLinearLayers(unittest.TestCase):
     def test_interface_depths_correct(self):
         assert_array_equal(self.v.interface_depths, np.array((0., 10., 35.)))
 
+    def test_one_interface_crossed_returns_true(self):
+        # both orders of depth should work:
+        self.assertEqual(self.v.interface_crossed(9, 11), True)
+        self.assertEqual(self.v.interface_crossed(10.5, 9.5), True)
+        # even small steps across the interface should be detected
+        z1, z2 = np.nextafter(10, 9), np.nextafter(10, 11)
+        if z1 != z2:
+            self.assertEqual(self.v.interface_crossed(z1, z2), True)
+            self.assertEqual(self.v.interface_crossed(z1, z2), self.v.interface_crossed(z2, z1))
+        else:
+            print("Assertion skipped due to float precision")
+        # top and bottom of the model also count as interfaces
+        self.assertEqual(self.v.interface_crossed(-0.1, 2), True)
+        self.assertEqual(self.v.interface_crossed(34.99, 36), True)
+
+    def test_multiple_interfaces_crossed_returns_true(self):
+        """As long as at least one interface between the depths, the function
+        should return True"""
+        self.assertEqual(self.v.interface_crossed(9, 36), True)
+        self.assertEqual(self.v.interface_crossed(36, 9), True)
+        self.assertEqual(self.v.interface_crossed(-1, 1000), True)
+
+    def test_no_interfaces_crossed_returns_false(self):
+        self.assertEqual(self.v.interface_crossed(1, 2), False)
+        z1 = np.nextafter(10, 11)
+        z2 = np.nextafter(z1, 11)
+        self.assertEqual(self.v.interface_crossed(z1, z2), False)
+
 
 class TestVelocityModel1DConstantLayers(unittest.TestCase):
 
@@ -114,3 +142,31 @@ class TestVelocityModel1DConstantLayers(unittest.TestCase):
 
     def test_interface_depths_correct(self):
         assert_array_equal(self.v.interface_depths, np.array((0., 10., 35., 50.)))
+
+    def test_one_interface_crossed_returns_true(self):
+        # both orders of depth should work:
+        self.assertEqual(self.v.interface_crossed(9, 11), True)
+        self.assertEqual(self.v.interface_crossed(10.5, 9.5), True)
+        # even small steps across the interface should be detected
+        z1, z2 = np.nextafter(35, 34), np.nextafter(35, 36)
+        if z1 != z2:
+            self.assertEqual(self.v.interface_crossed(z1, z2), True)
+            self.assertEqual(self.v.interface_crossed(z1, z2), self.v.interface_crossed(z2, z1))
+        else:
+            print("Assertion skipped due to float precision")
+        # top and bottom of the model also count as interfaces
+        self.assertEqual(self.v.interface_crossed(-0.1, 2), True)
+        self.assertEqual(self.v.interface_crossed(49.99, 51), True)
+
+    def test_multiple_interfaces_crossed_returns_true(self):
+        """As long as at least one interface between the depths, the function
+        should return True"""
+        self.assertEqual(self.v.interface_crossed(9, 36), True)
+        self.assertEqual(self.v.interface_crossed(36, 9), True)
+        self.assertEqual(self.v.interface_crossed(-1, 1000), True)
+
+    def test_no_interfaces_crossed_returns_false(self):
+        self.assertEqual(self.v.interface_crossed(1, 2), False)
+        z1 = np.nextafter(10, 11)
+        z2 = np.nextafter(z1, 11)
+        self.assertEqual(self.v.interface_crossed(z1, z2), False)
