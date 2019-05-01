@@ -141,7 +141,7 @@ class VelocityModel1D:
             # depth must have been outside of VelocityModel since all indices were false
             raise LookupError(f"No layer found in model at depth {depth_km}")
 
-    def eval_at(self, depth_km: float, prop: str) -> float:
+    def eval_at(self, depth_km: float, prop: str = "p") -> float:
         layer = self.layers[self._layer_number(depth_km)]
         if layer.dtype == ConstantVelocityLayer:
             return evaluate_at(layer, prop)
