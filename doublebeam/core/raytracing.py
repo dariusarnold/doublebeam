@@ -150,6 +150,8 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model, wa
         print("Total reflection")
         p[1] *= -1
         return p
+    #angle_out = asin(sin(angle_in) * v/v_prev)
+    #print("Angle out", degrees(angle_out))
     pn = np.dot(p, n)
     minusplus = -1 if wave_type == "T" else 1
     # TODO not stable when using reflected wave
@@ -177,7 +179,7 @@ def plot_rays(points1: Sequence[Tuple[float, float]], points2: Sequence[Tuple[fl
 
 def trace(t, y):
     """
-    Standard raypath equations Hill1990 Gaussian beam migration eq. 2a-2d
+    Standard raypath equations in 2D from Hill1990 Gaussian beam migration eq. 2a-2d
     :param t:
     :param y:
     :return:
