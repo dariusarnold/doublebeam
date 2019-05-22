@@ -86,8 +86,10 @@ class VelocityModel1D:
     as density"""
 
     def __init__(self, layers):
-        dtype = LinearVelocityLayer if len(layers[0]) == 8 else ConstantVelocityLayer
-        self.layers = np.asarray(layers, dtype=dtype)
+        try:
+            self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
+        except ValueError:
+            self.layers = np.asarray(layers, dtype=ConstantVelocityLayer)
         depths = self.layers["top_depth"]
         depths = np.append(depths, self.layers["bot_depth"][-1])
         self.interface_depths = depths
