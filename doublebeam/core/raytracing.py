@@ -2,6 +2,7 @@ from math import sin, cos, asin, acos, radians, degrees, isclose, copysign, sqrt
 from cmath import sqrt as csqrt
 import itertools
 from typing import Tuple, Sequence
+import enum
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -238,6 +239,13 @@ def ray_trace_euler(ray, velocity_model, s_end, ds=0.01):
     return points
 
 
+class IVPResultStatus(enum.IntEnum):
+    """Enum class to make the int status returned from scipys solve_ivp more readable"""
+    FAILED = -1
+    END_REACHED = 0
+    TERMINATION_EVENT = 1
+
+
 def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
     # Function which has a zero crossing at the boundary depth
     crossed = lambda t, y: y[1] - velocity_model.boundary_depth_km
@@ -266,7 +274,7 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
     # move z slightly below surface so event wont trigger immediately
     result = sp.integrate.solve_ivp(trace, [0, s_end], [ray.x0, z0+min_float_step, px0, pz0],
                                     max_step=ds, events=[crossed, surfaced])  # type: scipy.integrate._ivp.ivp.OdeResult
-    while result.status == 1:
+    while result.status == IVPResultStatus.TERMINATION_EVENT:
         # stop integration when surface was reached
         if result.t_events[1].size > 0:
             break
