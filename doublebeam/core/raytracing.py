@@ -26,24 +26,22 @@ def cartesian_to_ray_n(x, z, xm, theta):
 
 def dvx():
     """Derivative of velocity after x. 0 For 1D model"""
-    return 0
+    return 0.
 
 
 def dvz(velocity_model, z, delta=0.0001):
     """Derivative of velocity after z"""
     if z < delta:
         # special case: evaluating derivative would eval model at negative depth
-        return 0
+        return 0.
     return scipy.misc.derivative(velocity_model.eval_at, z, delta)
 
 
-def calc_px(v, theta):
-    """Calculate horizontal slowness"""
+def horizontal_slowness(v, theta):
     return sin(theta) / v
 
 
-def calc_pz(v, theta):
-    """Calculate vertical slowness"""
+def vertical_slowness(v, theta):
     return cos(theta) / v
 
 
@@ -92,24 +90,23 @@ def calc_initial_slowness3D(ray: Ray3D, v0: float) -> Tuple[float, float, float]
     :param v0: Velocity at ray starting point
     :return: Tuple of slowness values
     """
-
     px = 1/v0 * sin(ray.theta) * cos(ray.phi)
     py = 1/v0 * sin(ray.theta) * sin(ray.phi)
     pz = 1/v0 * cos(ray.theta)
     return px, py, pz
 
 
-def length(vector) -> float:
+def length(vector: np.ndarray) -> float:
     """Calculate length of vector"""
-    return np.dot(vector, vector)**0.5
+    return (vector @ vector)**0.5
 
 
-def angle(vector1, vector2) -> float:
-    """Calculate angle between two vectors"""
-    return acos(np.dot(vector1, vector2) / (length(vector1) * length(vector2)))
+def angle(vector1: np.ndarray, vector2: np.ndarray) -> float:
+    """Calculate angle between two vectors in rad"""
+    return acos((vector1 @ vector2) / (length(vector1) * length(vector2)))
 
 
-def critical_angle(v1, v2):
+def critical_angle(v1: float, v2: float) -> float:
     """
     Use Snells law to calculate the critical angle at an interface
     :param v1: velocity before interface
@@ -121,7 +118,7 @@ def critical_angle(v1, v2):
     return np.pi
 
 
-def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model, wave_type="T"):
+def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: VelocityModel1D, wave_type: str = "T"):
     """
     Compute new slowness vector using Snells law
     :param px: x component of slowness vector before interface
@@ -175,20 +172,21 @@ def plot_ray(points: Sequence[Tuple[float, float]]):
     plt.show()
 
 
-def trace(t, y):
+def trace(s: float, y: Tuple[float, float, float, float]) -> Tuple[float, float, float, float]:
     """
     Standard raypath equations in 2D from Hill1990 Gaussian beam migration eq. 2a-2d
-    :param t:
-    :param y:
+    :param s: Current value of integration variable s (arclength along ray)
+    :param y: List of values for x, y coordinate, horizontal and vertical slowness
     :return:
     """
     x, z, px, pz = y
     v = vm.eval_at(z)
     dxds = v * px
     dzds = v * pz
+    #TODO simplify dvx by replacing it with zero for 2D case
     dpxds = -1 * v**-2 * dvx()
     dpzds = -1 * v**-2 * dvz(vm, z)
-    dydt = [dxds, dzds, dpxds, dpzds]
+    dydt = (dxds, dzds, dpxds, dpzds)
     return dydt
 
 
@@ -199,7 +197,7 @@ class IVPResultStatus(enum.IntEnum):
     TERMINATION_EVENT = 1
 
 
-def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
+def ray_trace_scipy(ray: Ray2D, velocity_model: VelocityModel1D, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
     # Generate a function which has a zero crossing at the boundary depth
     # for all boundary depths in the models to apply Snells law
     crossings = [lambda t, y: y[1] - interface_depth for interface_depth in velocity_model.interface_depths[1:-1]]  # skip first interface depth since its the surface at z = 0 and skip last interface since model stops there # TODO add condition that stops integration once model bottom is reached
@@ -219,8 +217,8 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
 
     z0 = ray.z0
     v0 = velocity_model.eval_at(z0)
-    px0 = calc_px(v0, ray.theta)
-    pz0 = calc_pz(v0, ray.theta)
+    px0 = horizontal_slowness(v0, ray.theta)
+    pz0 = vertical_slowness(v0, ray.theta)
 
     min_float_step = np.finfo(float).eps
     x_values = []
