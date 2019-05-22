@@ -1,14 +1,13 @@
-from math import sin, cos, asin, acos, radians, degrees, isclose, copysign, sqrt
-from cmath import sqrt as csqrt
-import itertools
-from typing import Tuple, Sequence
 import enum
+import itertools
+from math import sin, cos, asin, acos, radians, degrees, copysign, sqrt
+from typing import Tuple, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.misc
-import scipy.integrate
 import scipy as sp
+import scipy.integrate
+import scipy.misc
 
 from doublebeam.core.models import VelocityModel1D
 
