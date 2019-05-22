@@ -49,11 +49,11 @@ def evaluate_at_linear(layer: LinearVelocityLayer, depth: float, prop: str) -> f
     Evaluate material properties at a given depth in a layer with linearly
     varying properties
     :param layer: The layer to evaluate
-    :param depth: Depth in km at which to evaluate the property
+    :param depth: Depth in m at which to evaluate the property
     :param prop: Which property to evaluate
-    "p" = P wave velocity (km/s)
-    "s" = S wave velocity (km/s)
-    "r" or "d" = density (gm/cm^3)
+    "p" = P wave velocity (m/s)
+    "s" = S wave velocity (m/s)
+    "r" or "d" = density (kg/m^3)
     :return: The requested layer property
     """
 
@@ -97,7 +97,7 @@ class VelocityModel1D:
     @classmethod
     def from_file(cls, filepath: Path):
         # Load model from file. Formatting and content of file is described
-        # in README..md
+        # in README.md
         try:
             # this fails if there are less than exactly 8 values, so next try
             # to convert to ConstantVelocityLayer
@@ -127,14 +127,14 @@ class VelocityModel1D:
                 raise ValueError(msg)
         return cls(raw_data)
 
-    def _layer_number(self, depth_km: float) -> int:
+    def _layer_number(self, depth: float) -> int:
         """
         Find the layer within the model that contains the depth and return
         its index in self.layers
         """
         # Get mask: True for the layer in which the depth is
-        layer = np.logical_and(self.layers['top_depth'] <= depth_km,
-                               depth_km < self.layers['bot_depth'])
+        layer = np.logical_and(self.layers['top_depth'] <= depth,
+                               depth < self.layers['bot_depth'])
         # get indices of the True value. meaning index of the wanted layer
         layer = np.where(layer)[0]
         if len(layer):
@@ -142,18 +142,18 @@ class VelocityModel1D:
             return layer[0]
         else:
             # depth must have been outside of VelocityModel since all indices were false
-            raise LookupError(f"No layer found in model at depth {depth_km}")
+            raise LookupError(f"No layer found in model at depth {depth}")
 
-    def eval_at(self, depth_km: float, prop: str = "p") -> float:
+    def eval_at(self, depth: float, prop: str = "p") -> float:
         # this condition is a workaround for solve_ivp evaluating above the surface to find the zero crossing
         #TODO maybe the zero crossing could be placed just below the surface?
-        if depth_km < 0:
+        if depth < 0:
             return 1
-        layer = self.layers[self._layer_number(depth_km)]
+        layer = self.layers[self._layer_number(depth)]
         if layer.dtype == ConstantVelocityLayer:
             return evaluate_at(layer, prop)
         elif layer.dtype == LinearVelocityLayer:
-            return evaluate_at_linear(layer, depth_km, prop)
+            return evaluate_at_linear(layer, depth, prop)
 
     def interface_crossed(self, z1: float, z2: float) -> bool:
         """Return true if at least one interface is between the depths z1 and z2."""

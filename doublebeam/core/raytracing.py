@@ -47,12 +47,13 @@ def vertical_slowness(v, theta):
 
 class Ray2D:
 
-    def __init__(self, pierce_point_xm: float, start_z: float, theta: float):
+    def __init__(self, start_x: float, start_z: float, theta: float):
         """
-        :param pierce_point_xm: x coordinate of start point of ray in km
+        :param start_x: x coordinate of start point of ray in m
+        :param start_z: z coordinate of start point of ray in m
         :param theta: angle of ray against vertical at the surface in rad
         """
-        self.x0 = pierce_point_xm
+        self.x0 = start_x
         self.z0 = start_z
         self.theta = theta
         self.layer_boundaries_crossed_depths = [-99]
@@ -66,18 +67,20 @@ class Ray2D:
 
 class Ray3D:
 
-    def __init__(self, pierce_point_xm: float, pierce_point_ym: float, theta: float, phi: float):
+    def __init__(self, start_x: float, start_y: float, start_z: float, theta: float, phi: float):
         """
-        :param pierce_point_xm: x coordinate of start point of ray in km
-        :param pierce_point_ym: y coordinate of start point of ray in km
+        :param start_x: x coordinate of start point of ray in m
+        :param start_y: y coordinate of start point of ray in m
+        :param start_z: z coordinate of start point of ray in m
         :param theta: Angle against vertical at start point in rad
         0 <= theta <= pi
         :param phi: Angle against x axis at start point in rad, with increasing
         angle towards the y axis
         0 <= phi <= 2*pi
         """
-        self.xm = pierce_point_xm
-        self.ym = pierce_point_ym
+        self.x0 = start_x
+        self.y0 = start_y
+        self.z0 = start_z
         self.theta = theta
         self.phi = phi
 
@@ -109,8 +112,8 @@ def angle(vector1: np.ndarray, vector2: np.ndarray) -> float:
 def critical_angle(v1: float, v2: float) -> float:
     """
     Use Snells law to calculate the critical angle at an interface
-    :param v1: velocity before interface
-    :param v2: velocity after interface
+    :param v1: velocity before interface in m/s
+    :param v2: velocity after interface in m/s
     :return: critical angle in rad
     """
     if v1 < v2:
@@ -130,6 +133,7 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: Ve
     :return: slowness vector (x, z) after interface
     """
     # create slowness vector p
+    # TODO keep p as a np.ndarray everywhere
     p = np.array((px, pz))
     # normal vector in 1D model will always be vertical
     # n should be oriented to the side where the transmitted wave propagates
