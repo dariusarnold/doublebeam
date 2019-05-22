@@ -142,6 +142,10 @@ class VelocityModel1D:
             raise LookupError(f"No layer found in model at depth {depth_km}")
 
     def eval_at(self, depth_km: float, prop: str = "p") -> float:
+        # this condition is a workaround for solve_ivp evaluating above the surface to find the zero crossing
+        #TODO maybe the zero crossing could be placed just below the surface?
+        if depth_km < 0:
+            return 1
         layer = self.layers[self._layer_number(depth_km)]
         if layer.dtype == ConstantVelocityLayer:
             return evaluate_at(layer, prop)

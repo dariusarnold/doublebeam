@@ -10,6 +10,8 @@ import scipy.misc
 import scipy.integrate
 import scipy as sp
 
+from doublebeam.core.models import VelocityModel1D
+
 
 def cartesian_to_ray_s(x, z, xm, _theta):
     """Conversion of 2D cartesian coordinates x, z to ray coordinate
@@ -23,34 +25,6 @@ def cartesian_to_ray_n(x, z, xm, theta):
     return (x - xm) * cos(theta) + z * sin(theta)
 
 
-class MockVelocityModel1D:
-
-    def __init__(self, boundary_depth_km: float):
-        self.boundary_depth_km = boundary_depth_km
-
-    def eval_at(self, z):
-        """Mock 1D velocity model. Get velocity as a function of depth.
-        Can be replaced with VelocityModel1D when layers with linear velocity
-        change are implemented"""
-        if z < self.boundary_depth_km:
-            v0 = 3
-            slope = 1
-        else:
-            v0 = 4.5  # km/s
-            slope = 1.5  # km/s per km depth
-        return v0 + z * slope
-
-    def at_boundary(self, z, abs_tol=0.01):
-        return isclose(z, self.boundary_depth_km, abs_tol=abs_tol)
-
-    def boundary_crossed(self, z1, z2):
-        """Return true if a boundary is between the depths z1, z2"""
-        # sort limits so that even when going upwards (where z1 > z2) a crossing is detected
-        _z1 = min(z1, z2)
-        _z2 = max(z1, z2)
-        return _z1 <= self.boundary_depth_km <= _z2
-
-
 def dvx():
     """Derivative of velocity after x. 0 For 1D model"""
     return 0
@@ -58,6 +32,9 @@ def dvx():
 
 def dvz(velocity_model, z, delta=0.0001):
     """Derivative of velocity after z"""
+    if z < delta:
+        # special case: evaluating derivative would eval model at negative depth
+        return 0
     return scipy.misc.derivative(velocity_model.eval_at, z, delta)
 
 
@@ -228,7 +205,7 @@ def ray_trace_euler(ray, velocity_model, s_end, ds=0.01):
         v = velocity_model.eval_at(z)
         x += v * px * ds
         z += v * pz * ds
-        if velocity_model.boundary_crossed(points[-1][1], z):
+        if velocity_model.interface_crossed(points[-1][1], z):
             z_prev = points[-1][1]
             px, pz = snells_law(px, pz, z, z_prev, velocity_model)
         else:
@@ -247,10 +224,12 @@ class IVPResultStatus(enum.IntEnum):
 
 
 def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
-    # Function which has a zero crossing at the boundary depth
-    crossed = lambda t, y: y[1] - velocity_model.boundary_depth_km
+    # Generate a function which has a zero crossing at the boundary depth
+    # for all boundary depths in the models to apply Snells law
+    crossings = [lambda t, y: y[1] - interface_depth for interface_depth in velocity_model.interface_depths[1:-1]]  # skip first interface depth since its the surface at z = 0 and skip last interface since model stops there # TODO add condition that stops integration once model bottom is reached
     # set to True to stop integration at the boundary so we can apply Snells law
-    crossed.terminal = True
+    for function in crossings:
+        function.terminal = True
 
     # return z coordinate which has a natural zero crossing at the surface
     surfaced = lambda t, y: y[1]
@@ -273,12 +252,14 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
     z_values = []
     # move z slightly below surface so event wont trigger immediately
     result = sp.integrate.solve_ivp(trace, [0, s_end], [ray.x0, z0+min_float_step, px0, pz0],
-                                    max_step=ds, events=[crossed, surfaced])  # type: scipy.integrate._ivp.ivp.OdeResult
+                                    max_step=ds, events=[*crossings, surfaced])  # type: scipy.integrate._ivp.ivp.OdeResult
     while result.status == IVPResultStatus.TERMINATION_EVENT:
+        # events are returned in the order as passed to solve_ivp
+        crossing_events, surface_events = result.t_events
         # stop integration when surface was reached
-        if result.t_events[1].size > 0:
+        if surface_events.size > 0:
             break
-        s_event = result.t_events[0][0]
+        s_event = crossing_events[0]
         _x, _z, _px, _pz = result.y
         x_values.append(_x)
         z_values.append(_z)
@@ -287,7 +268,7 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
         # trigger again. Increase z (positive step) when ray goes down, decrease
         # z (negative step) when ray goes up
         min_float_step = copysign(min_float_step, _pz[-1])
-        result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[crossed, surfaced])
+        result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[*crossings, surfaced])
     x_values.append(result.y[0])
     z_values.append(result.y[1])
     # scipy_x and scipy_z are lists of lists. Every sublist contains part of a
@@ -298,13 +279,11 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
     return list(zip(x_values, z_values))
 
 
-
 if __name__ == '__main__':
     start_x, start_z = 0, 0
     initial_angle_degrees = 20
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
-    boundary_depth_km = 1
-    vm = MockVelocityModel1D(boundary_depth_km)
+    vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
     s_end = 20
 
     points = ray_trace_euler(ray, vm, s_end)
