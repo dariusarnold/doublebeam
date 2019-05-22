@@ -31,6 +31,13 @@ class TestVelocityModel1DLinearLayers(unittest.TestCase):
         """Test if creating a VelocityModel populates the data structure correctly"""
         assert_array_equal(self.v.layers, self.layers)
 
+    def test_init_converting(self):
+        """Test if creating a VelocityModel from a sequence other than the expected array with dtype
+        LinearVelocityLayer works"""
+        layers_list = list(self.layers)
+        velocity_model_from_list = VelocityModel1D(layers_list)
+        assert_array_equal(self.v.layers, velocity_model_from_list.layers)
+
     def test_file_load(self):
         loaded_model = VelocityModel1D.from_file(self.path)
         assert_array_equal(loaded_model.layers, self.v.layers)
@@ -108,6 +115,13 @@ class TestVelocityModel1DConstantLayers(unittest.TestCase):
     def test_init(self):
         """Test if creating a VelocityModel populates the data structure correctly"""
         assert_array_equal(self.v.layers, self.layers)
+
+    def test_init_converting(self):
+        """Test if creating a VelocityModel from a sequence other than the expected array with dtype
+        ConstantVelocityLayer works"""
+        layers_list = list(self.layers)
+        velocity_model_from_list = VelocityModel1D(layers_list)
+        assert_array_equal(self.v.layers, velocity_model_from_list.layers)
 
     def test_file_load(self):
         loaded_model = VelocityModel1D.from_file(self.path)
