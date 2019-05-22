@@ -244,7 +244,6 @@ def ray_trace_scipy(ray: Ray2D, velocity_model, s_end: float, ds: float = 0.01) 
     v0 = velocity_model.eval_at(z0)
     px0 = calc_px(v0, ray.theta)
     pz0 = calc_pz(v0, ray.theta)
-    ds = 0.01
 
     min_float_step = np.finfo(float).eps
     x_values = []
