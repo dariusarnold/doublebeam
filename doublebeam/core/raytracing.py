@@ -161,11 +161,9 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model, wa
     return p_new
 
 
-def plot_rays(points1: Sequence[Tuple[float, float]], points2: Sequence[Tuple[float, float]]):
-    x1, z1 = zip(*points1)
-    x2, z2 = zip(*points2)
-    plt.plot(x1, z1, label="My integration")
-    plt.plot(x2, z2, label="Scipy")
+def plot_ray(points: Sequence[Tuple[float, float]]):
+    x1, z1 = zip(*points)
+    plt.plot(x1, z1, label="Ray path")
     ax = plt.gca()
     # invert y axis so positive depth values are shown downwards
     ax.invert_yaxis()
@@ -192,29 +190,6 @@ def trace(t, y):
     dpzds = -1 * v**-2 * dvz(vm, z)
     dydt = [dxds, dzds, dpxds, dpzds]
     return dydt
-
-
-def ray_trace_euler(ray, velocity_model, s_end, ds=0.01):
-    s = 0
-    x = ray.x0
-    z = ray.z0
-    v0 = velocity_model.eval_at(z)
-    px = calc_px(v0, ray.theta)
-    pz = calc_pz(v0, ray.theta)
-    points = [(x, z)]
-    while s < s_end and z >= 0:
-        v = velocity_model.eval_at(z)
-        x += v * px * ds
-        z += v * pz * ds
-        if velocity_model.interface_crossed(points[-1][1], z):
-            z_prev = points[-1][1]
-            px, pz = snells_law(px, pz, z, z_prev, velocity_model)
-        else:
-            px -= (1 / v**2) * dvx() * ds
-            pz -= (1 / v**2) * dvz(velocity_model, z) * ds
-        s += ds
-        points.append((x, z))
-    return points
 
 
 class IVPResultStatus(enum.IntEnum):
@@ -285,8 +260,5 @@ if __name__ == '__main__':
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
     vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
     s_end = 20
-
-    points = ray_trace_euler(ray, vm, s_end)
-    scipy_points = ray_trace_scipy(ray, vm, s_end)
-
-    plot_rays(points, scipy_points)
+    points = ray_trace_scipy(ray, vm, s_end)
+    plot_ray(points)
