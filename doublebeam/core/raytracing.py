@@ -56,6 +56,8 @@ class Ray2D:
         self.x0 = start_x
         self.z0 = start_z
         self.theta = theta
+        # Stores x, y coordinates of ray path
+        self.path = None  # type: Tuple[np.array, np.array]
         self.layer_boundaries_crossed_depths = [-99]
 
     def get_last_boundary_crossed_depth(self):
@@ -162,9 +164,9 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: Ve
     return p_new
 
 
-def plot_ray(points: Sequence[Tuple[float, float]]):
-    x1, z1 = zip(*points)
-    plt.plot(x1, z1, label="Ray path")
+def plot_ray(ray: Ray2D):
+    x, z = ray.path
+    plt.plot(x, z, label="Ray path")
     ax = plt.gca()
     # invert y axis so positive depth values are shown downwards
     ax.invert_yaxis()
@@ -201,7 +203,7 @@ class IVPResultStatus(enum.IntEnum):
     TERMINATION_EVENT = 1
 
 
-def ray_trace_scipy(ray: Ray2D, velocity_model: VelocityModel1D, s_end: float, ds: float = 0.01) -> Sequence[Tuple[float, float]]:
+def ray_trace_scipy(ray: Ray2D, velocity_model: VelocityModel1D, s_end: float, ds: float = 0.01) -> Ray2D:
     # Generate a function which has a zero crossing at the boundary depth
     # for all boundary depths in the models to apply Snells law
     crossings = [lambda t, y: y[1] - interface_depth for interface_depth in velocity_model.interface_depths[1:-1]]  # skip first interface depth since its the surface at z = 0 and skip last interface since model stops there # TODO add condition that stops integration once model bottom is reached
@@ -248,12 +250,12 @@ def ray_trace_scipy(ray: Ray2D, velocity_model: VelocityModel1D, s_end: float, d
         result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[*crossings, surfaced])
     x_values.append(result.y[0])
     z_values.append(result.y[1])
-    # scipy_x and scipy_z are lists of lists. Every sublist contains part of a
-    # ray path between interfaces. To plot them, unpack the inner lists
-    x_values = list(itertools.chain.from_iterable(x_values))
-    z_values = list(itertools.chain.from_iterable(z_values))
-    # create a list of (x, z) tuples where every tuple is one point of the ray
-    return list(zip(x_values, z_values))
+    # scipy_x and scipy_z are lists of ndarrays. Every array contains part of a
+    # ray path between interfaces.
+    x_values = np.concatenate(x_values)
+    z_values = np.concatenate(z_values)
+    ray.path = (x_values, z_values)
+    return ray
 
 
 if __name__ == '__main__':
@@ -262,5 +264,5 @@ if __name__ == '__main__':
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
     vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
     s_end = 20
-    points = ray_trace_scipy(ray, vm, s_end)
-    plot_ray(points)
+    ray = ray_trace_scipy(ray, vm, s_end)
+    plot_ray(ray)
