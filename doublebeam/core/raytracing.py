@@ -1,13 +1,14 @@
 import enum
-import itertools
+import time
+from collections import namedtuple
 from math import sin, cos, asin, acos, radians, degrees, copysign, sqrt
-from typing import Tuple, Sequence
+from typing import Tuple, Callable, List
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import scipy.integrate
 import scipy.misc
+from scipy.integrate import solve_ivp
 
 from doublebeam.core.models import VelocityModel1D
 
@@ -178,22 +179,7 @@ def plot_ray(ray: Ray2D):
     plt.show()
 
 
-def trace(s: float, y: Tuple[float, float, float, float]) -> Tuple[float, float, float, float]:
-    """
-    Standard raypath equations in 2D from Hill1990 Gaussian beam migration eq. 2a-2d
-    :param s: Current value of integration variable s (arclength along ray)
-    :param y: List of values for x, y coordinate, horizontal and vertical slowness
-    :return:
-    """
-    x, z, px, pz = y
-    v = vm.eval_at(z)
-    dxds = v * px
-    dzds = v * pz
-    #TODO simplify dvx by replacing it with zero for 2D case
-    dpxds = -1 * v**-2 * dvx()
-    dpzds = -1 * v**-2 * dvz(vm, z)
-    dydt = (dxds, dzds, dpxds, dpzds)
-    return dydt
+
 
 
 class IVPResultStatus(enum.IntEnum):
@@ -203,59 +189,86 @@ class IVPResultStatus(enum.IntEnum):
     TERMINATION_EVENT = 1
 
 
-def ray_trace_scipy(ray: Ray2D, velocity_model: VelocityModel1D, s_end: float, ds: float = 0.01) -> Ray2D:
-    # Generate a function which has a zero crossing at the boundary depth
-    # for all boundary depths in the models to apply Snells law
-    crossings = [lambda t, y: y[1] - interface_depth for interface_depth in velocity_model.interface_depths[1:-1]]  # skip first interface depth since its the surface at z = 0 and skip last interface since model stops there # TODO add condition that stops integration once model bottom is reached
-    # set to True to stop integration at the boundary so we can apply Snells law
-    for function in crossings:
-        function.terminal = True
+ODEState = namedtuple("ODEState", ["x", "z", "px", "pz"])
 
-    # return z coordinate which has a natural zero crossing at the surface
-    surfaced = lambda t, y: y[1]
-    # set True to stop integration once the ray reaches the surface
-    surfaced.terminal = True
+IVPEventFunction = Callable[[float, ODEState], float]
 
-    # This is a workaround so that trace can access the velocity model
-    # TODO find better solution
-    global vm
-    vm = velocity_model
+class RayTracer2D:
+    """
+    Class for ray tracing in a 2D velocity model.
+    """
 
-    z0 = ray.z0
-    v0 = velocity_model.eval_at(z0)
-    px0 = horizontal_slowness(v0, ray.theta)
-    pz0 = vertical_slowness(v0, ray.theta)
+    def __init__(self, velocity_model: VelocityModel1D):
+        """
+        :param velocity_model: Velocity model to use for ray tracing
+        """
+        self._velocity_model = velocity_model
+        # Generate a function which has a zero crossing at the boundary depth
+        # for all boundary depths in the models to apply Snells law
+        # skip first interface depth since its the surface at z = 0 and skip
+        # last interface since model stops there
+        #  TODO add condition that stops integration once model bottom is reached
+        crossings : List[IVPEventFunction] = [lambda s, y: y[1] - depth
+            for depth in velocity_model.interface_depths[1:-1]]
+        # set to True to stop integration at the boundary so we can apply Snells law
+        for f in crossings:
+            f.terminal = True
+        # return z coordinate which has a natural zero crossing at the surface
+        surfaced: IVPEventFunction = lambda s, y: y[1]
+        # set True to stop integration once the ray reaches the surface
+        surfaced.terminal = True
+        self._events = [*crossings, surfaced]
 
-    min_float_step = np.finfo(float).eps
-    x_values = []
-    z_values = []
-    # move z slightly below surface so event wont trigger immediately
-    result = sp.integrate.solve_ivp(trace, [0, s_end], [ray.x0, z0+min_float_step, px0, pz0],
-                                    max_step=ds, events=[*crossings, surfaced])  # type: scipy.integrate._ivp.ivp.OdeResult
-    while result.status == IVPResultStatus.TERMINATION_EVENT:
-        # events are returned in the order as passed to solve_ivp
-        crossing_events, surface_events = result.t_events
-        # stop integration when surface was reached
-        if surface_events.size > 0:
-            break
-        s_event = crossing_events[0]
-        _x, _z, _px, _pz = result.y
-        x_values.append(_x)
-        z_values.append(_z)
-        px, pz = snells_law(_px[-1], _pz[-1], _z[-1], _z[-2], velocity_model)
-        # move z behind the interface just passed by the ray so the event wont
-        # trigger again. Increase z (positive step) when ray goes down, decrease
-        # z (negative step) when ray goes up
-        min_float_step = copysign(min_float_step, _pz[-1])
-        result = scipy.integrate.solve_ivp(trace, [s_event, s_end], [_x[-1], _z[-1]+min_float_step, px, pz], max_step=ds, events=[*crossings, surfaced])
-    x_values.append(result.y[0])
-    z_values.append(result.y[1])
-    # scipy_x and scipy_z are lists of ndarrays. Every array contains part of a
-    # ray path between interfaces.
-    x_values = np.concatenate(x_values)
-    z_values = np.concatenate(z_values)
-    ray.path = (x_values, z_values)
-    return ray
+    def _trace(self, s: float, y: ODEState) -> ODEState:
+        """
+        Standard raypath equations in 2D from Hill1990 Gaussian beam migration eq. 2a-2d
+        :param s: Current value of integration variable s (arclength along ray)
+        :param y: List of values for x, y coordinate, horizontal and vertical slowness
+        :return:
+        """
+        x, z, px, pz = y
+        v = self._velocity_model.eval_at(z)
+        dxds = v * px
+        dzds = v * pz
+        # TODO simplify dvx by replacing it with zero for 2D case
+        dpxds = -1 * v ** -2 * dvx()
+        dpzds = -1 * v ** -2 * dvz(self._velocity_model, z)
+        dydt = ODEState(dxds, dzds, dpxds, dpzds)
+        return dydt
+
+    def ray_trace(self, ray: Ray2D, s_end: float, ds: float=0.01) -> Ray2D:
+        v0 = self._velocity_model.eval_at(ray.z0)
+        px0 = horizontal_slowness(v0, ray.theta)
+        pz0 = vertical_slowness(v0, ray.theta)
+        min_float_step = np.finfo(float).eps
+        initial_state = ODEState(ray.x0, ray.z0+min_float_step, px0, pz0)
+        result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, [0, s_end], initial_state, max_step=ds,
+                           events=self._events)
+        x_values, z_values = [], []
+        while result.status == IVPResultStatus.TERMINATION_EVENT:
+            # events are returned in the order as passed to solve_ivp
+            crossing_events, surface_events = result.t_events
+            # stop integration when surface was reached
+            if surface_events.size > 0:
+                break
+            s_event = crossing_events[0]
+            x_, z_, px_, pz_ = result.y
+            x_values.append(x_)
+            z_values.append(z_)
+            px, pz = snells_law(px_[-1], pz_[-1], z_[-1], z_[-2], self._velocity_model)
+            min_float_step = copysign(min_float_step, pz_[-1])
+            # move z behind the interface just passed by the ray so the event wont
+            # trigger again. Increase z (positive step) when ray goes down, decrease
+            # z (negative step) when ray goes up
+            result = solve_ivp(self._trace, [s_event, s_end],
+                               ODEState(x_[-1], z_[-1]+min_float_step, px, pz),
+                               max_step=ds, events=self._events)
+        x_values.append(result.y[0])
+        z_values.append(result.y[1])
+        x_values = np.concatenate(x_values)
+        z_values = np.concatenate(z_values)
+        ray.path = (x_values, z_values)
+        return ray
 
 
 if __name__ == '__main__':
@@ -264,5 +277,9 @@ if __name__ == '__main__':
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
     vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
     s_end = 20
-    ray = ray_trace_scipy(ray, vm, s_end)
+    ray_tracer = RayTracer2D(vm)
+    a = time.time()
+    ray = ray_tracer.ray_trace(ray, s_end)
+    b = time.time()
+    print(b-a)
     plot_ray(ray)
