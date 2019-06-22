@@ -14,6 +14,6 @@ class TestRayTracingScipy(unittest.TestCase):
         vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
         ray = Ray2D(0, 0, radians(20))
         s_end = 20
-        traced_points = ray_trace_scipy(ray, vm, s_end)[-1]
-        self.assertAlmostEqual(last_point_expected[0], traced_points[0])
-        self.assertAlmostEqual(last_point_expected[1], traced_points[1])
+        ray = ray_trace_scipy(ray, vm, s_end)
+        self.assertAlmostEqual(last_point_expected[0], ray.path[0][-1])
+        self.assertAlmostEqual(last_point_expected[1], ray.path[1][-1])
