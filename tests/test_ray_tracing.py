@@ -1,7 +1,7 @@
 import unittest
 from math import radians
 
-from doublebeam.core.raytracing import VelocityModel1D, Ray2D, RayTracer2D
+from doublebeam.core.raytracing.raytracing import VelocityModel1D, Ray2D, RayTracer2D
 
 
 class TestRayTracingScipy(unittest.TestCase):
