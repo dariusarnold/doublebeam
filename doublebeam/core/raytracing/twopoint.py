@@ -242,7 +242,7 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C15
             :param k: Index of current layer
             """
-            return (1 - self._delta_a(k) * (1 - self._delta_epsilon(k, s))
+            return ((1 - self._delta_a(k)) * (1 - self._delta_epsilon(k, s))
                     * self._h_tilde(k, s))
 
         return sum(c1_iter(k) for k in range(0, self.n))
