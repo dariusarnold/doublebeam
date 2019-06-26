@@ -331,9 +331,9 @@ class TwoPointRayTracing:
         alpha2 = self._alpha2(s)
         beta1 = self._beta1(s)
         beta2 = self._beta2(s)
-        return (beta1 * X - alpha1 + sqrt((beta1**2 - 4 * beta2) * X**2 + 2
-                                          * (2 * alpha2 - alpha1 * beta1)
-                                          * X + alpha1**2)
+        return ((beta1 * X - alpha1 + sqrt((beta1**2 - 4 * beta2) * X**2
+                                           + 2 * (2 * alpha2 - alpha1 * beta1) * X
+                                           + alpha1**2))
                 / (2 * (alpha2 - beta2 * X)))
 
     def _v_A(self) -> float:
