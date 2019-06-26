@@ -127,7 +127,7 @@ class TwoPointRayTracing:
         :param k: Index of current layer
         :param s: Index of source layer
         """
-        return self._mu(k, s) * self.v_M / self.a[k]
+        return self._mu(k, s) * self.v_M / self.a[k] if self.a[k] != 0 else 0.
 
     def _h_tilde(self, k: int, s: int) -> float:
         """
@@ -274,7 +274,7 @@ class TwoPointRayTracing:
             """
             return (self._delta_a(k) * 0.5 * self._mu_tilde(k, s)
                     * (self._delta_epsilon(k, s) / sqrt(self._epsilon_tilde(k, s))
-                       - self._delta_omega(k, s) / sqrt(self._omega_tilde(k, s)))
+                       - ((1 / sqrt(self._omega_tilde(k, s))) if self._delta_omega(k, s) != 0 else 0.))
                     - (1 - self._delta_a(k)) * self._delta_epsilon(k, s)
                     * 0.5 * self._h_tilde(k, s) / self._epsilon_tilde(k, s)**1.5)
 
