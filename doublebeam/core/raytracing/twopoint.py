@@ -341,8 +341,8 @@ class TwoPointRayTracing:
         """
         Return v_A, the maximum velocity above the depth z(n-1)
         """
-        velocities_bottom = (self.z * self.a + self.b)[:-1]
-        velocity_top = (np.insert(self.z[:-1], 0, 0.) * self.a + self.b)[:-1]
+        velocities_bottom = (self.z * self.a + self.b)[1:-1]
+        velocity_top = (self.z[:-1] * self.a[1:] + self.b[1:])[:-1]
         return max(np.max(velocities_bottom), np.max(velocity_top))
 
     def _v_M(self, source_position: np.ndarray, receiver_position: np.ndarray) -> float:
@@ -355,8 +355,8 @@ class TwoPointRayTracing:
         source_index = self._velocity_model.layer_index(source_position[2])
         receiver_index = self._velocity_model.layer_index(receiver_position[2])
         index_low, index_high = min(source_index, receiver_index), max(source_index, receiver_index)
-        velocities_bottom = (self.a * self.z + self.b)[index_low:index_high]
-        velocities_top = (np.insert(self.z[:-1], 0, 0.) *self.a + self.b)[index_low:index_high]
+        velocities_bottom = (self.a[1:] * self.z[1:] + self.b[1:])[index_low:index_high]
+        velocities_top = (self.z[:-1] * self.a[1:] + self.b[1:])[index_low:index_high]
         v = max(self._velocity_model.eval_at(source_position[2]),
                 self._velocity_model.eval_at(receiver_position[2]))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
@@ -399,7 +399,7 @@ class TwoPointRayTracing:
                    / (1 + self._epsilon_tilde(k, s) * q**2)**1.5
                    - (2 + 3 * self._omega_tilde(k, s) * q**2)
                    / (1 + self._omega_tilde(k, s) * q**2)**1.5)
-                - ( 1 - self._delta_a(k))
+                - (1 - self._delta_a(k))
                 * 3 * self._h_tilde(k, s) * self._epsilon_tilde(k, s) * q
                 / (1 + self._epsilon_tilde(k, s) * q**2)**2.5)
 
@@ -443,22 +443,28 @@ class TwoPointRayTracing:
 
     def trace(self, source_position, receiver_position):
         source_index = self._velocity_model.layer_index(source_position[2])
+        # insert a and b of source layer as first item into a and b
+        # this is done to fix inconsistencies of indexing, where the paper sums
+        # over k=0...n while a only has n elements.
+        self.a = np.insert(self.a, 0, self.a[source_index])
+        self.b = np.insert(self.b, 0, self.b[source_index])
         # keep notation short and close to paper
         self.zs = source_position[2]
-        s = source_index
+        self.s = source_index
         # maximum velocity above the depth z(n-1)
         self.v_A = self._v_A()
         # TODO Debug assert, remove this if successfully tested
         assert self.v_A == 2700, "Wrong value for v_A"
         # highest velocity of the layers the ray passes through
         self.v_M = self._v_M(source_position, receiver_position)
-
+        # TODO Debug assert, remove if successfully tested
+        assert self.v_M == 3000, "Wrong value for v_M"
         self.X = abs(source_position[0] - receiver_position[0])
 
-        q = self._initial_estimate_q(s, self.X)
+        q = self._initial_estimate_q(source_index, self.X)
         while True:
             print(q)
-            q = self._next_q(s, q)
+            q = self._next_q(source_index, q)
 
 
 
