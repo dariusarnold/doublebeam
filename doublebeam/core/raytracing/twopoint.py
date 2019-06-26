@@ -212,7 +212,7 @@ class TwoPointRayTracing:
                     * (self._epsilon_tilde(k, s) - self._omega_tilde(k, s))
                     + (1 - self._delta_a(k)) * self._h_tilde(k, s))
 
-        return sum(d1_iter(k) for k in range(0, self.n))
+        return sum(d1_iter(k) for k in range(0, self.n+1))
 
     def _c0(self, s: int) -> float:
         """
@@ -230,7 +230,7 @@ class TwoPointRayTracing:
                     + (1 - self._delta_a(k)) * self._delta_epsilon(k, s)
                     * self._h_tilde(k, s) / sqrt(self._epsilon_tilde(k, s)))
 
-        return sum(c0_iter(k) for k in range(0, self.n))
+        return sum(c0_iter(k) for k in range(0, self.n+1))
 
     def _c1(self, s: int) -> float:
         """
@@ -245,7 +245,7 @@ class TwoPointRayTracing:
             return ((1 - self._delta_a(k)) * (1 - self._delta_epsilon(k, s))
                     * self._h_tilde(k, s))
 
-        return sum(c1_iter(k) for k in range(0, self.n))
+        return sum(c1_iter(k) for k in range(0, self.n+1))
 
     def _c_minus1(self, s: int) -> float:
         """
@@ -260,7 +260,7 @@ class TwoPointRayTracing:
             return (self._delta_a(k) * (self._delta_omega(k, s) - self._delta_epsilon(k, s))
                     * self._mu_tilde(k, s))
 
-        return sum(c_minus1_iter(k) for k in range(0, self.n))
+        return sum(c_minus1_iter(k) for k in range(0, self.n+1))
 
     def _c_minus2(self, s: int) -> float:
         """
@@ -278,7 +278,7 @@ class TwoPointRayTracing:
                     - (1 - self._delta_a(k)) * self._delta_epsilon(k, s)
                     * 0.5 * self._h_tilde(k, s) / self._epsilon_tilde(k, s)**1.5)
 
-        return sum(c_minus2_iter(k) for k in range(0, self.n))
+        return sum(c_minus2_iter(k) for k in range(0, self.n+1))
 
     def _alpha1(self, s: int) -> float:
         """
