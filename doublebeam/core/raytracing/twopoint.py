@@ -194,9 +194,9 @@ class TwoPointRayTracing:
                     + (1 - self._delta_a(k)) * self._h_tilde(k, s)
                     / sqrt(self._epsilon_tilde(k, s) - self._q_A() ** -2))
 
-        return sum(d0_iter(k) for k in range(0, self.n)) \
-               + self._mu_tilde(self.n, s) * sqrt(self._epsilon_tilde(self.n, s)
-                                                  - self._q_A() ** -2)
+        return (sum(d0_iter(k) for k in range(0, self.n-1))
+                + self._mu_tilde(self.n, s) * sqrt(self._epsilon_tilde(self.n, s)
+                                                   - self._q_A() ** -2))
 
     def _d1(self, s: int) -> float:
         """
