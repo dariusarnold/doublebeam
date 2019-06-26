@@ -360,6 +360,85 @@ class TwoPointRayTracing:
                 self._velocity_model.eval_at(receiver_position[2]))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
+    def _X_tilde(self, k: int, s: int, q: float) -> float:
+        """
+        Eq. A3
+        :param k: Index of current layer
+        :param s: Index of receiver layer
+        :param q: Estimate of transformed ray parameter
+        """
+        return (self._delta_a(k) * self._mu_tilde(k, s)
+                * (sqrt(q**-2 +  self._epsilon_tilde(k, s))
+                   - sqrt(q**-2 + self._omega_tilde(k, s)))
+                + ( 1 - self._delta_a(k)) * self._h_tilde(k, s)
+                / sqrt(q**-2 + self._epsilon_tilde(k, s)))
+
+    def _X_tilde_prime(self, k: int, s: int, q:float) -> float:
+        """
+        Eq. B9
+        :param k: Index of current layer
+        :param s: Index of source layer
+        :param q: Estimate of transformed ray parameter
+        """
+        return (self._delta_a(k) * self._mu_tilde(k, s) / q**2
+                * (1 / sqrt(1 + self._omega_tilde(k, s) * q**2)
+                   - 1 / sqrt(1 + self._epsilon_tilde(k, s) * q**2))
+                + (1 - self._delta_a(k)) * self._h_tilde(k, s)
+                / (1 + self._epsilon_tilde(k, s) * q**2)**1.5)
+
+    def _X_tilde_double_prime(self, k: int, s: int, q: float) -> float:
+        """
+        Eq. B10
+        :param k: Index of current layer
+        :param s: Index of source layer
+        :param q: Estimate of transformed ray parameter
+        """
+        return (self._delta_a(k) * self._mu_tilde(k, s) / q**3
+                * ((2 + 3* self._epsilon_tilde(k, s) * q**2)
+                   / (1 + self._epsilon_tilde(k, s) * q**2)**1.5
+                   - (2 + 3 * self._omega_tilde(k, s) * q**2)
+                   / (1 + self._omega_tilde(k, s) * q**2)**1.5)
+                - ( 1 - self._delta_a(k))
+                * 3 * self._h_tilde(k, s) * self._epsilon_tilde(k, s) * q
+                / (1 + self._epsilon_tilde(k, s) * q**2)**2.5)
+
+    def _f_tilde(self, s: int, q: float) -> float:
+        """
+        Eq. (16)
+        :param s:
+        :param q:
+        :return:
+        """
+        return sum(self._X_tilde(k, s, q) for k in range(self.n)) - self.X
+
+    def _f_tilde_prime(self, s: int, q: float) -> float:
+        """
+        Eq. B3
+        :param s: Index of source layer
+        :param q: Estimate for transformed ray parameter
+        """
+        return sum(self._X_tilde_prime(k, s, q) for k in range(self.n))
+
+    def _f_tilde_double_prime(self, s: int, q: float) -> float:
+        """
+        Eq. B4
+        :param s: Index of source layer
+        :param q: Estimate of transformed ray parameter
+        """
+        return sum(self._X_tilde_double_prime(k, s, q) for k in range(self.n))
+
+    def _next_q(self, s: int, q_old: float) -> float:
+        A = 0.5 * self._f_tilde_double_prime(s, q_old)
+        B = self._f_tilde_prime(s, q_old)
+        C = self._f_tilde(s, q_old)
+        delta_q_plus = q_old + (-B + sqrt(B**2 -4*A*C)) / (2*A)
+        delta_q_minus = q_old + (-B - sqrt(B**2 -4*A*C)) / (2*A)
+        f_tilde_plus = self._f_tilde(s, delta_q_plus)
+        f_tilde_minus = self._f_tilde(s, delta_q_minus)
+        if abs(f_tilde_plus) < abs(f_tilde_minus):
+            return delta_q_plus
+        else:
+            return delta_q_minus
 
     def trace(self, source_position, receiver_position):
         source_index = self._velocity_model.layer_index(source_position[2])
@@ -373,7 +452,12 @@ class TwoPointRayTracing:
         # highest velocity of the layers the ray passes through
         self.v_M = self._v_M(source_position, receiver_position)
 
-        q = self._initial_estimate_q(s, receiver_position[0])
+        self.X = abs(source_position[0] - receiver_position[0])
+
+        q = self._initial_estimate_q(s, self.X)
+        while True:
+            print(q)
+            q = self._next_q(s, q)
 
 
 
