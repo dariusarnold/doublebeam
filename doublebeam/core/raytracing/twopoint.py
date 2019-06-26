@@ -19,7 +19,7 @@ class MockVelocityModel:
         # velocity gradient and b_k the intercept.
         self.intercepts = np.array([1800., 2400., 2400., 2700., 2250.])
         self.gradients = np.array([4., 0., 1., 0., 1.5])
-        self.depths = np.array([100., 200., 300., 400., 500])
+        self.depths = np.array([0., 100., 200., 300., 400., 500])
 
     def layer_index(self, depth: float) -> int:
         """
@@ -28,6 +28,8 @@ class MockVelocityModel:
         layers will give the index of the bottom layer.
         :param depth: Depth in m
         >>> vm = MockVelocityModel()
+        >>> vm.layer_index(0.)
+        0
         >>> vm.layer_index(50.)
         0
         >>> vm.layer_index(499.9)
@@ -35,7 +37,7 @@ class MockVelocityModel:
         >>> vm.layer_index(300.)
         2
         """
-        return np.searchsorted(self.depths, depth)
+        return np.searchsorted(self.depths[1:], depth)
 
     def eval_at(self, depth: float) -> float:
         """
@@ -57,7 +59,6 @@ class MockVelocityModel:
         return self.intercepts[index] + self.gradients[index] * depth
 
 
-
 class TwoPointRayTracing:
 
     def __init__(self, velocity_model: MockVelocityModel):
@@ -65,7 +66,7 @@ class TwoPointRayTracing:
         self.a = velocity_model.gradients
         self.b = velocity_model.intercepts
         self.z = velocity_model.depths
-        self.n = len(velocity_model.depths)
+        self.n = len(velocity_model.gradients)
 
     def _epsilon(self, k: int, s: int) -> float:
         """
