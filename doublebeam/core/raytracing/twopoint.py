@@ -3,6 +3,7 @@ Two point ray tracing as described by
 A fast and robust two-point ray tracing method in layered media with constant or
 linearly varying layer velocity (Xinding Fang and Xiaofei Chen, 2019)
 """
+import time
 from math import sqrt
 
 import numpy as np
@@ -10,62 +11,13 @@ import numpy as np
 from doublebeam.core.raytracing.raytracing import VelocityModel1D
 
 
-class MockVelocityModel:
-    # This class mocks the velocity model shown in fig. 3 of Fang2019
-
-    def __init__(self):
-        # the velocity in every layer can be described as v_k = a_k*z + b_k
-        # where k is the layer index starting at 0 for the top layer. a_k is the
-        # velocity gradient and b_k the intercept.
-        self.intercepts = np.array([1800., 2400., 2400., 2700., 2250.])
-        self.gradients = np.array([4., 0., 1., 0., 1.5])
-        self.depths = np.array([0., 100., 200., 300., 400., 500])
-
-    def layer_index(self, depth: float) -> int:
-        """
-        Return layer index that contains the given depth point.
-        Layers are top inclusive, bottom exclusive, meaning a depth between two
-        layers will give the index of the bottom layer.
-        :param depth: Depth in m
-        >>> vm = MockVelocityModel()
-        >>> vm.layer_index(0.)
-        0
-        >>> vm.layer_index(50.)
-        0
-        >>> vm.layer_index(499.9)
-        4
-        >>> vm.layer_index(300.)
-        2
-        """
-        return np.searchsorted(self.depths[1:], depth)
-
-    def eval_at(self, depth: float) -> float:
-        """
-        Return velocity in m/s at the given depth
-        :param depth: m
-        >>> vm = MockVelocityModel()
-        >>> vm.eval_at(0.)
-        1800.0
-        >>> vm.eval_at(500.)
-        3000.0
-        >>> vm.eval_at(350.)
-        2700.0
-        >>> vm.eval_at(50.)
-        2000.0
-        >>> vm.eval_at(100.)
-        2200.0
-        """
-        index = self.layer_index(depth)
-        return self.intercepts[index] + self.gradients[index] * depth
-
-
 class TwoPointRayTracing:
 
-    def __init__(self, velocity_model: MockVelocityModel):
-        self._velocity_model: MockVelocityModel = velocity_model
+    def __init__(self, velocity_model: VelocityModel1D):
+        self._velocity_model: VelocityModel1D = velocity_model
         self.a = velocity_model.gradients
         self.b = velocity_model.intercepts
-        self.z = velocity_model.depths
+        self.z = velocity_model.interface_depths
         self.n = len(velocity_model.gradients)
 
     def _epsilon(self, k: int, s: int) -> float:
@@ -441,7 +393,14 @@ class TwoPointRayTracing:
         else:
             return delta_q_minus
 
-    def trace(self, source_position, receiver_position):
+    def q_to_p(self, q: float, v_M: float) -> float:
+        """
+        Backtransform modified ray parameter q to standard ray parameter p
+        :param q: modified ray parameter
+        """
+        return sqrt(q**2 / v_M**2 / (1 + q**2))
+
+    def trace(self, source_position, receiver_position, accuracy: float = 0.0001) -> float:
         source_index = self._velocity_model.layer_index(source_position[2])
         # insert a and b of source layer as first item into a and b
         # this is done to fix inconsistencies of indexing, where the paper sums
@@ -463,12 +422,21 @@ class TwoPointRayTracing:
 
         q = self._initial_estimate_q(source_index, self.X)
         while True:
-            print(q)
-            q = self._next_q(source_index, q)
-
+            q_next = self._next_q(source_index, q)
+            if abs(q-q_next) < accuracy:
+                q = q_next
+                break
+            q = q_next
+        return self.q_to_p(q, self.v_M)
 
 
 if __name__ == '__main__':
-    vm = MockVelocityModel()
+    vm = VelocityModel1D.from_file("/home/darius/git/double-beam/fang2019model.txt")
     twopoint = TwoPointRayTracing(vm)
-    twopoint.trace((434., 0., 500.), (0., 868., 0))
+    a = time.time()
+    p = twopoint.trace((434., 0., 500.), (0., 868., 0))
+    b = time.time()
+    print(f"p: {p:.6e}")
+    # compare to known good result
+    assert p == 0.00024143895460092447, "Wrong result in raytracing"
+    print("Runtime: ", b-a)

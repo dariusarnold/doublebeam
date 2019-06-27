@@ -93,6 +93,10 @@ class VelocityModel1D:
         depths = self.layers["top_depth"]
         depths = np.append(depths, self.layers["bot_depth"][-1])
         self.interface_depths = depths
+        self.layer_heights = self.layers["bot_depth"] - self.layers["top_depth"]
+        if self.layers.dtype == LinearVelocityLayer:
+            self.gradients = (self.layers["bot_p_velocity"] - self.layers["top_p_velocity"]) / self.layer_heights
+            self.intercepts = self.layers["bot_p_velocity"] - np.cumsum(self.layer_heights) * self.gradients
 
     @classmethod
     def from_file(cls, filepath: Path):
@@ -136,6 +140,9 @@ class VelocityModel1D:
         Find the layer within the model that contains the depth and return
         its index in self.layers
         """
+        # workaround to include the bottom of the bottom most layer in the model
+        if depth == self.interface_depths[-1]:
+            return len(self.layers) - 1
         # Get mask: True for the layer in which the depth is
         layer = np.logical_and(self.layers['top_depth'] <= depth,
                                depth < self.layers['bot_depth'])
