@@ -62,8 +62,8 @@ def evaluate_at_linear(layer: LinearVelocityLayer, depth: float, prop: str) -> f
         """
         Used for interpolation between the layers property at top and bottom.
         The gradient is given by two points, which have an x value and a
-        corresponding y value. Linear interpolation between the two points at the
-        position given by value is used for the result
+        corresponding y value. Linear interpolation between the two points at
+        the position given by value is used for the result
         :return: Value of linear gradient at x_position
         """
         slope = (y_right - y_left) / (x_right - x_left)
@@ -101,10 +101,12 @@ class VelocityModel1D:
         try:
             # this fails if there are less than exactly 8 values, so next try
             # to convert to ConstantVelocityLayer
-            raw_data = np.loadtxt(str(filepath), dtype=LinearVelocityLayer, delimiter=",")
+            raw_data = np.loadtxt(str(filepath), dtype=LinearVelocityLayer,
+                                  delimiter=",")
         except IndexError:
             try:
-                raw_data = np.loadtxt(str(filepath), dtype=ConstantVelocityLayer, delimiter=",")
+                raw_data = np.loadtxt(str(filepath), dtype=ConstantVelocityLayer,
+                                      delimiter=",")
             except ValueError:
                 msg = f"Error parsing velocity model file {str(filepath)}"
                 raise ValueError(msg)
@@ -118,16 +120,18 @@ class VelocityModel1D:
         """
         # np.loadtxt also takes generators, so create one
         try:
-            raw_data = np.loadtxt((line for line in model.split("\n")), dtype=LinearVelocityLayer, delimiter=",")
+            raw_data = np.loadtxt((line for line in model.split("\n")),
+                                  dtype=LinearVelocityLayer, delimiter=",")
         except IndexError:
             try:
-                raw_data = np.loadtxt((line for line in model.split("\n")), dtype=ConstantVelocityLayer, delimiter=",")
+                raw_data = np.loadtxt((line for line in model.split("\n")),
+                                      dtype=ConstantVelocityLayer, delimiter=",")
             except ValueError:
-                msg =f"Error parsing velocity model string {model}"
+                msg = f"Error parsing velocity model string {model}"
                 raise ValueError(msg)
         return cls(raw_data)
 
-    def _layer_number(self, depth: float) -> int:
+    def layer_index(self, depth: float) -> int:
         """
         Find the layer within the model that contains the depth and return
         its index in self.layers
@@ -145,11 +149,12 @@ class VelocityModel1D:
             raise LookupError(f"No layer found in model at depth {depth}")
 
     def eval_at(self, depth: float, prop: str = "p") -> float:
-        # this condition is a workaround for solve_ivp evaluating above the surface to find the zero crossing
-        #TODO maybe the zero crossing could be placed just below the surface?
+        # this condition is a workaround for solve_ivp evaluating above the
+        # surface to find the zero crossing
+        # TODO maybe the zero crossing could be placed just below the surface?
         if depth < 0:
             return 1
-        layer = self.layers[self._layer_number(depth)]
+        layer = self.layers[self.layer_index(depth)]
         if layer.dtype == ConstantVelocityLayer:
             return evaluate_at(layer, prop)
         elif layer.dtype == LinearVelocityLayer:
@@ -160,7 +165,8 @@ class VelocityModel1D:
         z_upper = min(z1, z2)  # higher point
         z_lower = max(z1, z2)  # lower point
         # get mask: true for all interfaces which lay between the two points
-        interfaces_between = np.logical_and(self.interface_depths < z_lower, self.interface_depths > z_upper )
+        interfaces_between = np.logical_and(self.interface_depths < z_lower,
+                                            self.interface_depths > z_upper)
         return np.any(interfaces_between)
 
     def __len__(self):
