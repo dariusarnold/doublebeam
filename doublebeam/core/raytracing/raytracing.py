@@ -179,9 +179,6 @@ def plot_ray(ray: Ray2D):
     plt.show()
 
 
-
-
-
 class IVPResultStatus(enum.IntEnum):
     """Enum class to make the int status returned from scipys solve_ivp more readable"""
     FAILED = -1
@@ -227,7 +224,12 @@ class RayTracer2D:
         :return:
         """
         x, z, px, pz = y
-        v = self._velocity_model.eval_at(z)
+        try:
+            v = self._velocity_model.eval_at(z)
+        except LookupError:
+            # evaluating at negative depth means surface is reached
+            # TODO more clear/expressive way to stop integration
+            return ODEState(0, 0, 0, 0)
         dxds = v * px
         dzds = v * pz
         # TODO simplify dvx by replacing it with zero for 2D case
@@ -276,6 +278,7 @@ if __name__ == '__main__':
     initial_angle_degrees = 20
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
     vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
+    #vm = MockVelocityModel()
     s_end = 20
     ray_tracer = RayTracer2D(vm)
     a = time.time()
