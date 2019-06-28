@@ -173,8 +173,8 @@ def plot_ray(ray: Ray2D):
     ax.invert_yaxis()
     # set aspect ratio to equal so angles stay true
     ax.set_aspect("equal")
-    plt.xlabel("x (km)")
-    plt.ylabel("z (km)")
+    plt.xlabel("x (m)")
+    plt.ylabel("z (m)")
     plt.legend()
     plt.show()
 
@@ -206,10 +206,11 @@ class RayTracer2D:
         # last interface since model stops there
         #  TODO add condition that stops integration once model bottom is reached
         crossings : List[IVPEventFunction] = [lambda s, y: y[1] - depth
-            for depth in velocity_model.interface_depths[1:-1]]
+                                              for depth in velocity_model.interface_depths[1:-1]]
         # set to True to stop integration at the boundary so we can apply Snells law
         for f in crossings:
             f.terminal = True
+            f.direction = 1
         # return z coordinate which has a natural zero crossing at the surface
         surfaced: IVPEventFunction = lambda s, y: y[1]
         # set True to stop integration once the ray reaches the surface
@@ -262,8 +263,9 @@ class RayTracer2D:
             # move z behind the interface just passed by the ray so the event wont
             # trigger again. Increase z (positive step) when ray goes down, decrease
             # z (negative step) when ray goes up
+            #z_[-1] += copysign(z_[-1], 50000)
             result = solve_ivp(self._trace, [s_event, s_end],
-                               ODEState(x_[-1], z_[-1]+min_float_step, px, pz),
+                               ODEState(x_[-1], z_[-1], px, pz),
                                max_step=ds, events=self._events)
         x_values.append(result.y[0])
         z_values.append(result.y[1])
@@ -277,12 +279,12 @@ if __name__ == '__main__':
     start_x, start_z = 0, 0
     initial_angle_degrees = 20
     ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
-    vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
+    vm = VelocityModel1D.from_string("0, 1000, 3000, 4000, 0, 0, 1, 1\n1000, 101000, 6000, 156000, 0, 0, 1, 1")
     #vm = MockVelocityModel()
-    s_end = 20
+    s_end = 2000
     ray_tracer = RayTracer2D(vm)
     a = time.time()
-    ray = ray_tracer.ray_trace(ray, s_end)
+    ray = ray_tracer.ray_trace(ray, s_end, ds=0.1)
     b = time.time()
     print(b-a)
     plot_ray(ray)
