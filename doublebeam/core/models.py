@@ -1,119 +1,60 @@
 from pathlib import Path
+from typing import Sequence, Tuple
 
 import numpy as np
 
-# Layer which has a constant velocity over its depth
-ConstantVelocityLayer = np.dtype([
-    ('top_depth', np.float_),
-    ('bot_depth', np.float_),
-    ('top_p_velocity', np.float_),
-    ('top_s_velocity', np.float_),
-    ('top_density', np.float_),
-])
 
 # Layer which has a linear velocity gradient over its depth
+# v(z) = intercept + z * gradient
 LinearVelocityLayer = np.dtype([
-    ('top_depth', np.float_),
-    ('bot_depth', np.float_),
-    ('top_p_velocity', np.float_),
-    ('bot_p_velocity', np.float_),
-    ('top_s_velocity', np.float_),
-    ('bot_s_velocity', np.float_),
-    ('top_density', np.float_),
-    ('bot_density', np.float_),
+    ('top_depth', np.float64),
+    ('bot_depth', np.float64),
+    ('intercept', np.float64),
+    ('gradient', np.float64)
 ])
 
 
-def evaluate_at(layer: ConstantVelocityLayer, prop: str) -> float:
+def evaluate_at_linear(layer: LinearVelocityLayer, depth: float) -> float:
     """
-    Evaluate material properties of a velocity layer
-    :param layer: The layer to evaluate
-    :param prop: Which property to evaluate.
-    "p" = P wave velocity (km/s)
-    "s" = S wave velocity (km/s)
-    "r" or "d" = density (gm/cm^3)
-    :return: The requested layer property
-    """
-
-    if prop == "p":
-        key = "top_p_velocity"
-    elif prop == "s":
-        key = "top_s_velocity"
-    elif prop in "rd":
-        key = "top_density"
-    return layer[key]
-
-
-def evaluate_at_linear(layer: LinearVelocityLayer, depth: float, prop: str) -> float:
-    """
-    Evaluate material properties at a given depth in a layer with linearly
-    varying properties
+    Evaluate velocity at a given depth in a layer with linearly varying velocity
     :param layer: The layer to evaluate
     :param depth: Depth in m at which to evaluate the property
-    :param prop: Which property to evaluate
-    "p" = P wave velocity (m/s)
-    "s" = S wave velocity (m/s)
-    "r" or "d" = density (kg/m^3)
-    :return: The requested layer property
     """
-
-    def eval_linear_gradient(x_left: float, x_right: float, y_left: float,
-                             y_right: float, x_position: float) -> float:
-        """
-        Used for interpolation between the layers property at top and bottom.
-        The gradient is given by two points, which have an x value and a
-        corresponding y value. Linear interpolation between the two points at
-        the position given by value is used for the result
-        :return: Value of linear gradient at x_position
-        """
-        slope = (y_right - y_left) / (x_right - x_left)
-        return y_left + slope * (x_position - x_left)
-
-    if prop == "p":
-        top_key, bottom_key = "top_p_velocity", "bot_p_velocity"
-    elif prop == "s":
-        top_key, bottom_key = "top_s_velocity", "bot_s_velocity"
-    elif prop in "rd":
-        top_key, bottom_key = "top_density", "bot_density"
-
-    top_value, bottom_value = layer[top_key], layer[bottom_key]
-    return eval_linear_gradient(layer["top_depth"], layer["bot_depth"],
-                                top_value, bottom_value, depth)
+    return layer["intercept"] + layer["gradient"] * depth
 
 
-class VelocityModel1D:
+class VelocityModel3D:
     """Simple vertical velocity model storing P and S wave velocity as well
     as density"""
 
-    def __init__(self, layers):
-        try:
-            self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
-        except ValueError:
-            self.layers = np.asarray(layers, dtype=ConstantVelocityLayer)
+    def __init__(self, layers: Sequence[Tuple[float, float, float, float]]):
+        # TODO implement 3D part, ie. bordersfor x/y values
+        self.layers = np.asarray(list(layers), dtype=LinearVelocityLayer)
         depths = self.layers["top_depth"]
         depths = np.append(depths, self.layers["bot_depth"][-1])
         self.interface_depths = depths
         self.layer_heights = self.layers["bot_depth"] - self.layers["top_depth"]
-        if self.layers.dtype == LinearVelocityLayer:
-            self.gradients = (self.layers["bot_p_velocity"] - self.layers["top_p_velocity"]) / self.layer_heights
-            self.intercepts = self.layers["bot_p_velocity"] - np.cumsum(self.layer_heights) * self.gradients
+        self.gradients = self.layers["gradient"]
+        self.intercepts = self.layers["intercept"]
+
+    def __getitem__(self, index):
+        """
+        Implement indexing to get layers
+        :param index: Number of layer, 0 for top most, increasing downwards.
+        """
+        return self.layers[index]
 
     @classmethod
     def from_file(cls, filepath: Path):
         # Load model from file. Formatting and content of file is described
         # in README.md
+        # TODO update README to reflect changes: Only LinearVelocityLayer is kept
         try:
-            # this fails if there are less than exactly 8 values, so next try
-            # to convert to ConstantVelocityLayer
             raw_data = np.loadtxt(str(filepath), dtype=LinearVelocityLayer,
                                   delimiter=",")
         except IndexError:
-            try:
-                raw_data = np.loadtxt(str(filepath), dtype=ConstantVelocityLayer,
-                                      delimiter=",")
-            except ValueError:
-                msg = f"Error parsing velocity model file {str(filepath)}"
-                raise ValueError(msg)
+            msg = f"Error parsing velocity model file {str(filepath)}"
+            raise ValueError(msg)
         return cls(raw_data)
 
     @classmethod
@@ -127,12 +68,8 @@ class VelocityModel1D:
             raw_data = np.loadtxt((line for line in model.split("\n")),
                                   dtype=LinearVelocityLayer, delimiter=",")
         except IndexError:
-            try:
-                raw_data = np.loadtxt((line for line in model.split("\n")),
-                                      dtype=ConstantVelocityLayer, delimiter=",")
-            except ValueError:
-                msg = f"Error parsing velocity model string {model}"
-                raise ValueError(msg)
+            msg = f"Error parsing velocity model string {model}"
+            raise ValueError(msg)
         return cls(raw_data)
 
     def layer_index(self, depth: float) -> int:
@@ -155,14 +92,11 @@ class VelocityModel1D:
             # depth must have been outside of VelocityModel since all indices were false
             raise LookupError(f"No layer found in model at depth {depth}")
 
-    def eval_at(self, depth: float, prop: str = "p") -> float:
-        if depth < 0:
-            raise LookupError(f"Can't evaluate model at negative depth {depth}")
-        layer = self.layers[self.layer_index(depth)]
-        if layer.dtype == ConstantVelocityLayer:
-            return evaluate_at(layer, prop)
-        elif layer.dtype == LinearVelocityLayer:
-            return evaluate_at_linear(layer, depth, prop)
+    def eval_at(self, x: float, y: float, z: float) -> float:
+        if z < 0:
+            raise LookupError(f"Can't evaluate model at negative depth {z}")
+        layer = self.layers[self.layer_index(z)]
+        return layer["intercept"] + layer["gradient"] * z
 
     def interface_crossed(self, z1: float, z2: float) -> bool:
         """Return true if at least one interface is between the depths z1 and z2."""

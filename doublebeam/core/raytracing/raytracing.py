@@ -1,5 +1,4 @@
 import enum
-import time
 from collections import namedtuple
 from math import sin, cos, asin, acos, radians, degrees, copysign, sqrt
 from typing import Tuple, Callable, List
@@ -9,8 +8,9 @@ import numpy as np
 import scipy.integrate
 import scipy.misc
 from scipy.integrate import solve_ivp
+from scipy.misc import derivative
 
-from doublebeam.core.models import VelocityModel1D
+from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -125,7 +125,7 @@ def critical_angle(v1: float, v2: float) -> float:
     return np.pi
 
 
-def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: VelocityModel1D, wave_type: str = "T"):
+def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: VelocityModel3D, wave_type: str = "T"):
     """
     Compute new slowness vector using Snells law
     :param px: x component of slowness vector before interface
@@ -166,16 +166,16 @@ def snells_law(px: float, pz: float, z: float, z_prev: float, velocity_model: Ve
     return p_new
 
 
-def plot_ray(ray: Ray2D):
-    x, z = ray.path
-    plt.plot(x, z, label="Ray path")
+def plot_ray(x1: np.ndarray, x2: np.ndarray):
+    """Plot two coordinates of a aray"""
+    plt.plot(x1, x2, label="Ray path")
     ax = plt.gca()
     # invert y axis so positive depth values are shown downwards
     ax.invert_yaxis()
     # set aspect ratio to equal so angles stay true
     ax.set_aspect("equal")
-    plt.xlabel("x (m)")
-    plt.ylabel("z (m)")
+    plt.xlabel("x1 (m)")
+    plt.ylabel("x2 (m)")
     plt.legend()
     plt.show()
 
@@ -196,7 +196,7 @@ class RayTracer2D:
     Class for ray tracing in a 2D velocity model.
     """
 
-    def __init__(self, velocity_model: VelocityModel1D):
+    def __init__(self, velocity_model: VelocityModel3D):
         """
         :param velocity_model: Velocity model to use for ray tracing
         """
@@ -276,16 +276,67 @@ class RayTracer2D:
         return ray
 
 
+ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
+
+
+class NumericRayTracer3D:
+
+    def __init__(self, velocity_model):
+        self.velocity_model = velocity_model
+        self.current_layer = None
+
+    @staticmethod
+    def _velocity(layer: LinearVelocityLayer, x: float, y:float, z: float) -> float:
+        """
+        Evaluate velocity at a given depth in a layer with linearly varying velocity
+        :param layer: The layer to evaluate
+        :param depth: Depth in m at which to evaluate the property
+        """
+        return layer["intercept"] + layer["gradient"] * z
+
+    def _trace(self, s: float, y: ODEState3D) -> ODEState3D:
+        """
+        Implement ray tracing system (3.1.10) from Cerveny - Seismic ray theory
+        (2001).
+        :param s: Arclength along ray
+        :param y: Previous state
+        :return: New state
+        """
+        # TODO currently velocitymodel searches layer every time it is
+        #   evaluated. It would probably be more efficient to pass layer
+        #   and eval that, since this calculation takes place in one layer only.
+        #   This could be done in a member variable that is updated after
+        #   passing a layer boundary and passed to the model at evaluation.
+        x, y, z, px, py, pz, T = y
+        v = self._velocity(self.current_layer, x, y, z)
+        dxds = px * v
+        dyds = py * v
+        dzds = pz * v
+        dpxds = derivative((lambda x: 1. / self._velocity(self.current_layer, x, y, z)), x, dx=0.0001)
+        dpyds = derivative((lambda y: 1. / self._velocity(self.current_layer, x, y, z)), y, dx=0.0001)
+        dpzds = derivative((lambda z: 1. / self._velocity(self.current_layer, x, y, z)), z, dx=0.0001)
+        dTds = 1. / v
+        return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
+
+    def trace_layer(self, layer: LinearVelocityLayer, ray: Ray3D) -> Ray3D:
+        self.current_layer = layer
+        out_of_layer_events = [lambda s, y: y[2] - depth for depth in (layer["top_depth"], layer["bot_depth"])]
+        for function in out_of_layer_events:
+            function.terminal = True
+        px0, py0, pz0 = calc_initial_slowness3D(ray, self._velocity(self.current_layer, ray.x0, ray.y0, ray.z0))
+        initial_state = ODEState3D(ray.x0, ray.y0, ray.z0, px0, py0, pz0, 0.)
+        result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, (0, np.inf), initial_state, max_step=1, events=out_of_layer_events)
+        x, y, z, px, py, pz, t = result.y
+        ray.path = (x, y, z)
+        return ray
+
+
 if __name__ == '__main__':
-    start_x, start_z = 0, 0
-    initial_angle_degrees = 20
-    ray = Ray2D(start_x, start_z, radians(initial_angle_degrees))
-    vm = VelocityModel1D.from_string("0, 1000, 3000, 4000, 0, 0, 1, 1\n1000, 101000, 6000, 156000, 0, 0, 1, 1")
-    #vm = MockVelocityModel()
-    s_end = 2000
-    ray_tracer = RayTracer2D(vm)
-    a = time.time()
-    ray = ray_tracer.ray_trace(ray, s_end, ds=0.1)
-    b = time.time()
-    print(b-a)
-    plot_ray(ray)
+    layers = ((0, 100, 1800, 4), (100, 200, 2400, 0), (200, 300, 2400, 1),
+              (300, 400, 2700, 0), (400, 500, 2250, 1.5))
+    vm = VelocityModel3D(layers)
+    ray = Ray3D(0, 0, 0, radians(20), radians(0))
+    nrt = NumericRayTracer3D(vm)
+    ray = nrt.trace_layer(vm[0], ray)
+    plot_ray(ray.path[0], ray.path[2])
+
