@@ -52,7 +52,8 @@ class Ray2D:
         """
         :param start_x: x coordinate of start point of ray in m
         :param start_z: z coordinate of start point of ray in m
-        :param theta: angle of ray against vertical at the surface in rad
+        :param theta: angle of ray against downgoing vertical (z axis) at the
+        surface in rad
         """
         self.x0 = start_x
         self.z0 = start_z
@@ -75,8 +76,8 @@ class Ray3D:
         :param start_x: x coordinate of start point of ray in m
         :param start_y: y coordinate of start point of ray in m
         :param start_z: z coordinate of start point of ray in m
-        :param theta: Angle against vertical at start point in rad
-        0 <= theta <= pi
+        :param theta: Angle against downgoing vertical axis (z) at start
+        point in rad, increasing upwards. 0 <= theta <= pi
         :param phi: Angle against x axis at start point in rad, with increasing
         angle towards the y axis
         0 <= phi <= 2*pi
@@ -234,8 +235,8 @@ class RayTracer2D:
         dxds = v * px
         dzds = v * pz
         # TODO simplify dvx by replacing it with zero for 2D case
-        dpxds = -1 * v ** -2 * dvx()
-        dpzds = -1 * v ** -2 * dvz(self._velocity_model, z)
+        dpxds = -1 * v**-2 * dvx()
+        dpzds = -1 * v**-2 * dvz(self._velocity_model, z)
         dydt = ODEState(dxds, dzds, dpxds, dpzds)
         return dydt
 
