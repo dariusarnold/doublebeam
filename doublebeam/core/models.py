@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Sequence, Tuple
+from typing import Tuple, List
 
 import numpy as np
-
 
 # Layer which has a linear velocity gradient over its depth
 # v(z) = intercept + z * gradient
@@ -27,15 +26,16 @@ class VelocityModel3D:
     """Simple vertical velocity model storing P and S wave velocity as well
     as density"""
 
-    def __init__(self, layers: Sequence[Tuple[float, float, float, float]]):
-        # TODO implement 3D part, ie. bordersfor x/y values
-        self.layers = np.asarray(list(layers), dtype=LinearVelocityLayer)
+    def __init__(self, layers: List[Tuple[float, float, float, float]]):
+        # TODO implement 3D part, ie. borders for x/y values
+        self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
         depths = self.layers["top_depth"]
         depths = np.append(depths, self.layers["bot_depth"][-1])
         self.interface_depths = depths
         self.layer_heights = self.layers["bot_depth"] - self.layers["top_depth"]
         self.gradients = self.layers["gradient"]
         self.intercepts = self.layers["intercept"]
+
 
     def __getitem__(self, index):
         """
@@ -45,16 +45,36 @@ class VelocityModel3D:
         return self.layers[index]
 
     @classmethod
+    def convert_to_gradient_intercept(cls, layers: List[Tuple[float, float, float, float]]) -> np.ndarray:
+        """
+        Convert layers specified by their top and bottom depth and their top and
+        bottom velocity to intercept and gradient for the velocity
+        :param layers: List of layers, where every layer is specified by four
+        values in the listed order:
+        Depth top (m), depth bottom (m), velocity top (m/s), velocity bottom (m/s)
+        """
+        layers = np.asarray(layers).T
+        if layers.shape[0] != 4:
+            raise ValueError(f"Wrong input shape, expected (N, 4), "
+                             f"got {layers.T.shape}.")
+        heights = layers[1] - layers[0]
+        gradients = (layers[3] - layers[2]) / heights
+        intercepts = layers[2] - gradients * layers[0]
+        return np.array([(dt, db, i, g) for dt, db, i, g in
+                         zip(layers[0], layers[1], intercepts, gradients)],
+                        dtype=LinearVelocityLayer)
+
+    @classmethod
     def from_file(cls, filepath: Path):
         # Load model from file. Formatting and content of file is described
         # in README.md
         # TODO update README to reflect changes: Only LinearVelocityLayer is kept
         try:
-            raw_data = np.loadtxt(str(filepath), dtype=LinearVelocityLayer,
-                                  delimiter=",")
+            raw_data = np.loadtxt(str(filepath), delimiter=",")
         except IndexError:
             msg = f"Error parsing velocity model file {str(filepath)}"
             raise ValueError(msg)
+        raw_data = cls.convert_to_gradient_intercept(raw_data)
         return cls(raw_data)
 
     @classmethod
@@ -65,11 +85,11 @@ class VelocityModel3D:
         """
         # np.loadtxt also takes generators, so create one
         try:
-            raw_data = np.loadtxt((line for line in model.split("\n")),
-                                  dtype=LinearVelocityLayer, delimiter=",")
+            raw_data = np.loadtxt((line for line in model.split("\n")), delimiter=",")
         except IndexError:
             msg = f"Error parsing velocity model string {model}"
             raise ValueError(msg)
+        raw_data = cls.convert_to_gradient_intercept(raw_data)
         return cls(raw_data)
 
     def layer_index(self, depth: float) -> int:
