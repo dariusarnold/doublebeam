@@ -87,6 +87,14 @@ class Ray3D:
         self.z0 = start_z
         self.theta = theta
         self.phi = phi
+        # These will be set after the ray is traced
+        self.x: np.ndarray = None
+        self.y: np.ndarray = None
+        self.z: np.ndarray = None
+        self.px: np.ndarray = None
+        self.py: np.ndarray = None
+        self.pz: np.ndarray = None
+        self.t: np.ndarray = None
 
 
 def calc_initial_slowness3D(ray: Ray3D, v0: float) -> Tuple[float, float, float]:
@@ -327,7 +335,9 @@ class NumericRayTracer3D:
         initial_state = ODEState3D(ray.x0, ray.y0, ray.z0, px0, py0, pz0, 0.)
         result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, (0, np.inf), initial_state, max_step=1, events=out_of_layer_events)
         x, y, z, px, py, pz, t = result.y
-        ray.path = (x, y, z)
+        ray.x, ray.y, ray.z = x, y, z
+        ray.px, ray.py, ray.pz = px, py, pz
+        ray.t = t
         return ray
 
 
@@ -338,5 +348,5 @@ if __name__ == '__main__':
     ray = Ray3D(0, 0, 0, radians(20), radians(0))
     nrt = NumericRayTracer3D(vm)
     ray = nrt.trace_layer(vm[0], ray)
-    plot_ray(ray.path[0], ray.path[2])
+    plot_ray(ray.x, ray.z)
 
