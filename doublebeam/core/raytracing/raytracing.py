@@ -283,7 +283,7 @@ class NumericRayTracer3D:
 
     def __init__(self, velocity_model):
         self.velocity_model = velocity_model
-        self.current_layer = None
+        self.layer = None
 
     @staticmethod
     def _velocity(layer: LinearVelocityLayer, x: float, y:float, z: float) -> float:
@@ -308,22 +308,22 @@ class NumericRayTracer3D:
         #   This could be done in a member variable that is updated after
         #   passing a layer boundary and passed to the model at evaluation.
         x, y, z, px, py, pz, T = y
-        v = self._velocity(self.current_layer, x, y, z)
+        v = self._velocity(self.layer, x, y, z)
         dxds = px * v
         dyds = py * v
         dzds = pz * v
-        dpxds = derivative((lambda x: 1. / self._velocity(self.current_layer, x, y, z)), x, dx=0.0001)
-        dpyds = derivative((lambda y: 1. / self._velocity(self.current_layer, x, y, z)), y, dx=0.0001)
-        dpzds = derivative((lambda z: 1. / self._velocity(self.current_layer, x, y, z)), z, dx=0.0001)
+        dpxds = derivative((lambda x: 1. / self._velocity(self.layer, x, y, z)), x, dx=0.0001)
+        dpyds = derivative((lambda y: 1. / self._velocity(self.layer, x, y, z)), y, dx=0.0001)
+        dpzds = derivative((lambda z: 1. / self._velocity(self.layer, x, y, z)), z, dx=0.0001)
         dTds = 1. / v
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def trace_layer(self, layer: LinearVelocityLayer, ray: Ray3D) -> Ray3D:
-        self.current_layer = layer
+        self.layer = layer
         out_of_layer_events = [lambda s, y: y[2] - depth for depth in (layer["top_depth"], layer["bot_depth"])]
         for function in out_of_layer_events:
             function.terminal = True
-        px0, py0, pz0 = calc_initial_slowness3D(ray, self._velocity(self.current_layer, ray.x0, ray.y0, ray.z0))
+        px0, py0, pz0 = calc_initial_slowness3D(ray, self._velocity(self.layer, ray.x0, ray.y0, ray.z0))
         initial_state = ODEState3D(ray.x0, ray.y0, ray.z0, px0, py0, pz0, 0.)
         result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, (0, np.inf), initial_state, max_step=1, events=out_of_layer_events)
         x, y, z, px, py, pz, t = result.y
