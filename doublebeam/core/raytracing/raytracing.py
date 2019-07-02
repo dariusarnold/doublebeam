@@ -341,12 +341,15 @@ class NumericRayTracer3D:
         return ray
 
 
-if __name__ == '__main__':
+def main():
     layers = ((0, 100, 1800, 4), (100, 200, 2400, 0), (200, 300, 2400, 1),
               (300, 400, 2700, 0), (400, 500, 2250, 1.5))
     vm = VelocityModel3D(layers)
     ray = Ray3D(0, 0, 0, radians(20), radians(0))
     nrt = NumericRayTracer3D(vm)
-    ray = nrt.trace_layer(vm[0], ray)
+    ray = nrt.trace_stack(ray, "TTTTRTTTT")
     plot_ray(ray.x, ray.z)
 
+
+if __name__ == '__main__':
+    main()
