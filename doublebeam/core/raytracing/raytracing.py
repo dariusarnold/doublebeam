@@ -289,7 +289,7 @@ ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
 
 class NumericRayTracer3D:
 
-    def __init__(self, velocity_model):
+    def __init__(self, velocity_model: VelocityModel3D):
         self.velocity_model = velocity_model
         self.layer = None
 
@@ -310,11 +310,6 @@ class NumericRayTracer3D:
         :param y: Previous state
         :return: New state
         """
-        # TODO currently velocitymodel searches layer every time it is
-        #   evaluated. It would probably be more efficient to pass layer
-        #   and eval that, since this calculation takes place in one layer only.
-        #   This could be done in a member variable that is updated after
-        #   passing a layer boundary and passed to the model at evaluation.
         x, y, z, px, py, pz, T = y
         v = self._velocity(self.layer, x, y, z)
         dxds = px * v
@@ -327,6 +322,11 @@ class NumericRayTracer3D:
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def trace_layer(self, layer: LinearVelocityLayer, ray: Ray3D) -> Ray3D:
+        """
+        Trace a ray through a single layer of the model
+        :param ray: Ray to trace
+        :return: Ray with its parameters set
+        """
         self.layer = layer
         out_of_layer_events = [lambda s, y: y[2] - depth for depth in (layer["top_depth"], layer["bot_depth"])]
         for function in out_of_layer_events:
