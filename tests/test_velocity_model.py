@@ -14,12 +14,16 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         # create temp file with example model data
         cls.content = """#Depth top(m), Depth bottom (m), vp top (m/s), vp bottom (m/s)
                      0.00, 10000., 5800, 5800
-                     10000.00, 11000, 5000, 6000"""
+                     10000.00, 11000, 5000, 6000
+                     11000, 12000, 7000, 6000"""
         cls.path, cls.file = TempFile(cls.content)
         # manually parsed to compare
         cls.layers = np.array([(0., 10000., 5800, 5800),
-                               (10000., 11000., 5000, 6000)])
-        cls.layers_correct = np.array([(0, 10000, 5800, 0), (10000, 11000, -5000, 1)],
+                               (10000., 11000., 5000, 6000),
+                               (11000, 12000, 7000, 6000)])
+        cls.layers_correct = np.array([(0, 10000, 5800, 0),
+                                       (10000, 11000, -5000, 1),
+                                       (11000, 12000, 18000, -1)],
                                       dtype=LinearVelocityLayer)
 
     @classmethod
@@ -62,7 +66,7 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
             self.v.eval_at(0, 0, 99999999999)
 
     def test_interface_depths_correct(self):
-        assert_array_equal(self.v.interface_depths, np.array((0., 10000., 11000.)))
+        assert_array_equal(self.v.interface_depths, np.insert(self.layers_correct["bot_depth"], 0, 0))
 
     def test_one_interface_crossed_returns_true(self):
         # both orders of depth should work:
@@ -91,3 +95,27 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         z1 = np.nextafter(10000, 11000)
         z2 = np.nextafter(z1, 11000)
         self.assertEqual(self.v.interface_crossed(z1, z2), False)
+
+    def test_interface_velocities_evaluation(self):
+        """Test if method returns velocity from above and below the closest
+        interface to the depth."""
+        for z in (9999, 10000, 10001):
+            with self.subTest(z=z):
+                v_top, v_bottom = self.v.interface_velocities(z)
+                self.assertEqual(v_top, 5800)
+                self.assertEqual(v_bottom, 5000)
+
+    def test_interface_velocites_top(self):
+        """For depths above the top layers mid point, the interface between the
+        first and the second layer (from the top) should be returned, since the
+        interface between the first layer and the air is not defined."""
+        v_top, v_bottom = self.v.interface_velocities(10)
+        self.assertEqual(v_top, 5800)
+        self.assertEqual(v_bottom, 5000)
+
+    def test_interface_velocities_bottom(self):
+        """For depths below the bottom layers mid point, the interface between
+        it and the layer above should be used."""
+        v_top, v_bottom = self.v.interface_velocities(11999)
+        self.assertEqual(v_top, 6000)
+        self.assertEqual(v_bottom, 7000)

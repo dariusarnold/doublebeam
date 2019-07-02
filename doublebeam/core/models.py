@@ -35,6 +35,8 @@ class VelocityModel3D:
         self.layer_heights = self.layers["bot_depth"] - self.layers["top_depth"]
         self.gradients = self.layers["gradient"]
         self.intercepts = self.layers["intercept"]
+        self.velocities_top = self.layers["intercept"] + self.layers["gradient"] * self.layers["top_depth"]
+        self.velocities_bot = self.layers["intercept"] + self.layers["gradient"] * self.layers["bot_depth"]
 
 
     def __getitem__(self, index):
@@ -126,6 +128,31 @@ class VelocityModel3D:
         interfaces_between = np.logical_and(self.interface_depths < z_lower,
                                             self.interface_depths > z_upper)
         return np.any(interfaces_between)
+
+    def interface_velocities(self, z: float) -> Tuple[float, float]:
+        """
+        Return velocities above and below the closest interface.
+        :param z: Depth in m
+        :return: Tuple of: (velocity above interface, velocity below interface)
+        """
+        index = self.layer_index(z)
+        if index == 0:
+            # special case of top layer
+            return (self.velocities_bot[index],
+                    self.velocities_top[index+1])
+        elif index == len(self.layers) - 1:
+            # special case of bottom layer
+            return (self.velocities_bot[index-1],
+                    self.velocities_top[index])
+        midpoint_height = self.layers[index]["top_depth"] + self.layer_heights[index] / 2
+        if midpoint_height < z:
+            # eval interface with layer below
+            return (self.velocities_bot[index],
+                    self.velocities_top[index+1])
+        else:
+            # eval interface with layer above
+            return (self.velocities_bot[index-1],
+                    self.velocities_top[index])
 
     def __len__(self):
         return len(self.layers)
