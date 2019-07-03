@@ -99,6 +99,10 @@ class VelocityModel3D:
         Find the layer within the model that contains the depth and return
         its index in self.layers
         """
+        # workaround floating point inaccuracies where sometimes values slightly
+        # out of the layers boundaries cause an error, eg -6.328271240363392e-15
+        # instead of zero
+        depth = round(depth)
         # workaround to include the bottom of the bottom most layer in the model
         if depth == self.interface_depths[-1]:
             return len(self.layers) - 1

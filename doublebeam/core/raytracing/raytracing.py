@@ -451,7 +451,9 @@ class NumericRayTracer3D:
             return ray
         for wave_type in ray_code:
             v_top, v_bottom = self.velocity_model.interface_velocities(ray.last_point[Index.Z])
-            index = self.velocity_model.layer_index(ray.last_point[Index.Z])
+            if wave_type == "T":
+                # reflected waves stay in the layer and dont change the index
+                index += -1 if ray.direction == "up" else 1
             self.layer = self.velocity_model[index]
             if ray.direction == "down":
                 new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
