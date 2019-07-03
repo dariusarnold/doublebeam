@@ -230,14 +230,19 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float, wave_type: str = 
     :param wave_type: Select for which wave type (reflected/transmitted) the
     slowness should be computed. "T" for transmitted, "R" for reflected.
     """
+    # TODO implement checking for critical angle, which should abort ray tracing
+    if wave_type == "R":
+        # TODO quick exit not valid for non 1D models
+        return p * np.array((1, 1, -1))
+    else:
+        minus_plus = -1
     # n is normal vector of the interface. n should be oriented to the side
     # the transmitted wave propagates, else the minus/plus relation for
     # transmitted/reflected waves isn't valid.
-    n = np.array((0, 0, copysign(1, p[2])))
+    n = np.array((0, 0, copysign(1, p[Index.Z])))
     pn = p.dot(n)
     eps = copysign(1, pn)
-    minusplus = -1 if wave_type == "T" else 1
-    return p - (pn + minusplus * eps * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
+    return p - (pn + minus_plus * eps * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
 
 
 def plot_ray(x1: np.ndarray, x2: np.ndarray):
