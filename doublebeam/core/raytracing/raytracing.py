@@ -388,7 +388,6 @@ class NumericRayTracer3D:
         """
         Evaluate velocity at a given depth in a layer with linearly varying velocity
         :param layer: The layer to evaluate
-        :param depth: Depth in m at which to evaluate the property
         """
         return layer["intercept"] + layer["gradient"] * z
 
@@ -411,21 +410,29 @@ class NumericRayTracer3D:
         dTds = 1. / v
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
-    def trace_layer(self, ray: Ray3D, initial_slownesses: Tuple[float, float, float]) -> Ray3D:
+    def trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
+                    max_step_s: float = 1) -> Ray3D:
         """
         Trace a ray through a single layer of the model
         :param ray: Ray to trace
         :param initial_slownesses: Initial value of px, py, pz (slowness along
         the corresponding axis) of the ray in s/m.
+        :param max_step_s: Max step the solver takes for the integration
+        variable s.
         :return: Ray with its parameters set
         """
-        out_of_layer_events = [lambda s, y: y[2] - depth for depth in
-                               (self.layer["top_depth"], self.layer["bot_depth"])]
-        for func in out_of_layer_events:
+        # workaround: events only activate after a step is taken because
+        # sometimes events trigger directly after tracing starts and the
+        # depth doesn't change enough. Keep event function artificially away
+        # from zero to avoid that
+        upper_layer_event = lambda s, y: y[2] - self.layer["top_depth"] if s > max_step_s else 1
+        lower_layer_event = lambda s, y: y[2] - self.layer["bot_depth"] if s > max_step_s else -1
+        for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
         # TODO change signature of _velocity to accept np array instead of three floats
         initial_state = ODEState3D(*ray.last_point, *initial_slownesses, ray.last_time)
-        result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, (0, np.inf), initial_state, max_step=1, events=out_of_layer_events)
+        result = solve_ivp(self._trace, (0, np.inf), initial_state,
+                           max_step=max_step_s, events=(upper_layer_event, lower_layer_event))
         x, y, z, px, py, pz, t = result.y
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
