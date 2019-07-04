@@ -8,13 +8,13 @@ from math import sqrt
 
 import numpy as np
 
-from doublebeam.core.raytracing.raytracing import VelocityModel1D
+from doublebeam.core.raytracing.raytracing import VelocityModel3D
 
 
 class TwoPointRayTracing:
 
-    def __init__(self, velocity_model: VelocityModel1D):
-        self._velocity_model: VelocityModel1D = velocity_model
+    def __init__(self, velocity_model: VelocityModel3D):
+        self._velocity_model: VelocityModel3D = velocity_model
         self.a = velocity_model.gradients
         self.b = velocity_model.intercepts
         self.z = velocity_model.interface_depths
@@ -309,8 +309,8 @@ class TwoPointRayTracing:
         index_low, index_high = min(source_index, receiver_index), max(source_index, receiver_index)
         velocities_bottom = (self.a[1:] * self.z[1:] + self.b[1:])[index_low:index_high]
         velocities_top = (self.z[:-1] * self.a[1:] + self.b[1:])[index_low:index_high]
-        v = max(self._velocity_model.eval_at(source_position[2]),
-                self._velocity_model.eval_at(receiver_position[2]))
+        v = max(self._velocity_model.eval_at(*source_position),
+                self._velocity_model.eval_at(*receiver_position))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
     def _X_tilde(self, k: int, s: int, q: float) -> float:
@@ -431,7 +431,7 @@ class TwoPointRayTracing:
 
 
 if __name__ == '__main__':
-    vm = VelocityModel1D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+    vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
     twopoint = TwoPointRayTracing(vm)
     a = time.time()
     p = twopoint.trace((434., 0., 500.), (0., 868., 0))
