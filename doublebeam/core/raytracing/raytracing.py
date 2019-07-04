@@ -1,12 +1,10 @@
 import enum
 from collections import namedtuple
-from math import sin, cos, asin, acos, radians, degrees, copysign, sqrt
-from typing import Tuple, Callable, List, Union
+from math import sin, cos, asin, acos, radians, copysign
+from typing import Callable, List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.integrate
-import scipy.misc
 from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
@@ -35,7 +33,8 @@ def vertical_slowness(v, theta):
 
 class Ray3D:
 
-    def __init__(self, start_x: float, start_y: float, start_z: float, theta: float, phi: float):
+    def __init__(self, start_x: float, start_y: float, start_z: float,
+                 theta: float, phi: float):
         """
         :param start_x: x coordinate of start point of ray in m
         :param start_y: y coordinate of start point of ray in m
@@ -107,7 +106,7 @@ class Ray3D:
         return "horizontal"
 
 
-def calc_initial_slowness3D(ray: Ray3D, v0: float) -> Tuple[float, float, float]:
+def initial_slowness3D(ray: Ray3D, v0: float) -> np.ndarray:
     """
     Calculate initial vertical and horizontal slowness for a ray.
     For geometric definitions see chapter 3.2.1 in Cerveny - Seismic ray theory
@@ -118,7 +117,7 @@ def calc_initial_slowness3D(ray: Ray3D, v0: float) -> Tuple[float, float, float]
     px = 1/v0 * sin(ray.theta) * cos(ray.phi)
     py = 1/v0 * sin(ray.theta) * sin(ray.phi)
     pz = 1/v0 * cos(ray.theta)
-    return px, py, pz
+    return np.array((px, py, pz))
 
 
 def length(vector: np.ndarray) -> float:
@@ -143,7 +142,8 @@ def critical_angle(v1: float, v2: float) -> float:
     return np.pi
 
 
-def snells_law(p: np.ndarray, v_before: float, v_after: float, wave_type: str = "T") -> np.ndarray:
+def snells_law(p: np.ndarray, v_before: float, v_after: float,
+               wave_type: str = "T") -> np.ndarray:
     """
     Calculate initial slowness of a wave transmitted across an interface.
     Eq. (2.4.70) in Cerveny - Seismic ray theory (2001).
@@ -165,7 +165,8 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float, wave_type: str = 
     n = np.array((0, 0, copysign(1, p[Index.Z])))
     pn = p.dot(n)
     eps = copysign(1, pn)
-    return p - (pn + minus_plus * eps * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
+    return p - (pn + minus_plus * eps
+                * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
 
 
 def plot_ray_in_model(ray: Ray3D, velocity_model: VelocityModel3D):
@@ -182,13 +183,15 @@ def plot_ray_in_model(ray: Ray3D, velocity_model: VelocityModel3D):
 
 
 class IVPResultStatus(enum.IntEnum):
-    """Enum class to make the int status returned from scipys solve_ivp more readable"""
+    """Enum to make the int status returned from solve_ivp more readable"""
     FAILED = -1
     END_REACHED = 0
     TERMINATION_EVENT = 1
 
 
 ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
+
+IVPEventFunction = Callable[[float, ODEState3D], float]
 
 
 class Index(enum.IntEnum):
@@ -200,13 +203,15 @@ class Index(enum.IntEnum):
 class NumericRayTracer3D:
 
     def __init__(self, velocity_model: VelocityModel3D):
-        self.velocity_model = velocity_model
+        self.model = velocity_model
         self.layer = None
 
     @staticmethod
-    def _velocity(layer: LinearVelocityLayer, x: float, y: float, z: float) -> float:
+    def _velocity(layer: LinearVelocityLayer, x: float, y: float,
+                  z: float) -> float:
         """
-        Evaluate velocity at a given depth in a layer with linearly varying velocity
+        Evaluate velocity at a given depth in a layer with linearly varying
+        velocity
         :param layer: The layer to evaluate
         """
         return layer["intercept"] + layer["gradient"] * z
@@ -224,14 +229,17 @@ class NumericRayTracer3D:
         dxds = px * v
         dyds = py * v
         dzds = pz * v
-        dpxds = derivative((lambda x: 1. / self._velocity(self.layer, x, y, z)), x, dx=0.0001)
-        dpyds = derivative((lambda y: 1. / self._velocity(self.layer, x, y, z)), y, dx=0.0001)
-        dpzds = derivative((lambda z: 1. / self._velocity(self.layer, x, y, z)), z, dx=0.0001)
+        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, x_, y, z)),
+                           x, dx=0.0001)
+        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, x, y_, z)),
+                           y, dx=0.0001)
+        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
+                           z, dx=0.0001)
         dTds = 1. / v
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
-    def trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
-                    max_step_s: float) -> Ray3D:
+    def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
+                     max_step_s: float) -> Ray3D:
         """
         Trace a ray through a single layer of the model
         :param ray: Ray to trace
@@ -245,21 +253,25 @@ class NumericRayTracer3D:
         # sometimes events trigger directly after tracing starts and the
         # depth doesn't change enough. Keep event function artificially away
         # from zero to avoid that
-        upper_layer_event = lambda s, y: y[2] - self.layer["top_depth"] if s > max_step_s else 1
-        lower_layer_event = lambda s, y: y[2] - self.layer["bot_depth"] if s > max_step_s else -1
+        upper_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
+        lower_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
-        # TODO change signature of _velocity to accept np array instead of three floats
-        initial_state = ODEState3D(*ray.last_point, *initial_slownesses, ray.last_time)
+        # TODO change signature of _velocity to accept np array instead of
+        #  three floats
+        initial_state = ODEState3D(*ray.last_point, *initial_slownesses,
+                                   ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
-                           max_step=max_step_s, events=(upper_layer_event, lower_layer_event))
+                           max_step=max_step_s, events=(upper_layer_event,
+                                                        lower_layer_event))
         x, y, z, px, py, pz, t = result.y
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
         return ray
 
-    def trace_stack(self, ray: Ray3D, ray_code: str = None, max_step: float = 1) -> Ray3D:
+    def trace_stack(self, ray: Ray3D, ray_code: str = None,
+                    max_step: float = 1) -> Ray3D:
         """
         Trace ray through a stack of layers. The ray type at an interface is
         chosen by the ray code.
@@ -268,25 +280,26 @@ class NumericRayTracer3D:
         at an interface in the model. "T" stands for the transmitted ray, "R"
         for the reflected ray. If not given, the ray will only be traced through
         the layer in which its starting point resides.
+        :param max_step: Max step s for the integration.
         :return: Ray with parameters set
         """
-        index = self.velocity_model.layer_index(ray.start[Index.Z])
-        self.layer = self.velocity_model[index]
-        initial_slownesses = calc_initial_slowness3D(ray, self._velocity(self.layer, *ray.last_point))
-        ray = self.trace_layer(ray, initial_slownesses, max_step)
+        index = self.model.layer_index(ray.start[Index.Z])
+        self.layer = self.model[index]
+        initial_slownesses = initial_slowness3D(ray, self._velocity(self.layer, *ray.last_point))
+        ray = self._trace_layer(ray, initial_slownesses, max_step)
         if ray_code is None:
             return ray
         for wave_type in ray_code:
-            v_top, v_bottom = self.velocity_model.interface_velocities(ray.last_point[Index.Z])
+            v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
             if wave_type == "T":
                 # reflected waves stay in the layer and dont change the index
                 index += -1 if ray.direction == "up" else 1
-            self.layer = self.velocity_model[index]
+            self.layer = self.model[index]
             if ray.direction == "down":
                 new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
             else:
                 new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
-            ray = self.trace_layer(ray, new_p, max_step)
+            ray = self._trace_layer(ray, new_p, max_step)
         return ray
 
 
