@@ -25,48 +25,12 @@ def cartesian_to_ray_n(x, z, xm, theta):
     return (x - xm) * cos(theta) + z * sin(theta)
 
 
-def dvx():
-    """Derivative of velocity after x. 0 For 1D model"""
-    return 0.
-
-
-def dvz(velocity_model, z, delta=0.0001):
-    """Derivative of velocity after z"""
-    if z < delta:
-        # special case: evaluating derivative would eval model at negative depth
-        return 0.
-    return scipy.misc.derivative(velocity_model.eval_at, z, delta)
-
-
 def horizontal_slowness(v, theta):
     return sin(theta) / v
 
 
 def vertical_slowness(v, theta):
     return cos(theta) / v
-
-
-class Ray2D:
-
-    def __init__(self, start_x: float, start_z: float, theta: float):
-        """
-        :param start_x: x coordinate of start point of ray in m
-        :param start_z: z coordinate of start point of ray in m
-        :param theta: angle of ray against downgoing vertical (z axis) at the
-        surface in rad
-        """
-        self.x0 = start_x
-        self.z0 = start_z
-        self.theta = theta
-        # Stores x, y coordinates of ray path
-        self.path = None  # type: Tuple[np.array, np.array]
-        self.layer_boundaries_crossed_depths = [-99]
-
-    def get_last_boundary_crossed_depth(self):
-        try:
-            return self.layer_boundaries_crossed_depths[-1]
-        except IndexError:
-            return None
 
 
 class Ray3D:
@@ -179,47 +143,6 @@ def critical_angle(v1: float, v2: float) -> float:
     return np.pi
 
 
-def snells_law_(px: float, pz: float, z: float, z_prev: float, velocity_model: VelocityModel3D, wave_type: str = "T"):
-    """
-    Compute new slowness vector using Snells law
-    :param px: x component of slowness vector before interface
-    :param pz: z component of slowness vector before interface
-    :param z: depth after interface
-    :param z_prev: depth before interface
-    :param wave_type: Select for which wave type (reflected/transmitted) the
-    slowness should be computed. "T" for transmitted, "R" for reflected.
-    :return: slowness vector (x, z) after interface
-    """
-    # create slowness vector p
-    # TODO keep p as a np.ndarray everywhere
-    p = np.array((px, pz))
-    # normal vector in 1D model will always be vertical
-    # n should be oriented to the side where the transmitted wave propagates
-    # else the minus/plus relation for transmitted/reflected waves isn't valid
-    n = np.array((0, copysign(1, pz)))
-    # look at angle to determine critical incidence
-    angle_in = angle(p, n)
-    print("Angle in", degrees(angle_in))
-    eps = copysign(1, np.dot(p, n))
-    v = velocity_model.eval_at(z)
-    v_prev = velocity_model.eval_at(z_prev)
-    angle_crit = critical_angle(v_prev, v)
-    print("Critical angle", degrees(angle_crit))
-    if angle_in > angle_crit:
-        print("Total reflection")
-        p[1] *= -1
-        return p
-    #angle_out = asin(sin(angle_in) * v/v_prev)
-    #print("Angle out", degrees(angle_out))
-    pn = np.dot(p, n)
-    minusplus = -1 if wave_type == "T" else 1
-    # TODO not stable when using reflected wave
-    # calculate slowness vector after interface using eq. 2.4.70 from
-    # Cerveny - Seismic ray theory
-    p_new = p - n * (pn + minusplus * eps * sqrt(v**-2 - v_prev**-2 + pn**2))
-    return p_new
-
-
 def snells_law(p: np.ndarray, v_before: float, v_after: float, wave_type: str = "T") -> np.ndarray:
     """
     Calculate initial slowness of a wave transmitted across an interface.
@@ -245,20 +168,6 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float, wave_type: str = 
     return p - (pn + minus_plus * eps * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
 
 
-def plot_ray(x1: np.ndarray, x2: np.ndarray):
-    """Plot two coordinates of a aray"""
-    plt.plot(x1, x2, label="Ray path")
-    ax = plt.gca()
-    # invert y axis so positive depth values are shown downwards
-    ax.invert_yaxis()
-    # set aspect ratio to equal so angles stay true
-    ax.set_aspect("equal")
-    plt.xlabel("x1 (m)")
-    plt.ylabel("x2 (m)")
-    plt.legend()
-    plt.show()
-
-
 def plot_ray_in_model(ray: Ray3D, velocity_model: VelocityModel3D):
     fig, ax = plt.subplots()
     ax.invert_yaxis()
@@ -277,95 +186,6 @@ class IVPResultStatus(enum.IntEnum):
     FAILED = -1
     END_REACHED = 0
     TERMINATION_EVENT = 1
-
-
-ODEState = namedtuple("ODEState", ["x", "z", "px", "pz"])
-
-IVPEventFunction = Callable[[float, ODEState], float]
-
-class RayTracer2D:
-    """
-    Class for ray tracing in a 2D velocity model.
-    """
-
-    def __init__(self, velocity_model: VelocityModel3D):
-        """
-        :param velocity_model: Velocity model to use for ray tracing
-        """
-        self._velocity_model = velocity_model
-        # Generate a function which has a zero crossing at the boundary depth
-        # for all boundary depths in the models to apply Snells law
-        # skip first interface depth since its the surface at z = 0 and skip
-        # last interface since model stops there
-        #  TODO add condition that stops integration once model bottom is reached
-        crossings : List[IVPEventFunction] = [lambda s, y: y[1] - depth
-                                              for depth in velocity_model.interface_depths[1:-1]]
-        # set to True to stop integration at the boundary so we can apply Snells law
-        for f in crossings:
-            f.terminal = True
-            f.direction = 1
-        # return z coordinate which has a natural zero crossing at the surface
-        surfaced: IVPEventFunction = lambda s, y: y[1]
-        # set True to stop integration once the ray reaches the surface
-        surfaced.terminal = True
-        self._events = [*crossings, surfaced]
-
-    def _trace(self, s: float, y: ODEState) -> ODEState:
-        """
-        Standard raypath equations in 2D from Hill1990 Gaussian beam migration eq. 2a-2d
-        :param s: Current value of integration variable s (arclength along ray)
-        :param y: List of values for x, y coordinate, horizontal and vertical slowness
-        :return:
-        """
-        x, z, px, pz = y
-        try:
-            v = self._velocity_model.eval_at(z)
-        except LookupError:
-            # evaluating at negative depth means surface is reached
-            # TODO more clear/expressive way to stop integration
-            return ODEState(0, 0, 0, 0)
-        dxds = v * px
-        dzds = v * pz
-        # TODO simplify dvx by replacing it with zero for 2D case
-        dpxds = -1 * v**-2 * dvx()
-        dpzds = -1 * v**-2 * dvz(self._velocity_model, z)
-        dydt = ODEState(dxds, dzds, dpxds, dpzds)
-        return dydt
-
-    def ray_trace(self, ray: Ray2D, s_end: float, ds: float=0.01) -> Ray2D:
-        v0 = self._velocity_model.eval_at(ray.z0)
-        px0 = horizontal_slowness(v0, ray.theta)
-        pz0 = vertical_slowness(v0, ray.theta)
-        min_float_step = np.finfo(float).eps
-        initial_state = ODEState(ray.x0, ray.z0+min_float_step, px0, pz0)
-        result: scipy.integrate._ivp.ivp.OdeResult = solve_ivp(self._trace, [0, s_end], initial_state, max_step=ds,
-                           events=self._events)
-        x_values, z_values = [], []
-        while result.status == IVPResultStatus.TERMINATION_EVENT:
-            # events are returned in the order as passed to solve_ivp
-            crossing_events, surface_events = result.t_events
-            # stop integration when surface was reached
-            if surface_events.size > 0:
-                break
-            s_event = crossing_events[0]
-            x_, z_, px_, pz_ = result.y
-            x_values.append(x_)
-            z_values.append(z_)
-            px, pz = snells_law(px_[-1], pz_[-1], z_[-1], z_[-2], self._velocity_model)
-            min_float_step = copysign(min_float_step, pz_[-1])
-            # move z behind the interface just passed by the ray so the event wont
-            # trigger again. Increase z (positive step) when ray goes down, decrease
-            # z (negative step) when ray goes up
-            #z_[-1] += copysign(z_[-1], 50000)
-            result = solve_ivp(self._trace, [s_event, s_end],
-                               ODEState(x_[-1], z_[-1], px, pz),
-                               max_step=ds, events=self._events)
-        x_values.append(result.y[0])
-        z_values.append(result.y[1])
-        x_values = np.concatenate(x_values)
-        z_values = np.concatenate(z_values)
-        ray.path = (x_values, z_values)
-        return ray
 
 
 ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
