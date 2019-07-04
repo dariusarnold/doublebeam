@@ -411,7 +411,7 @@ class NumericRayTracer3D:
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
-                    max_step_s: float = 1) -> Ray3D:
+                    max_step_s: float) -> Ray3D:
         """
         Trace a ray through a single layer of the model
         :param ray: Ray to trace
@@ -439,7 +439,7 @@ class NumericRayTracer3D:
         ray.travel_time.append(t)
         return ray
 
-    def trace_stack(self, ray: Ray3D, ray_code: str = None) -> Ray3D:
+    def trace_stack(self, ray: Ray3D, ray_code: str = None, max_step: float = 1) -> Ray3D:
         """
         Trace ray through a stack of layers. The ray type at an interface is
         chosen by the ray code.
@@ -453,7 +453,7 @@ class NumericRayTracer3D:
         index = self.velocity_model.layer_index(ray.start[Index.Z])
         self.layer = self.velocity_model[index]
         initial_slownesses = calc_initial_slowness3D(ray, self._velocity(self.layer, *ray.last_point))
-        ray = self.trace_layer(ray, initial_slownesses)
+        ray = self.trace_layer(ray, initial_slownesses, max_step)
         if ray_code is None:
             return ray
         for wave_type in ray_code:
@@ -466,7 +466,7 @@ class NumericRayTracer3D:
                 new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
             else:
                 new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
-            ray = self.trace_layer(ray, new_p)
+            ray = self.trace_layer(ray, new_p, max_step)
         return ray
 
 
