@@ -37,11 +37,22 @@ class TestRayTracingScipy(unittest.TestCase):
         """This just tests if the last point of the ray is the same as
         previously calculated. Changes in the structure of the function should
         not change the result."""
-        last_point_expected = (6.458938131869513, -8.331009493378616e-16)
-        vm = VelocityModel1D.from_string("0, 1, 3, 4, 0, 0, 1, 1\n1, 101, 6, 156, 0, 0, 1, 1")
-        ray = Ray2D(0, 0, radians(20))
-        s_end = 20
-        tracer = RayTracer2D(vm)
-        ray = tracer.ray_trace(ray, s_end)
-        self.assertAlmostEqual(last_point_expected[0], ray.path[0][-1])
-        self.assertAlmostEqual(last_point_expected[1], ray.path[1][-1])
+        last_point_expected = (9403.354242360037, 0, 0)
+        layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
+                                                                (1000, 101000, 6000, 156000)])
+        vm = VelocityModel3D(layers)
+        ray = Ray3D(0, 0, 0, radians(20), 0)
+        tracer = NumericRayTracer3D(vm)
+        ray = tracer.trace_stack(ray, "TT", 10)
+        self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
+                               msg=f"x position wrong, got {ray.last_point[0]},"
+                               f" expected {last_point_expected[0]}")
+        self.assertAlmostEqual(last_point_expected[1], ray.last_point[1], places=4,
+                               msg=f"z position wrong, got {ray.last_point[1]},"
+                               f" expected {last_point_expected[1]}")
+        self.assertAlmostEqual(last_point_expected[2], ray.last_point[2], places=4,
+                               msg=f"z position wrong, got {ray.last_point[2]},"
+                               f" expected {last_point_expected[2]}")
+        self.assertEqual(len(ray.path), 3, msg="Wrong nuber of ray paths")
+        self.assertAlmostEqual(ray.last_time, 1.864023576678209, places=4,
+                               msg="Wrong travel time for ray")
