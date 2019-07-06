@@ -9,6 +9,7 @@ from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
+from doublebeam.core.common import Index
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -192,12 +193,6 @@ class IVPResultStatus(enum.IntEnum):
 ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
 
 IVPEventFunction = Callable[[float, ODEState3D], float]
-
-
-class Index(enum.IntEnum):
-    X = 0
-    Y = 1
-    Z = 2
 
 
 class NumericRayTracer3D:
