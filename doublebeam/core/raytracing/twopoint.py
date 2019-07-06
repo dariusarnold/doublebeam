@@ -9,6 +9,7 @@ from math import sqrt
 import numpy as np
 
 from doublebeam.core.raytracing.raytracing import VelocityModel3D
+from doublebeam.core.common import Index
 
 
 class TwoPointRayTracing:
@@ -401,14 +402,14 @@ class TwoPointRayTracing:
         return sqrt(q**2 / v_M**2 / (1 + q**2))
 
     def trace(self, source_position, receiver_position, accuracy: float = 0.0001) -> float:
-        source_index = self._velocity_model.layer_index(source_position[2])
+        source_index = self._velocity_model.layer_index(source_position[Index.Z])
         # insert a and b of source layer as first item into a and b
         # this is done to fix inconsistencies of indexing, where the paper sums
         # over k=0...n while a only has n elements.
         self.a = np.insert(self.a, 0, self.a[source_index])
         self.b = np.insert(self.b, 0, self.b[source_index])
         # keep notation short and close to paper
-        self.zs = source_position[2]
+        self.zs = source_position[Index.Z]
         self.s = source_index
         # maximum velocity above the depth z(n-1)
         self.v_A = self._v_A()
@@ -418,7 +419,7 @@ class TwoPointRayTracing:
         self.v_M = self._v_M(source_position, receiver_position)
         # TODO Debug assert, remove if successfully tested
         assert self.v_M == 3000, "Wrong value for v_M"
-        self.X = abs(source_position[0] - receiver_position[0])
+        self.X = abs(source_position[Index.X] - receiver_position[Index.X])
 
         q = self._initial_estimate_q(source_index, self.X)
         while True:
