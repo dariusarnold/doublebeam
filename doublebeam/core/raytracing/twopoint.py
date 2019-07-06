@@ -28,6 +28,7 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         """
         if k == 0:
+            s += 1
             return (self.a[s] * self.z[s-1] + self.b[k])**2
         else:
             return (self.a[k] * self.z[k-1] + self.b[k])**2
@@ -39,6 +40,7 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         """
         if k == 0:
+            s += 1
             return (self.a[s] * self.zs + self.b[s])**2
         else:
             return (self.a[k] * self.z[k] + self.b[k])**2
@@ -50,6 +52,7 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         """
         if k == 0:
+            s += 1
             return (self.a[s] * self.z[s-1] + self.b[s]) * (self.zs - self.z[s-1])
         else:
             return (self.a[k] * self.z[k-1] + self.b[k]) * (self.z[k] - self.z[k-1])
@@ -62,6 +65,7 @@ class TwoPointRayTracing:
         :param wave_type: "direct" or "reflected"
         """
         if k == 0:
+            s += 1
             return 1 - self._mu(k=s, s=s, wave_type=wave_type)
         elif 1 <= k <= s-1:
             return 1.
@@ -148,7 +152,7 @@ class TwoPointRayTracing:
                     + (1 - self._delta_a(k)) * self._h_tilde(k, s)
                     / sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2))
 
-        return (sum(d0_iter(k) for k in range(0, self.n-1))
+        return (sum(d0_iter(k) for k in range(0, self.n))
                 + self._mu_tilde(self.n, s) * sqrt(self._epsilon_tilde(self.n, s)
                                                    - self._q_A()**-2))
 
@@ -294,8 +298,8 @@ class TwoPointRayTracing:
         """
         Return v_A, the maximum velocity above the depth z(n-1)
         """
-        velocities_bottom = (self.z * self.a + self.b)[1:-1]
-        velocity_top = (self.z[:-1] * self.a[1:] + self.b[1:])[:-1]
+        velocities_bottom = self._velocity_model.velocities_bot[:-1]
+        velocity_top = self._velocity_model.velocities_top[:-1]
         return max(np.max(velocities_bottom), np.max(velocity_top))
 
     def _v_M(self, source_position: np.ndarray, receiver_position: np.ndarray) -> float:
@@ -378,7 +382,7 @@ class TwoPointRayTracing:
         :param q:
         :return:
         """
-        return sum(self._X_tilde(k, s, q) for k in range(self.n)) - self.X
+        return sum(self._X_tilde(k, s, q) for k in range(self.n+1)) - self.X
 
     def _f_tilde_prime(self, s: int, q: float) -> float:
         """
@@ -386,7 +390,7 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         :param q: Estimate for transformed ray parameter
         """
-        return sum(self._X_tilde_prime(k, s, q) for k in range(self.n))
+        return sum(self._X_tilde_prime(k, s, q) for k in range(self.n+1))
 
     def _f_tilde_double_prime(self, s: int, q: float) -> float:
         """
@@ -394,7 +398,7 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         :param q: Estimate of transformed ray parameter
         """
-        return sum(self._X_tilde_double_prime(k, s, q) for k in range(self.n))
+        return sum(self._X_tilde_double_prime(k, s, q) for k in range(self.n+1))
 
     def _next_q(self, s: int, q_old: float) -> float:
         A = 0.5 * self._f_tilde_double_prime(s, q_old)
@@ -411,16 +415,19 @@ class TwoPointRayTracing:
 
     def q_to_p(self, q: float, v_M: float) -> float:
         """
-        Backtransform modified ray parameter q to standard ray parameter p
+        Backtransform modified ray parameter q to standard ray parameter p.
+        Reordered from eq. 15.
         :param q: modified ray parameter
         """
-        return sqrt(q**2 / v_M**2 / (1 + q**2))
+        return sqrt(q**2 / (v_M**2 + v_M**2 * q**2))
 
     def trace(self, source_position, receiver_position, accuracy: float = 0.0001) -> float:
         source_index = self._velocity_model.layer_index(source_position[Index.Z])
         # insert a and b of source layer as first item into a and b
         # this is done to fix inconsistencies of indexing, where the paper sums
         # over k=0...n while a only has n elements.
+        # TODO array is mutable, so every call to this function mutates a and b
+        #  make a copy
         self.a = np.insert(self.a, 0, self.a[source_index])
         self.b = np.insert(self.b, 0, self.b[source_index])
         # keep notation short and close to paper
@@ -428,12 +435,8 @@ class TwoPointRayTracing:
         self.s = source_index
         # maximum velocity above the depth z(n-1)
         self.v_A = self._v_A()
-        # TODO Debug assert, remove this if successfully tested
-        assert self.v_A == 2700, "Wrong value for v_A"
         # highest velocity of the layers the ray passes through
         self.v_M = self._v_M(source_position, receiver_position)
-        # TODO Debug assert, remove if successfully tested
-        assert self.v_M == 3000, "Wrong value for v_M"
         self.X = abs(source_position[Index.X] - receiver_position[Index.X])
 
         q = self._initial_estimate_q(source_index, self.X)
