@@ -85,7 +85,9 @@ class TwoPointRayTracing:
         :param k: Index of current layer
         :param s: Index of source layer
         """
-        return self._mu(k, s) * self.v_M / self.a[k] if self.a[k] != 0 else 0.
+        if self.a[k] == 0:
+            raise ValueError("a_k is zero")
+        return self._mu(k, s) * self.v_M / self.a[k]
 
     def _h_tilde(self, k: int, s: int) -> float:
         """
