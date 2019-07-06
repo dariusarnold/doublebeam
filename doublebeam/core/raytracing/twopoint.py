@@ -303,13 +303,28 @@ class TwoPointRayTracing:
         Return v_M, the highest velocity of the layers the ray passes through
         """
         # TODO This assumes direct ray between source and receiver so only the
-        # layers between them matter. This doesn't work for reflections and
-        # turning rays
-        source_index = self._velocity_model.layer_index(source_position[2])
-        receiver_index = self._velocity_model.layer_index(receiver_position[2])
-        index_low, index_high = min(source_index, receiver_index), max(source_index, receiver_index)
-        velocities_bottom = (self.a[1:] * self.z[1:] + self.b[1:])[index_low:index_high]
-        velocities_top = (self.z[:-1] * self.a[1:] + self.b[1:])[index_low:index_high]
+        #  layers between them matter. This doesn't work for reflections and
+        #  turning rays
+        # first, get all the top and bottom velocities from the interfaces
+        # between the source and receiver
+        source_index = self.s
+        receiver_index = self._velocity_model.layer_index(receiver_position[Index.Z])
+        # sort indices because accessing array only works from low to high
+        index_low = min(source_index, receiver_index)
+        index_high = max(source_index, receiver_index)
+        if index_low == index_high:
+            # source and receiver are in the same layer
+            return max(self._velocity_model.eval_at(*source_position),
+                       self._velocity_model.eval_at(*receiver_position))
+        velocities_bottom = self._velocity_model.velocities_bot[index_low:index_high]
+        # +1 to exclude top velocity of the layer containing the upper point.
+        # There are two cases:
+        # - The point lays below the top of the layer, so the ray doesn't pass
+        #   through the velocity at the top of the layer
+        # - The point lays on the top depth, so the velocity should be included.
+        #   This case in then handled by evaluating the velocity at both points.
+        velocities_top = self._velocity_model.velocities_top[index_low+1:index_high+1]
+        # second, also get velocity at the end points (source and receiver)
         v = max(self._velocity_model.eval_at(*source_position),
                 self._velocity_model.eval_at(*receiver_position))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
