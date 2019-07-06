@@ -142,14 +142,14 @@ class TwoPointRayTracing:
             :param k: Index of current layer
             """
             return (self._delta_a(k) * self._mu_tilde(k, s)
-                    * (sqrt(self._epsilon_tilde(k, s) - self._q_A() ** -2)
-                       - sqrt(self._omega_tilde(k, s) - self._q_A() ** -2))
+                    * (sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2)
+                       - sqrt(self._omega_tilde(k, s) - self._q_A()**-2))
                     + (1 - self._delta_a(k)) * self._h_tilde(k, s)
-                    / sqrt(self._epsilon_tilde(k, s) - self._q_A() ** -2))
+                    / sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2))
 
         return (sum(d0_iter(k) for k in range(0, self.n-1))
                 + self._mu_tilde(self.n, s) * sqrt(self._epsilon_tilde(self.n, s)
-                                                   - self._q_A() ** -2))
+                                                   - self._q_A()**-2))
 
     def _d1(self, s: int) -> float:
         """
@@ -321,9 +321,9 @@ class TwoPointRayTracing:
         :param q: Estimate of transformed ray parameter
         """
         return (self._delta_a(k) * self._mu_tilde(k, s)
-                * (sqrt(q**-2 +  self._epsilon_tilde(k, s))
+                * (sqrt(q**-2 + self._epsilon_tilde(k, s))
                    - sqrt(q**-2 + self._omega_tilde(k, s)))
-                + ( 1 - self._delta_a(k)) * self._h_tilde(k, s)
+                + (1 - self._delta_a(k)) * self._h_tilde(k, s)
                 / sqrt(q**-2 + self._epsilon_tilde(k, s)))
 
     def _X_tilde_prime(self, k: int, s: int, q:float) -> float:
@@ -347,7 +347,7 @@ class TwoPointRayTracing:
         :param q: Estimate of transformed ray parameter
         """
         return (self._delta_a(k) * self._mu_tilde(k, s) / q**3
-                * ((2 + 3* self._epsilon_tilde(k, s) * q**2)
+                * ((2 + 3 * self._epsilon_tilde(k, s) * q**2)
                    / (1 + self._epsilon_tilde(k, s) * q**2)**1.5
                    - (2 + 3 * self._omega_tilde(k, s) * q**2)
                    / (1 + self._omega_tilde(k, s) * q**2)**1.5)
@@ -423,7 +423,7 @@ class TwoPointRayTracing:
         q = self._initial_estimate_q(source_index, self.X)
         while True:
             q_next = self._next_q(source_index, q)
-            if abs(q-q_next) < accuracy:
+            if abs(q - q_next) < accuracy:
                 q = q_next
                 break
             q = q_next
