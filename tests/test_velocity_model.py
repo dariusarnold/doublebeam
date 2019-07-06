@@ -119,3 +119,41 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         v_top, v_bottom = self.v.interface_velocities(11999)
         self.assertEqual(v_top, 6000)
         self.assertEqual(v_bottom, 7000)
+
+
+class TestVelocityModel3DLayerIndex(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.layers = [(0, 100, 1800, 4), (100, 200, 2400, 0),
+                       (200, 300, 2400, 1), (300, 400, 2700, 0),
+                       (400, 500, 2250, 1.5)]
+        self.interface_depths = [0, 100, 200, 300, 400, 500]
+        self.num_layers = len(self.layers)
+        self.vm = VelocityModel3D(self.layers)
+
+    @staticmethod
+    def error_msg(depth: float, index_expected: int, index_got: int):
+        return f"Got wrong index for depth {depth}. Expected " \
+            f"{index_expected}, got {index_got}"
+
+    def testIndexInLayers(self):
+        depths = [d+50 for d in self.interface_depths[:-1]]
+        for i, depth in zip(range(self.num_layers), depths):
+            with self.subTest(i=i):
+                index = self.vm.layer_index(depth)
+                self.assertEqual(index, i, msg=self.error_msg(depth, i, index))
+
+    def testIndexOnInterface(self):
+        """Upper border of a layer is inclusive, so the index of the lower layer
+        should be returned."""
+        depths = self.interface_depths[:-1]
+        for i, depth in zip(range(self.num_layers-1), depths):
+            with self.subTest(i=i):
+                index = self.vm.layer_index(depth)
+                self.assertEqual(index, i, msg=self.error_msg(depth, i, index))
+
+    def testSpecialCaseBottomOfModel(self):
+        depth = self.interface_depths[-1]
+        index = self.vm.layer_index(depth)
+        self.assertEqual(index, self.num_layers-1,
+                         msg=self.error_msg(depth, self.num_layers-1, index))
