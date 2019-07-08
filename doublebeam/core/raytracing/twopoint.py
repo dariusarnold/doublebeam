@@ -447,7 +447,7 @@ if __name__ == '__main__':
     vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
     twopoint = TwoPointRayTracing(vm)
     a = time.time()
-    p = twopoint.trace((434., 0., 500.), (0., 868., 0))
+    p = twopoint.trace((434., 0., 500.), (868., 0., 0))
     b = time.time()
     print(f"p: {p:.6e}")
     # compare to known good result
