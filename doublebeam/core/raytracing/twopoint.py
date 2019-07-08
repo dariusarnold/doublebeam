@@ -148,11 +148,10 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C12
             :param k: Index of current layer
             """
-            return (self._delta_a(k) * self._mu_tilde(k, s)
+            return ((self._mu_tilde(k, s)
                     * (sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2)
-                       - sqrt(self._omega_tilde(k, s) - self._q_A()**-2))
-                    + (1 - self._delta_a(k)) * self._h_tilde(k, s)
-                    / sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2))
+                       - sqrt(self._omega_tilde(k, s) - self._q_A()**-2)) if self._delta_a(k) else 0.)
+                    + (self._h_tilde(k, s) / sqrt(self._epsilon_tilde(k, s) - self._q_A()**-2) if (1 - self._delta_a(k)) else 0.))
 
         return (sum(d0_iter(k) for k in range(0, self.n))
                 + self._mu_tilde(self.n, s) * sqrt(self._epsilon_tilde(self.n, s)
@@ -168,8 +167,7 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C13
             :param k: Index of current layer
             """
-            return (self._delta_a(k) * 0.5 * self._mu_tilde(k, s)
-                    * (self._epsilon_tilde(k, s) - self._omega_tilde(k, s))
+            return ((0.5 * self._mu_tilde(k, s) * (self._epsilon_tilde(k, s) - self._omega_tilde(k, s)) if self._delta_a(k) else 0.)
                     + (1 - self._delta_a(k)) * self._h_tilde(k, s))
 
         return sum(d1_iter(k) for k in range(0, self.n+1))
@@ -184,11 +182,9 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C14
             :param k: Index of current layer
             """
-            return (self._delta_a(k) * self._mu_tilde(k, s)
-                    * (self._delta_epsilon(k, s) * sqrt(self._epsilon_tilde(k, s))
-                       - self._delta_omega(k, s) * sqrt(self._omega_tilde(k, s)))
-                    + (1 - self._delta_a(k)) * self._delta_epsilon(k, s)
-                    * self._h_tilde(k, s) / sqrt(self._epsilon_tilde(k, s)))
+            return ((self._mu_tilde(k, s) * ((sqrt(self._epsilon_tilde(k, s)) if self._delta_epsilon(k, s) else 0.)
+                                             - (sqrt(self._omega_tilde(k, s)) if self._delta_omega(k, s) else 0.)) if self._delta_a(k) else 0.)
+                    + (self._h_tilde(k, s) / sqrt(self._epsilon_tilde(k, s)) if (1 - self._delta_a(k)) * self._delta_epsilon(k, s) else 0.))
 
         return sum(c0_iter(k) for k in range(0, self.n+1))
 
@@ -202,8 +198,7 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C15
             :param k: Index of current layer
             """
-            return ((1 - self._delta_a(k)) * (1 - self._delta_epsilon(k, s))
-                    * self._h_tilde(k, s))
+            return self._h_tilde(k, s) if (1 - self._delta_a(k)) * (1 - self._delta_epsilon(k, s)) else 0.
 
         return sum(c1_iter(k) for k in range(0, self.n+1))
 
@@ -217,8 +212,7 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C16
             :param k: Index of current layer
             """
-            return (self._delta_a(k) * (self._delta_omega(k, s) - self._delta_epsilon(k, s))
-                    * self._mu_tilde(k, s))
+            return self._mu_tilde(k, s) if self._delta_a(k) * (self._delta_omega(k, s) - self._delta_epsilon(k, s)) else 0.
 
         return sum(c_minus1_iter(k) for k in range(0, self.n+1))
 
@@ -232,11 +226,10 @@ class TwoPointRayTracing:
             Inner part of sum from eq. C17
             :param k: Index of current layer
             """
-            return (self._delta_a(k) * 0.5 * self._mu_tilde(k, s)
-                    * (self._delta_epsilon(k, s) / sqrt(self._epsilon_tilde(k, s))
-                       - ((1 / sqrt(self._omega_tilde(k, s))) if self._delta_omega(k, s) != 0 else 0.))
-                    - (1 - self._delta_a(k)) * self._delta_epsilon(k, s)
-                    * 0.5 * self._h_tilde(k, s) / self._epsilon_tilde(k, s)**1.5)
+            return ((0.5 * self._mu_tilde(k, s)
+                    * ((1 / sqrt(self._epsilon_tilde(k, s)) if self._delta_epsilon(k, s) else 0.)
+                       - (1 / sqrt(self._omega_tilde(k, s)) if self._delta_omega(k, s) else 0.)) if self._delta_a(k) else 0.)
+                    - (0.5 * self._h_tilde(k, s) / self._epsilon_tilde(k, s)**1.5 if (1 - self._delta_a(k)) * self._delta_epsilon(k, s) else 0.))
 
         return sum(c_minus2_iter(k) for k in range(0, self.n+1))
 
@@ -256,7 +249,7 @@ class TwoPointRayTracing:
         c_minus1 = self._c_minus1(s)
         c_minus2 = self._c_minus2(s)
         d1 = self._d1(s)
-        return c0 * (c0**2 + d1 * c_minus1) / (c_minus1**2 - c0 * c_minus2)
+        return c0 * (c0**2 + d1 * c_minus1) / (c_minus1**2 - c0 * c_minus2) if c0 * (c0**2 + d1 * c_minus1) else 0.
 
     def _beta1(self, s: int) -> float:
         """
@@ -267,7 +260,7 @@ class TwoPointRayTracing:
         c_minus1 = self._c_minus1(s)
         c_minus2 = self._c_minus2(s)
         d1 = self._d1(s)
-        return (c0 * c_minus1 + d1 * c_minus2) / (c0 * c_minus2 - c_minus1**2)
+        return (c0 * c_minus1 + d1 * c_minus2) / (c0 * c_minus2 - c_minus1**2) if (c0 * c_minus1 + d1 * c_minus2) else 0.
 
     def _beta2(self, s: int) -> float:
         """
@@ -278,7 +271,7 @@ class TwoPointRayTracing:
         c_minus1 = self._c_minus1(s)
         c_minus2 = self._c_minus2(s)
         d1 = self._d1(s)
-        return (c0**2 + d1 * c_minus1) / (c_minus1**2 - c0 * c_minus2)
+        return (c0**2 + d1 * c_minus1) / (c_minus1**2 - c0 * c_minus2) if (c0**2 + d1 * c_minus1) else 0.
 
     def _initial_estimate_q(self, s: int, X: float) -> float:
         """
@@ -291,10 +284,12 @@ class TwoPointRayTracing:
         alpha2 = self._alpha2(s)
         beta1 = self._beta1(s)
         beta2 = self._beta2(s)
-        return ((beta1 * X - alpha1 + sqrt((beta1**2 - 4 * beta2) * X**2
-                                           + 2 * (2 * alpha2 - alpha1 * beta1) * X
-                                           + alpha1**2))
-                / (2 * (alpha2 - beta2 * X)))
+        numerator = (beta1 * X - alpha1 + sqrt((beta1**2 - 4 * beta2) * X**2
+                                               + 2 * (2 * alpha2 - alpha1 * beta1) * X
+                                               + alpha1**2))
+        denominator = 2 * (alpha2 - beta2 * X)
+        if denominator != 0:
+            return numerator / denominator
 
     def _v_A(self) -> float:
         """
@@ -342,24 +337,22 @@ class TwoPointRayTracing:
         :param s: Index of receiver layer
         :param q: Estimate of transformed ray parameter
         """
-        return (self._delta_a(k) * self._mu_tilde(k, s)
+        return ((self._mu_tilde(k, s)
                 * (sqrt(q**-2 + self._epsilon_tilde(k, s))
-                   - sqrt(q**-2 + self._omega_tilde(k, s)))
-                + (1 - self._delta_a(k)) * self._h_tilde(k, s)
-                / sqrt(q**-2 + self._epsilon_tilde(k, s)))
+                   - sqrt(q**-2 + self._omega_tilde(k, s))) if self._delta_a(k) else 0.)
+                + (self._h_tilde(k, s) / sqrt(q**-2 + self._epsilon_tilde(k, s)) if (1 - self._delta_a(k)) else 0.))
 
-    def _X_tilde_prime(self, k: int, s: int, q:float) -> float:
+    def _X_tilde_prime(self, k: int, s: int, q: float) -> float:
         """
         Eq. B9
         :param k: Index of current layer
         :param s: Index of source layer
         :param q: Estimate of transformed ray parameter
         """
-        return (self._delta_a(k) * self._mu_tilde(k, s) / q**2
+        return ((self._mu_tilde(k, s) / q**2
                 * (1 / sqrt(1 + self._omega_tilde(k, s) * q**2)
-                   - 1 / sqrt(1 + self._epsilon_tilde(k, s) * q**2))
-                + (1 - self._delta_a(k)) * self._h_tilde(k, s)
-                / (1 + self._epsilon_tilde(k, s) * q**2)**1.5)
+                   - 1 / sqrt(1 + self._epsilon_tilde(k, s) * q**2)) if self._delta_a(k) else 0.)
+                + (self._h_tilde(k, s) / (1 + self._epsilon_tilde(k, s) * q**2)**1.5 if (1 - self._delta_a(k)) else 0.))
 
     def _X_tilde_double_prime(self, k: int, s: int, q: float) -> float:
         """
@@ -368,14 +361,13 @@ class TwoPointRayTracing:
         :param s: Index of source layer
         :param q: Estimate of transformed ray parameter
         """
-        return (self._delta_a(k) * self._mu_tilde(k, s) / q**3
+        return ((self._mu_tilde(k, s) / q**3
                 * ((2 + 3 * self._epsilon_tilde(k, s) * q**2)
                    / (1 + self._epsilon_tilde(k, s) * q**2)**1.5
                    - (2 + 3 * self._omega_tilde(k, s) * q**2)
-                   / (1 + self._omega_tilde(k, s) * q**2)**1.5)
-                - (1 - self._delta_a(k))
-                * 3 * self._h_tilde(k, s) * self._epsilon_tilde(k, s) * q
-                / (1 + self._epsilon_tilde(k, s) * q**2)**2.5)
+                   / (1 + self._omega_tilde(k, s) * q**2)**1.5) if self._delta_a(k) else 0.)
+                - (3 * self._h_tilde(k, s) * self._epsilon_tilde(k, s) * q
+                / (1 + self._epsilon_tilde(k, s) * q**2)**2.5 if (1 - self._delta_a(k)) else 0.))
 
     def _f_tilde(self, s: int, q: float) -> float:
         """
