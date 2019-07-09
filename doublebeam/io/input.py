@@ -113,3 +113,48 @@ def read_sources(filepath: Path) -> np.ndarray:
             raise ValueError(f"Expected {nsrc} stations in file {filepath} but "
                              f"got only {len(sources)}.")
         return sources
+
+
+def read_header_from_file(filepath: Path) -> List[np.ndarray]:
+    """
+    Parse header from seismogram file and return source and receiver position.
+    :param filepath: Full filename
+    :return: Tuple of (source_position, receiver_position)
+    """
+    with open(filepath, "r") as f:
+        # read first 2 lines
+        header: List[str] = [next(f).rstrip("\n") for _ in range(2)]
+    positions = []
+    for line in header:
+        # throw away source/receiver, only keep digits
+        line = line.split(":")[-1]
+        # remove outer square brackets
+        line = re.sub("[\[\]]", "", line)
+        vec = np.fromstring(line, dtype=float, sep=" ")
+        positions.append(vec)
+    return positions
+
+
+def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
+        -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], np.ndarray]:
+    """
+    Load seismograms from the given path.
+    This loads all seismograms from the path and returns them as well as
+    additional information.
+    :param seismograms_path: Path to seismogram files
+    :param seismogram_filename_template: String where the numeric part of the
+    filename is replaced by a star. Eg. if the seismograms where saved as
+    receiver_001.txt, receiver_002.txt, ..., pass "receiver_*.txt".
+    :return Numpy array consisting of all loaded seismograms, numpy array
+    containing the common timesteps for all seismograms, a list of receiver
+    positions for these seismograms, and the source position.
+    """
+    seismograms = []
+    receiver_positions = []
+    seismogram_filenames = seismograms_path.glob(seismogram_filename_template)
+    for fname in sorted(seismogram_filenames):
+        source_pos, receiver_pos = read_header_from_file(fname)
+        receiver_positions.append(receiver_pos)
+        time, seismic_data = load_wfdata(fname)
+        seismograms.append(seismic_data)
+    return np.array(seismograms), time, receiver_positions, source_pos
