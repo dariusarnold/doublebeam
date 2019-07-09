@@ -290,6 +290,7 @@ class TwoPointRayTracing:
         denominator = 2 * (alpha2 - beta2 * X)
         if denominator != 0:
             return numerator / denominator
+        return 0
 
     def _v_A(self) -> float:
         """
