@@ -398,14 +398,14 @@ class TwoPointRayTracing:
         A = 0.5 * self._f_tilde_double_prime(s, q_old)
         B = self._f_tilde_prime(s, q_old)
         C = self._f_tilde(s, q_old)
-        delta_q_plus = q_old + (-B + sqrt(B**2 -4*A*C)) / (2*A)
-        delta_q_minus = q_old + (-B - sqrt(B**2 -4*A*C)) / (2*A)
-        f_tilde_plus = self._f_tilde(s, delta_q_plus)
-        f_tilde_minus = self._f_tilde(s, delta_q_minus)
+        q_plus = q_old + (-B + sqrt(B**2 - 4*A*C)) / (2*A)
+        q_minus = q_old + (-B - sqrt(B**2 - 4*A*C)) / (2*A)
+        f_tilde_plus = self._f_tilde(s, q_plus)
+        f_tilde_minus = self._f_tilde(s, q_minus)
         if abs(f_tilde_plus) < abs(f_tilde_minus):
-            return delta_q_plus
+            return q_plus
         else:
-            return delta_q_minus
+            return q_minus
 
     def q_to_p(self, q: float, v_M: float) -> float:
         """
