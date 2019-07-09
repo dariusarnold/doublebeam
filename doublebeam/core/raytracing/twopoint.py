@@ -407,7 +407,8 @@ class TwoPointRayTracing:
         else:
             return q_minus
 
-    def q_to_p(self, q: float, v_M: float) -> float:
+    @staticmethod
+    def q_to_p(q: float, v_M: float) -> float:
         """
         Backtransform modified ray parameter q to standard ray parameter p.
         Reordered from eq. 15.
