@@ -4,7 +4,7 @@ Code for reading data from disk, for example waveform data
 import ast
 import re
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import numpy as np
 
@@ -13,14 +13,14 @@ def load_wfdata_binary(filename: Path) -> (np.ndarray, np.ndarray):
     return np.load(filename)
 
 
-def load_wfdata(filename: Path) -> (np.ndarray, np.ndarray):
-    jumbled = np.fromfile(str(filename), sep=" ")
-    # reading text files with fromfile is faster than genfromtxt and loadtxt.
-    # But all values are read sequentially line by line into one array, so
-    # we split it after reading
-    times = jumbled[::2]
-    amplitudes = jumbled[1::2]
-    # TODO own class for wf data that handles conversion to pressure
+def load_wfdata(filename: Path) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Load waveform data from file
+    :param filename: Path of file containing waveform data
+    :return: Tuple of timesteps and amplitudes
+    """
+    # TODO rename: load_timeseries?
+    times, amplitudes = np.loadtxt(filename, unpack=True)
     return times, amplitudes
 
 
@@ -43,6 +43,7 @@ def get_file_iterator(path, extension):
 
 
 def read_stations(filepath: Path) -> np.ndarray:
+    # TODO rename: read_receiverfile
     """
     Read file defining receiver positions.
     :param filepath:
