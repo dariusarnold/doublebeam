@@ -157,7 +157,8 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float,
     # TODO implement checking for critical angle, which should abort ray tracing
     if wave_type == "R":
         # TODO quick exit not valid for non 1D models
-        return p * np.array((1, 1, -1))
+        p[Index.Z] = -p[Index.Z]
+        return p
     else:
         minus_plus = -1
     # n is normal vector of the interface. n should be oriented to the side
