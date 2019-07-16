@@ -303,7 +303,10 @@ def main():
     layers = [(0, 100, 1800, 4), (100, 200, 2400, 0), (200, 300, 2400, 1),
               (300, 400, 2700, 0), (400, 500, 2250, 1.5)]
     vm = VelocityModel3D(layers)
-    ray = Ray3D(0, 0, 0, radians(20), radians(0))
+    angle_868m = 27.3632
+    angle_469m = 17.4576
+    angle_2159m = 36.70655
+    ray = Ray3D(0, 0, 0, radians(angle_469m), radians(0))
     nrt = NumericRayTracer3D(vm)
     ray = nrt.trace_stack(ray, "TTTTRTTTT")
     plot_ray_in_model(ray, vm)
