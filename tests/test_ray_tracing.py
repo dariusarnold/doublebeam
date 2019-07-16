@@ -2,6 +2,8 @@ import math
 import unittest
 from math import radians
 
+import numpy as np
+
 from doublebeam.core.raytracing.raytracing import VelocityModel3D, Ray3D, NumericRayTracer3D
 
 
@@ -56,3 +58,20 @@ class TestRayTracingScipy(unittest.TestCase):
         self.assertEqual(len(ray.path), 3, msg="Wrong nuber of ray paths")
         self.assertAlmostEqual(ray.last_time, 1.864023576678209, places=4,
                                msg="Wrong travel time for ray")
+
+
+class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
+
+    def test_correct_arrival(self):
+        """
+        Test if the analytic ray tracer gives the same endpoint of the ray as the numeric one
+        for a medium composed of constant velocity layers.
+        """
+        layers = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
+                  (300, 400, 2700, 0), (400, 500, 2250, 0)]
+        vm = VelocityModel3D(layers)
+        nrt = NumericRayTracer3D(vm)
+        ray = Ray3D(0, 0, 0, radians(17.4576), radians(0))
+        ray = nrt.trace_stack(ray, "TTTTRTTTT")
+        expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]
+        np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)

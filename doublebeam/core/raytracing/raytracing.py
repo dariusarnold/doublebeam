@@ -249,6 +249,27 @@ class NumericRayTracer3D:
         # sometimes events trigger directly after tracing starts and the
         # depth doesn't change enough. Keep event function artificially away
         # from zero to avoid that
+        if self.layer["gradient"] == 0:
+            # constant velocity layer, use analytic ray tracing
+            # this uses (A.1) and (4) from Analytical ray tracing system:
+            # Introducing art, a C-library designed for seismic applications
+            # (Miqueles et al., 2013)
+            c = self.layer["intercept"]
+            p0 = initial_slownesses
+            x0 = ray.last_point
+            z0 = ray.last_point[Index.Z]
+            z = self.layer["top_depth"] if p0[Index.Z] < 0 else self.layer["bot_depth"]
+            s_end = (z - z0) / (c * p0[Index.Z])
+            num_steps = int(s_end / max_step_s)
+            s = np.linspace(0, s_end, num_steps)
+            path = x0[None, :] + c * s[:, None] * p0[None, :]
+            time = ray.last_time + s / c
+            ray.path.append(path)
+            ray.slowness.append(p0.reshape(1, 3))
+            ray.travel_time.append(time)
+            return ray
+
+
         upper_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
         lower_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
@@ -302,7 +323,9 @@ class NumericRayTracer3D:
 def main():
     layers = [(0, 100, 1800, 4), (100, 200, 2400, 0), (200, 300, 2400, 1),
               (300, 400, 2700, 0), (400, 500, 2250, 1.5)]
-    vm = VelocityModel3D(layers)
+    layers_const = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
+              (300, 400, 2700, 0), (400, 500, 2250, 0)]
+    vm = VelocityModel3D(layers_const)
     angle_868m = 27.3632
     angle_469m = 17.4576
     angle_2159m = 36.70655
