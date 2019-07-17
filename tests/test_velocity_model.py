@@ -157,3 +157,40 @@ class TestVelocityModel3DLayerIndex(unittest.TestCase):
         index = self.vm.layer_index(depth)
         self.assertEqual(index, self.num_layers-1,
                          msg=self.error_msg(depth, self.num_layers-1, index))
+
+
+class TestVelocityModel3DNumberOfInterfaces(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.layers = [(0, 100, 1800, 4), (100, 200, 2400, 0),
+                       (200, 300, 2400, 1), (300, 400, 2700, 0),
+                       (400, 500, 2250, 1.5)]
+        self.vm = VelocityModel3D(self.layers)
+        # combination of two points and expected result
+        self.points = [((0, 0, 0), (0, 0, 500), 4),
+                       ((0, 0, 50), (0, 0, 450), 4),
+                       ((0, 0, 50), (0, 0, 150), 1),
+                       ((0, 0, 200), (0, 0, 250), 0)]
+        # transform coordinates to numpy arrays
+        self.points = [(np.array(a), np.array(b), num) for a, b, num in self.points]
+
+    def generate_error_msg(self, a: np.ndarray, b: np.ndarray, expected: int,
+                           actual: int) -> str:
+        return f"Error using points {a}, {b}. Expected number of layers " \
+            f"{expected}, got {actual}!"
+
+    def test_correct_values(self):
+        for a, b, correct in self.points:
+            with self.subTest(a=a, b=b, correct=correct):
+                n = self.vm.num_of_interfaces_between(a, b)
+                self.assertEqual(n, correct, msg=self.generate_error_msg(a, b, correct, n))
+
+    def test_reverse(self):
+        """
+        Reversing upper and lower points should not change the result
+        """
+        for a, b, correct in self.points:
+            with self.subTest(a=a, b=b, correct=correct):
+                n = self.vm.num_of_interfaces_between(b, a)
+                self.assertEqual(n, correct, msg=self.generate_error_msg(a, b, correct, n))
+
