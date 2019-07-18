@@ -36,3 +36,12 @@ def angle(vector1: np.ndarray, vector2: np.ndarray, acute: bool = True) -> float
         return angle
     else:
         return np.pi - angle
+
+
+def horizontal_distance(point1: np.ndarray, point2: np.ndarray) -> float:
+    """
+    Calculate distance between two points projected on a horizontal plane.
+    """
+    vector = point1 - point2
+    vector[Index.Z] = 0.
+    return length(vector)
