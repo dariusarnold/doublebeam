@@ -45,7 +45,7 @@ class TestRayTracingScipy(unittest.TestCase):
         vm = VelocityModel3D(layers)
         ray = Ray3D(0, 0, 0, radians(20), 0)
         tracer = NumericRayTracer3D(vm)
-        ray = tracer.trace_stack(ray, "TT", 10)
+        tracer.trace_stack(ray, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
                                msg=f"x position wrong, got {ray.last_point[0]},"
                                f" expected {last_point_expected[0]}")
@@ -72,6 +72,6 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
         vm = VelocityModel3D(layers)
         nrt = NumericRayTracer3D(vm)
         ray = Ray3D(0, 0, 0, radians(17.4576), radians(0))
-        ray = nrt.trace_stack(ray, "TTTTRTTTT")
+        nrt.trace_stack(ray, "TTTTRTTTT")
         expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)

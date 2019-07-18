@@ -235,15 +235,15 @@ class NumericRayTracer3D:
         return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
-                     max_step_s: float) -> Ray3D:
+                     max_step_s: float) -> None:
         """
-        Trace a ray through a single layer of the model
+        Trace a ray through a single layer of the model and set the parameters
+        (path, slowness, traveltime) of the ray.
         :param ray: Ray to trace
         :param initial_slownesses: Initial value of px, py, pz (slowness along
         the corresponding axis) of the ray in s/m.
         :param max_step_s: Max step the solver takes for the integration
         variable s.
-        :return: Ray with its parameters set
         """
         # workaround: events only activate after a step is taken because
         # sometimes events trigger directly after tracing starts and the
@@ -267,8 +267,7 @@ class NumericRayTracer3D:
             ray.path.append(path)
             ray.slowness.append(p0.reshape(1, 3))
             ray.travel_time.append(time)
-            return ray
-
+            return
 
         upper_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
         lower_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
@@ -285,10 +284,9 @@ class NumericRayTracer3D:
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
-        return ray
 
     def trace_stack(self, ray: Ray3D, ray_code: str = None,
-                    max_step: float = 1) -> Ray3D:
+                    max_step: float = 1) -> None:
         """
         Trace ray through a stack of layers. The ray type at an interface is
         chosen by the ray code.
@@ -298,14 +296,13 @@ class NumericRayTracer3D:
         for the reflected ray. If not given, the ray will only be traced through
         the layer in which its starting point resides.
         :param max_step: Max step s for the integration.
-        :return: Ray with parameters set
         """
         index = self.model.layer_index(ray.start[Index.Z])
         self.layer = self.model[index]
         initial_slownesses = initial_slowness3D(ray, self._velocity(self.layer, *ray.last_point))
-        ray = self._trace_layer(ray, initial_slownesses, max_step)
+        self._trace_layer(ray, initial_slownesses, max_step)
         if ray_code is None:
-            return ray
+            return
         for wave_type in ray_code:
             v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
             if wave_type == "T":
@@ -316,8 +313,7 @@ class NumericRayTracer3D:
                 new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
             else:
                 new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
-            ray = self._trace_layer(ray, new_p, max_step)
-        return ray
+            self._trace_layer(ray, new_p, max_step)
 
 
 def main():
@@ -331,7 +327,7 @@ def main():
     angle_2159m = 36.70655
     ray = Ray3D(0, 0, 0, radians(angle_469m), radians(0))
     nrt = NumericRayTracer3D(vm)
-    ray = nrt.trace_stack(ray, "TTTTRTTTT")
+    nrt.trace_stack(ray, "TTTTRTTTT")
     plot_ray_in_model(ray, vm)
 
 
