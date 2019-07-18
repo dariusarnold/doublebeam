@@ -445,7 +445,11 @@ class TwoPointRayTracing:
         return self.q_to_p(q, self.v_M)
 
 
-if __name__ == '__main__':
+def main_linear():
+    """
+    Main function to test two point ray tracing in model containing layers
+    with a linear velocity gradient.
+    """
     vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
     twopoint = TwoPointRayTracing(vm)
     a = time.time()
@@ -455,3 +459,7 @@ if __name__ == '__main__':
     # compare to known good result
     assert p == 0.00024143895460092447, "Wrong result in raytracing"
     print("Runtime: ", b-a)
+
+
+if __name__ == '__main__':
+    main_linear()
