@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from utils import TempFile
+from utils_testing import TempFile
 
 from doublebeam.core.models import LinearVelocityLayer, VelocityModel3D
 
