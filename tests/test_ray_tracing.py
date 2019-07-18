@@ -4,7 +4,7 @@ from math import radians
 
 import numpy as np
 
-from doublebeam.core.raytracing.raytracing import VelocityModel3D, Ray3D, NumericRayTracer3D
+from doublebeam.core.raytracing.initial_value import VelocityModel3D, Ray3D, NumericRayTracer3D
 
 
 class TestRay3D(unittest.TestCase):

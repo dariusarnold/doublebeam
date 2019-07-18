@@ -8,7 +8,7 @@ from math import sqrt
 
 import numpy as np
 
-from doublebeam.core.raytracing.raytracing import VelocityModel3D
+from doublebeam.core.raytracing.initial_value import VelocityModel3D
 from doublebeam.core.utils import Index, angle, length
 
 
