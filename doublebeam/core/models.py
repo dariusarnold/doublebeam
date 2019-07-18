@@ -5,7 +5,7 @@ import numpy as np
 
 # Layer which has a linear velocity gradient over its depth
 # v(z) = intercept + z * gradient
-from doublebeam.core.common import Index
+from doublebeam.core.utils import Index
 
 LinearVelocityLayer = np.dtype([
     ('top_depth', np.float64),

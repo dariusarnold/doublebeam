@@ -9,7 +9,7 @@ from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
-from doublebeam.core.common import Index
+from doublebeam.core.utils import Index
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
