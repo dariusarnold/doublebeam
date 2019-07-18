@@ -5,6 +5,8 @@ import numpy as np
 
 # Layer which has a linear velocity gradient over its depth
 # v(z) = intercept + z * gradient
+from doublebeam.core.common import Index
+
 LinearVelocityLayer = np.dtype([
     ('top_depth', np.float64),
     ('bot_depth', np.float64),
@@ -37,7 +39,6 @@ class VelocityModel3D:
         self.intercepts = self.layers["intercept"]
         self.velocities_top = self.layers["intercept"] + self.layers["gradient"] * self.layers["top_depth"]
         self.velocities_bot = self.layers["intercept"] + self.layers["gradient"] * self.layers["bot_depth"]
-
 
     def __getitem__(self, index):
         """
@@ -157,6 +158,14 @@ class VelocityModel3D:
             # eval interface with layer above
             return (self.velocities_bot[index-1],
                     self.velocities_top[index])
+
+    def num_of_interfaces_between(self, point1: np.ndarray, point2: np.ndarray) -> int:
+        """
+        Return the number of interfaces that lie between two points.
+        """
+        l1 = self.layer_index(point1[Index.Z])
+        l2 = self.layer_index(point2[Index.Z])
+        return abs(l1 - l2)
 
     def __len__(self):
         return len(self.layers)
