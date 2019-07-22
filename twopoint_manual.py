@@ -39,7 +39,7 @@ def mu_k(k, s):
     if s <= k <= n:
         return 0
     if k == 0:
-        return mu_k(s, s)
+        return 1 - mu_k(s, s)
 
 mu = np.array([mu_k(k, s) for k in range(0, n + 1)])
 vM = 3000
