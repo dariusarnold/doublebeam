@@ -61,9 +61,8 @@ delta_epsilon = np.abs(np.sign(epsilon_tilde))
 
 delta_omega = np.abs(np.sign(omega_tilde))
 
-c0 = np.divide(delta_a * mu_tilde * (delta_epsilon * np.sqrt(epsilon_tilde)
-                                     - delta_omega * np.sqrt(omega_tilde))
-               + (1 - delta_a) * delta_epsilon * h_tilde, np.sqrt(epsilon_tilde), out=np.zeros_like(a), where=epsilon_tilde!=0)
+c0 = (delta_a * mu_tilde * (delta_epsilon * np.sqrt(epsilon_tilde) - delta_omega * np.sqrt(omega_tilde))
+      + np.divide((1 - delta_a) * delta_epsilon * h_tilde, np.sqrt(epsilon_tilde), out=np.zeros_like(a), where=epsilon_tilde!=0))
 c0 = np.sum(c0)
 
 c1 = np.sum((1 - delta_a) * (1 - delta_epsilon) * h_tilde)
@@ -79,7 +78,7 @@ def safe_divide(a, b):
 
 
 cminus2 = (delta_a * 0.5 * mu_tilde * (safe_divide(delta_epsilon, np.sqrt(epsilon_tilde)) - safe_divide(delta_omega, np.sqrt(omega_tilde)))
-           - (1 - delta_a) * delta_epsilon * h_tilde / (2 * epsilon_tilde**1.5))
+           - safe_divide((1 - delta_a) * delta_epsilon * h_tilde, (2 * epsilon_tilde**1.5)))
 cminus2 = np.sum(cminus2)
 
 X = abs(source[0] - receiver[0])
