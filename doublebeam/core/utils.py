@@ -31,7 +31,7 @@ def angle(vector1: np.ndarray, vector2: np.ndarray, acute: bool = True) -> float
     This is not interpreted to be the reflex angle.
     :return: Angle between vector1 and vector2 in rad
     """
-    angle = acos((vector1 @ vector2) / (length(vector1) * length(vector2)))
+    angle = acos(np.clip((vector1 @ vector2) / (length(vector1) * length(vector2)), -1, 1))
     if acute:
         return angle
     else:
