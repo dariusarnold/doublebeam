@@ -92,6 +92,11 @@ def trace(source: np.ndarray, receiver: np.ndarray, model: VelocityModel3D,
         else:
             return q_minus
 
+    if source[Index.Z] < receiver[Index.Z]:
+        # Fang2019's algorithm only works for sources that are below the
+        # receiver. 
+        source, receiver = receiver, source
+
     a = model.gradients
     b = model.intercepts
     n = len(model)
