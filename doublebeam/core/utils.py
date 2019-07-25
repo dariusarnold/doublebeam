@@ -45,3 +45,10 @@ def horizontal_distance(point1: np.ndarray, point2: np.ndarray) -> float:
     vector = point1 - point2
     vector[Index.Z] = 0.
     return length(vector)
+
+
+def safe_divide(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """
+    Divide a by b but return 0 on places where b is zero without dividing
+    """
+    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)

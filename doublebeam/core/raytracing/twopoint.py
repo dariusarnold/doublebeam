@@ -4,7 +4,7 @@ from math import sqrt, sin, radians
 import numpy as np
 
 from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.utils import Index
+from doublebeam.core.utils import Index, safe_divide
 
 
 class TwoPointRayTracing:
@@ -219,14 +219,6 @@ def mu_k(k, s, n):
         return 0
     if k == 0:
         return 1 - mu_k(s, s, n)
-
-
-def safe_divide(a, b):
-    """
-    Divide a by b but return 0 on places where a is zero without dividing, since
-    b could be zero there
-    """
-    return np.divide(a, b, out=np.zeros_like(a), where=b!=0)
 
 
 def q_to_p(q: float, v_M: float) -> float:
