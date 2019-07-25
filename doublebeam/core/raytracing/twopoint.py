@@ -234,7 +234,7 @@ def p_to_angle(p: float, v: float) -> float:
     """
     Convert slowness to angle
     :param p: slowness in s/m
-    :param v: volocity in m/s
+    :param v: velocity in m/s
     :return: angle against vertical in rad
     """
     return math.asin(p * v)
