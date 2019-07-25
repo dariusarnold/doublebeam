@@ -149,7 +149,7 @@ class TwoPointRayTracing:
         h = np.array([(a[k] * z[k - 1] + b[k]) * (z[k] - z[k - 1]) for k in range(1, n + 1)])
         h = np.insert(h, 0, (a[s] * z[s - 1] + b[s]) * (zs - z[s - 1]))
 
-        mu = np.array([mu_k(k, s, n) for k in range(0, n + 1)])
+        mu = np.array([_mu_k(k, s, n) for k in range(0, n + 1)])
         vM = self._v_M(source, receiver, s)
 
         # eq. A10
@@ -206,7 +206,7 @@ class TwoPointRayTracing:
         return p
 
 
-def mu_k(k, s, n):
+def _mu_k(k, s, n):
     """
     Eq. A8
     :param k: Index of current layer
@@ -218,7 +218,7 @@ def mu_k(k, s, n):
     if s <= k <= n:
         return 0
     if k == 0:
-        return 1 - mu_k(s, s, n)
+        return 1 - _mu_k(s, s, n)
 
 
 def q_to_p(q: float, v_M: float) -> float:
