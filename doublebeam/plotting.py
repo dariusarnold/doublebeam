@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from doublebeam.core.models import VelocityModel3D
+from doublebeam.core.raytracing.initial_value import Ray3D
+from doublebeam.core.utils import Index
+
 
 def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     """Plot all seismograms from a shot to recreate fig 5b) from Hu2018a"""
@@ -16,4 +20,21 @@ def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     cb.set_label("Amplitude")
     plt.xlabel("Trace #")
     plt.ylabel("Time (s)")
+    plt.show()
+
+
+def plot_ray_in_model_2D(ray: Ray3D, velocity_model: VelocityModel3D) -> None:
+    """
+    Plot a ray path projected on the x-z plane and draw horizontal lines
+    for interfaces.
+    """
+    fig, ax = plt.subplots()
+    ax.invert_yaxis()
+    ax.set_ylabel("Depth (m)")
+    ax.set_xlabel("Offset along x (m)")
+    for depth in velocity_model.interface_depths:
+        ax.axhline(depth, color="k")
+    for segment in ray.path:
+        x, z = segment.T[Index.X], segment.T[Index.Z]
+        ax.plot(x, z)
     plt.show()

@@ -3,13 +3,13 @@ from collections import namedtuple
 from math import sin, cos, asin, acos, radians, copysign
 from typing import Callable, List, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.core.utils import Index, angle
+from doublebeam.plotting import plot_ray_in_model_2D
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -161,19 +161,6 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float,
                 * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
 
 
-def plot_ray_in_model(ray: Ray3D, velocity_model: VelocityModel3D):
-    fig, ax = plt.subplots()
-    ax.invert_yaxis()
-    ax.set_ylabel("Depth (m)")
-    ax.set_xlabel("Offset along x (m)")
-    for depth in velocity_model.interface_depths:
-        ax.axhline(depth, color="k")
-    for segment in ray.path:
-        x, z = segment.T[Index.X], segment.T[Index.Z]
-        ax.plot(x, z)
-    plt.show()
-
-
 class IVPResultStatus(enum.IntEnum):
     """Enum to make the int status returned from solve_ivp more readable"""
     FAILED = -1
@@ -318,7 +305,7 @@ def main():
     ray = Ray3D(0, 0, 0, radians(angle_469m), radians(0))
     nrt = NumericRayTracer3D(vm)
     nrt.trace_stack(ray, "TTTTRTTTT")
-    plot_ray_in_model(ray, vm)
+    plot_ray_in_model_2D(ray, vm)
 
 
 if __name__ == '__main__':
