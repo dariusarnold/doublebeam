@@ -10,7 +10,7 @@ from scipy.misc import derivative
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.core.raytracing.ray import Ray3D
 from doublebeam.core.utils import Index, angle
-from doublebeam.plotting import plot_ray_in_model_2D
+from doublebeam.plotting import plot_ray_in_model_3D
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -233,7 +233,7 @@ def main():
     ray = Ray3D(0, 0, 0, radians(angle_469m), radians(0))
     nrt = NumericRayTracer3D(vm)
     nrt.trace_stack(ray, "TTTTRTTTT")
-    plot_ray_in_model_2D(ray, vm)
+    plot_ray_in_model_3D(ray, vm)
 
 
 if __name__ == '__main__':
