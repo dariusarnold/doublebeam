@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.raytracing.initial_value import Ray3D
+from doublebeam.core.raytracing.ray import Ray3D
 from doublebeam.core.utils import Index
 
 
