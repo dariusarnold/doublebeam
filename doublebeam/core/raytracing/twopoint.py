@@ -117,11 +117,6 @@ class TwoPointRayTracing:
             else:
                 return q_minus
 
-        if source[Index.Z] < receiver[Index.Z]:
-            # Fang2019's algorithm only works for sources that are below the
-            # receiver.
-            source, receiver = receiver, source
-
         zs = source[Index.Z]
         a = self._a
         b = self._b
@@ -149,7 +144,8 @@ class TwoPointRayTracing:
         h = np.array([(a[k] * z[k - 1] + b[k]) * (z[k] - z[k - 1]) for k in range(1, n + 1)])
         h = np.insert(h, 0, (a[s] * z[s - 1] + b[s]) * (zs - z[s - 1]))
 
-        mu = np.array([_mu_k(k, s, n) for k in range(0, n + 1)])
+        source_below_receiver = source[Index.Z] > receiver[Index.Z]
+        mu = np.array([_mu_k(k, s, n, source_below_receiver) for k in range(0, n + 1)])
         vM = self._v_M(source, receiver, s)
 
         # eq. A10
@@ -206,19 +202,24 @@ class TwoPointRayTracing:
         return p
 
 
-def _mu_k(k, s, n):
+def _mu_k(k, s, n, source_below_receiver: bool = True):
     """
     Eq. A8
     :param k: Index of current layer
     :param s: Index of source layer
     :param n: Number of layers
+    :param source_below_receiver: Fang2019s algorithm is only designed for
+    sources below the receiver. If the source is above the receiver, this
+    function has to be modified. Mu_k normally returns 1 for all layers above
+    the source layer and 0 for all layers below. This must be reversed if the
+    source is above the receiver
     """
     if 1 <= k <= s - 1:
-        return 1
+        return 1 if source_below_receiver else 0
     if s <= k <= n:
-        return 0
+        return 0 if source_below_receiver else 1
     if k == 0:
-        return 1 - _mu_k(s, s, n)
+        return 1 - _mu_k(s, s, n, source_below_receiver)
 
 
 def q_to_p(q: float, v_M: float) -> float:
