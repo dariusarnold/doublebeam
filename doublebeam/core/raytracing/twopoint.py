@@ -1,10 +1,12 @@
 import math
-from math import sqrt, sin, radians
+from math import sqrt, sin, radians, cos
+from typing import Tuple
 
 import numpy as np
 
 from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.utils import Index, safe_divide
+from doublebeam.core.raytracing.initial_value import slowness_to_angle
+from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle, length
 
 
 class TwoPointRayTracing:
@@ -57,7 +59,7 @@ class TwoPointRayTracing:
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
     def trace(self, source: np.ndarray, receiver: np.ndarray,
-              accuracy: float = 1E-10) -> float:
+              accuracy: float = 1E-10) -> np.ndarray:
         """
         Two point ray tracing from source to receiver position
         :param source: array of shape (3,) which contains the x y z coordinates
@@ -67,7 +69,7 @@ class TwoPointRayTracing:
         :param accuracy: Iteration for modified ray parameter q will be stopped
         if the difference between the current and the next value falls below
         this value.
-        :return: Ray parameter p in s/m
+        :return: Ray parameters px, py, pz in s/m
         """
 
         def initial_q():
@@ -188,8 +190,7 @@ class TwoPointRayTracing:
         cminus2 = np.sum(cminus2)
 
         # horizontal distance between source and receiver
-        X = abs(source[0] - receiver[0])
-
+        X = horizontal_distance(source, receiver)
         q = initial_q()
         while True:
             q_next = next_q(q)
@@ -198,11 +199,22 @@ class TwoPointRayTracing:
                 break
             q = q_next
 
-        p = q_to_p(q, vM)
-        return p
+        horizontal_slowness = q_to_p(q, vM)
+        c = self._model.eval_at(*source)
+        vertical_slowness = math.sqrt(c**-2 - horizontal_slowness**2)
+        if source_below_receiver:
+            # ray should travel upward from source in this case
+            vertical_slowness *= -1
+        receiver_surface_projection = receiver - source
+        receiver_surface_projection[Index.Z] = 0
+        x_axis = np.array((1, 0, 0))
+        phi = angle(receiver_surface_projection, x_axis)
+        px = cos(phi) * horizontal_slowness
+        py = sin(phi) * horizontal_slowness
+        return np.array((px, py, vertical_slowness))
 
 
-def _mu_k(k, s, n, source_below_receiver: bool = True):
+def _mu_k(k, s, n, source_below_receiver: bool = True) -> int:
     """
     Eq. A8
     :param k: Index of current layer
@@ -252,5 +264,4 @@ if __name__ == '__main__':
     tprt = TwoPointRayTracing(vm)
     p = [tprt.trace(source, receiver) for source, receiver in zip(sources, receivers)]
     p_expected = [sin(radians(i)) / 3000 for i in (30, 50, 85)]
-    print(p, p_expected)
-    print([math.degrees(p_to_angle(p_, 3000)) for p_ in p])
+    print(p)
