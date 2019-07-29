@@ -125,7 +125,8 @@ class TwoPointRayTracing:
         n = self._n
         z = self._z
 
-        s = np.searchsorted(z, zs, side="right")
+        # because paper uses 1 based indexing
+        s = self._model.layer_index(zs) + 1
         # special case: bottom of the lowest layer should belong to the lowest
         # layer instead of the layer below as for the other layer
         if s > n:
