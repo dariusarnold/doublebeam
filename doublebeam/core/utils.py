@@ -1,5 +1,5 @@
 import enum
-from math import acos, cos, sin
+from math import acos, cos, sin, atan2, radians
 
 import numpy as np
 
@@ -36,6 +36,20 @@ def angle(vector1: np.ndarray, vector2: np.ndarray, acute: bool = True) -> float
         return angle
     else:
         return np.pi - angle
+
+
+def angle_clockwise(vector1: np.ndarray, vector2: np.ndarray) -> float:
+    """
+    Calculate the clockwise angle between two vectors.
+    :return: Clockwise angle from vector1 to vector2 in radians
+    """
+    angle1 = atan2(*vector1[0:2])
+    angle2 = atan2(*vector2[0:2])
+    difference = angle1 - angle2
+    if difference < 0:
+        # special case in the bottom right quadrant
+        return 2*np.pi + difference
+    return difference
 
 
 def horizontal_distance(point1: np.ndarray, point2: np.ndarray) -> float:

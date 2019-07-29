@@ -1,9 +1,9 @@
 import unittest
-from math import sqrt, radians
+from math import sqrt, radians, degrees
 
 import numpy as np
 
-from doublebeam.core.utils import horizontal_distance, angle
+from doublebeam.core.utils import horizontal_distance, angle, angle_clockwise
 
 
 class TestHorizontalDistance(unittest.TestCase):
@@ -52,3 +52,43 @@ class TestAngle(unittest.TestCase):
         b = np.array((1, 1, 0))
         self.assertAlmostEqual(angle(a, b), radians(45))
         self.assertAlmostEqual(angle(a, b, acute=False), radians(135))
+
+
+class TestClockwiseAngle(unittest.TestCase):
+
+    @staticmethod
+    def _msg(x: float, angle: float) -> str:
+        return f"Error for {degrees(angle)}°. Got {degrees(x)}°"
+
+    def setUp(self) -> None:
+        self.x_axis = np.array((1, 0, 0))
+        self.test_data = {radians(0): np.array((1, 0, 0)),
+                          radians(45): np.array((1, 1, 0)),
+                          radians(90): np.array((0, 1, 0)),
+                          radians(135): np.array((-1, 1, 0)),
+                          radians(180): np.array((-1, 0, 0)),
+                          radians(225): np.array((-1, -1, 0)),
+                          radians(270): np.array((0, -1, 0)),
+                          radians(315): np.array((1, -1, 0))}
+
+    def test_normal(self):
+        """
+        Test if function calculates angle between x axis and given vector
+        correctly by checking against manually computed test data
+        """
+        for angle, vector in self.test_data.items():
+            with self.subTest(angle=angle, vector=vector):
+                x = angle_clockwise(self.x_axis, vector)
+                self.assertEqual(x, angle, msg=self._msg(x, angle))
+
+    def test_swapped(self):
+        """
+        If the vectors are swapped, the "other angle" has to be returned. The
+        value of this other angle is 360° - first_angle.
+        """
+        for angle, vector in self.test_data.items():
+            with self.subTest(angle=angle, vector=vector):
+                x = angle_clockwise(vector, self.x_axis)
+                # modulo 360° since for 0° the function will not return 360°
+                expected = (radians(360) - angle) % (2*np.pi)
+                self.assertEqual(x, expected, msg=self._msg(x, expected))
