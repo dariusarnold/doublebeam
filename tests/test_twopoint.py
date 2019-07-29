@@ -67,4 +67,4 @@ class TestTwoPointRayTracing(unittest.TestCase):
         nrt = NumericRayTracer3D(self.vm)
         ray = Ray3D(*source, slowness)
         nrt.trace_stack(ray, "TTTT")
-        np.testing.assert_allclose(ray.last_point, receiver, atol=1e-10)
+        np.testing.assert_allclose(ray.last_point, receiver, atol=1e-9)
