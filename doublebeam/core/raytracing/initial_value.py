@@ -9,7 +9,7 @@ from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.core.raytracing.ray import Ray3D
-from doublebeam.core.utils import Index, angle
+from doublebeam.core.utils import Index, angle, slowness_3D
 from doublebeam.plotting import plot_ray_in_model_3D
 
 
@@ -33,20 +33,6 @@ def vertical_slowness(v, theta):
     return cos(theta) / v
 
 
-
-
-def initial_slowness3D(ray: Ray3D, v0: float) -> np.ndarray:
-    """
-    Calculate initial vertical and horizontal slowness for a ray.
-    For geometric definitions see chapter 3.2.1 in Cerveny - Seismic ray theory
-    :param ray: Ray instance
-    :param v0: Velocity at ray starting point
-    :return: Tuple of slowness values
-    """
-    px = 1/v0 * sin(ray.theta) * cos(ray.phi)
-    py = 1/v0 * sin(ray.theta) * sin(ray.phi)
-    pz = 1/v0 * cos(ray.theta)
-    return np.array((px, py, pz))
 
 
 def critical_angle(v1: float, v2: float) -> float:
@@ -204,7 +190,7 @@ class NumericRayTracer3D:
         """
         index = self.model.layer_index(ray.start[Index.Z])
         self.layer = self.model[index]
-        initial_slownesses = initial_slowness3D(ray, self._velocity(self.layer, *ray.last_point))
+        initial_slownesses = slowness_3D(ray.theta, ray.phi, self._velocity(self.layer, *ray.last_point))
         self._trace_layer(ray, initial_slownesses, max_step)
         if ray_code is None:
             return

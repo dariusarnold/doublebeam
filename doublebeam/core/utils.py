@@ -1,5 +1,5 @@
 import enum
-from math import acos
+from math import acos, cos, sin
 
 import numpy as np
 
@@ -52,3 +52,22 @@ def safe_divide(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     Divide a by b but return 0 on places where b is zero without dividing
     """
     return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+
+def slowness_3D(theta: float, phi: float, velocity: float) -> np.ndarray:
+    """
+    Calculate initial vertical and horizontal slowness for a ray.
+    For geometric definitions see chapter 3.2.1 in Cerveny - Seismic ray theory
+    :param theta: Angle against downgoing vertical axis (z) at start
+    point in rad, increasing upwards. 0 <= theta <= pi
+    :param phi: Angle against x axis at start point in rad, with increasing
+    angle towards the y axis
+    0 <= phi <= 2*pi
+    :param velocity: Velocity in m/s at start point of the ray, used to
+    calculate slowness
+    :return: Tuple of slowness values
+    """
+    px = 1/velocity * sin(theta) * cos(phi)
+    py = 1/velocity * sin(theta) * sin(phi)
+    pz = 1/velocity * cos(theta)
+    return np.array((px, py, pz))
