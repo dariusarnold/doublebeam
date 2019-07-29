@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 import numpy as np
 
@@ -68,7 +68,7 @@ class VelocityModel3D:
                         dtype=LinearVelocityLayer)
 
     @classmethod
-    def from_file(cls, filepath: Path):
+    def from_file(cls, filepath: Union[Path, str]):
         # Load model from file. Formatting and content of file is described
         # in README.md
         # TODO update README to reflect changes: Only LinearVelocityLayer is kept
