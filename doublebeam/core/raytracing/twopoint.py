@@ -6,7 +6,7 @@ import numpy as np
 
 from doublebeam.core.models import VelocityModel3D
 from doublebeam.core.raytracing.initial_value import slowness_to_angle
-from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle, length
+from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle, length, angle_clockwise
 
 
 class TwoPointRayTracing:
@@ -209,7 +209,7 @@ class TwoPointRayTracing:
         receiver_surface_projection = receiver - source
         receiver_surface_projection[Index.Z] = 0
         x_axis = np.array((1, 0, 0))
-        phi = angle(receiver_surface_projection, x_axis)
+        phi = angle_clockwise(x_axis, receiver_surface_projection)
         px = cos(phi) * horizontal_slowness
         py = sin(phi) * horizontal_slowness
         return np.array((px, py, vertical_slowness))
