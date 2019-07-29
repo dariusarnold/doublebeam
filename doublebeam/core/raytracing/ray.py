@@ -84,14 +84,10 @@ class Ray3D:
         return "down", while an upgoing ray will return "up". The special case
         of a horizontal ray (vertical slowness pz = 0) will return "horizontal".
         """
-        try:
-            pz = self.last_slowness[Index.Z]
-        except TypeError:
-            # if None is returned (ray hasn't been traced yet), use starting
-            # angle against vertical axis
-            pz = np.pi/2 - self.theta
+        pz = self.last_slowness[Index.Z]
+        if abs(pz) < np.finfo(type(pz)).eps:
+            return "horizontal"
         if pz < 0:
             return "up"
         elif pz > 0:
             return "down"
-        return "horizontal"

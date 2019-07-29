@@ -15,22 +15,22 @@ class TestRay3D(unittest.TestCase):
 
     def test_direction_up(self):
         angles_up = [x + 90 for x in self.angles_down if x != 0]
-        rays_up = [Ray3D(0, 0, 0, radians(i), 0) for i in angles_up]
-        for ray in rays_up:
-            with self.subTest(ray=ray):
+        rays_up = [Ray3D.from_angle(0, 0, 0, radians(i), 0, 2000) for i in angles_up]
+        for ray, theta in zip(rays_up, angles_up):
+            with self.subTest(ray=ray, theta=theta):
                 self.assertEqual(ray.direction, "up", msg=f"Failed test for "
-                f"upgoing ray with angle {math.degrees(ray.theta)}")
+                f"upgoing ray with angle {math.degrees(theta)}")
 
     def test_direction_down(self):
 
-        rays_down = [Ray3D(0, 0, 0, radians(i), 0) for i in self.angles_down]
-        for ray in rays_down:
+        rays_down = [Ray3D.from_angle(0, 0, 0, radians(i), 0, 2000) for i in self.angles_down]
+        for ray, theta in zip(rays_down, self.angles_down):
             with self.subTest(ray=ray):
                 self.assertEqual(ray.direction, "down", msg=f"Failed test for "
-                f"downgoing ray with angle {math.degrees(ray.theta)}")
+                f"downgoing ray with angle {math.degrees(theta)}")
 
     def test_direction_horizontal(self):
-        ray_horizontal = Ray3D(0, 0, 0, radians(90), 0)
+        ray_horizontal = Ray3D.from_angle(0, 0, 0, radians(90), 0, 2000)
         self.assertEqual(ray_horizontal.direction, "horizontal")
 
 
@@ -44,7 +44,7 @@ class TestRayTracingScipy(unittest.TestCase):
         layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
                                                                 (1000, 101000, 6000, 156000)])
         vm = VelocityModel3D(layers)
-        ray = Ray3D(0, 0, 0, radians(20), 0)
+        ray = Ray3D.from_angle(0, 0, 0, radians(20), 0, vm.eval_at(0, 0, 0))
         tracer = NumericRayTracer3D(vm)
         tracer.trace_stack(ray, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
@@ -72,7 +72,7 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
                   (300, 400, 2700, 0), (400, 500, 2250, 0)]
         vm = VelocityModel3D(layers)
         nrt = NumericRayTracer3D(vm)
-        ray = Ray3D(0, 0, 0, radians(17.4576), radians(0))
+        ray = Ray3D.from_angle(0, 0, 0, radians(17.4576), radians(0), vm.eval_at(0, 0, 0))
         nrt.trace_stack(ray, "TTTTRTTTT")
         expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)
