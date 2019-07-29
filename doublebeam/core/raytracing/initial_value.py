@@ -89,16 +89,16 @@ def snells_law(p: np.ndarray, v_before: float, v_after: float,
                 * (v_after**-2 - v_before**-2 + pn**2)**0.5) * n
 
 
-class IVPResultStatus(enum.IntEnum):
+class _IVPResultStatus(enum.IntEnum):
     """Enum to make the int status returned from solve_ivp more readable"""
     FAILED = -1
     END_REACHED = 0
     TERMINATION_EVENT = 1
 
 
-ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
+_ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
 
-IVPEventFunction = Callable[[float, ODEState3D], float]
+_IVPEventFunction = Callable[[float, _ODEState3D], float]
 
 
 class NumericRayTracer3D:
@@ -117,7 +117,7 @@ class NumericRayTracer3D:
         """
         return layer["intercept"] + layer["gradient"] * z
 
-    def _trace(self, s: float, y: ODEState3D) -> ODEState3D:
+    def _trace(self, s: float, y: _ODEState3D) -> _ODEState3D:
         """
         Implement ray tracing system (3.1.10) from Cerveny - Seismic ray theory
         (2001).
@@ -137,7 +137,7 @@ class NumericRayTracer3D:
         dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
                            z, dx=0.0001)
         dTds = 1. / v
-        return ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
+        return _ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
                      max_step_s: float) -> None:
@@ -174,14 +174,14 @@ class NumericRayTracer3D:
             ray.travel_time.append(time)
             return
 
-        upper_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
-        lower_layer_event: IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
+        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
+        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
         # TODO change signature of _velocity to accept np array instead of
         #  three floats
-        initial_state = ODEState3D(*ray.last_point, *initial_slownesses,
-                                   ray.last_time)
+        initial_state = _ODEState3D(*ray.last_point, *initial_slownesses,
+                                    ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
                            max_step=max_step_s, events=(upper_layer_event,
                                                         lower_layer_event))
