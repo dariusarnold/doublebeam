@@ -9,8 +9,7 @@ from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.core.raytracing.ray import Ray3D
-from doublebeam.core.utils import Index, angle
-from doublebeam.plotting import plot_ray_in_model_3D
+from doublebeam.core.utils import Index
 
 
 #TODO Use __all__ to specify which symbols can be imported from this module
@@ -34,8 +33,6 @@ def horizontal_slowness(v, theta):
 
 def vertical_slowness(v, theta):
     return cos(theta) / v
-
-
 
 
 def critical_angle(v1: float, v2: float) -> float:
@@ -213,22 +210,3 @@ class NumericRayTracer3D:
             else:
                 new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
             self._trace_layer(ray, new_p, max_step)
-
-
-def main():
-    layers = [(0, 100, 1800, 4), (100, 200, 2400, 0), (200, 300, 2400, 1),
-              (300, 400, 2700, 0), (400, 500, 2250, 1.5)]
-    layers_const = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
-              (300, 400, 2700, 0), (400, 500, 2250, 0)]
-    vm = VelocityModel3D(layers_const)
-    angle_868m = 27.3632
-    angle_469m = 17.4576
-    angle_2159m = 36.70655
-    ray = Ray3D(0, 0, 0, radians(angle_469m), radians(0))
-    nrt = NumericRayTracer3D(vm)
-    nrt.trace_stack(ray, "TTTTRTTTT")
-    plot_ray_in_model_3D(ray, vm)
-
-
-if __name__ == '__main__':
-    main()

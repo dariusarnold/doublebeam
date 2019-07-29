@@ -1,12 +1,10 @@
 import math
-from math import sqrt, sin, radians, cos
-from typing import Tuple
+from math import sqrt, sin, cos
 
 import numpy as np
 
 from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.raytracing.initial_value import slowness_to_angle
-from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle, length, angle_clockwise
+from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle_clockwise
 
 
 class TwoPointRayTracing:
@@ -259,17 +257,3 @@ def p_to_angle(p: float, v: float) -> float:
     :return: angle against vertical in rad
     """
     return math.asin(p * v)
-
-
-if __name__ == '__main__':
-    vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
-    sources = [np.array((469/2, 0, 500)),
-               np.array((868/2, 0, 500)),
-               np.array((2159/2, 0, 500))]
-    receivers = [np.array((469, 0, 0)),
-                 np.array((868, 0, 0)),
-                 np.array((2159, 0, 0))]
-    tprt = TwoPointRayTracing(vm)
-    p = [tprt.trace(source, receiver) for source, receiver in zip(sources, receivers)]
-    p_expected = [sin(radians(i)) / 3000 for i in (30, 50, 85)]
-    print(p)
