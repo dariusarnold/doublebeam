@@ -2,14 +2,32 @@ from typing import List, Union
 
 import numpy as np
 
-from doublebeam.core.utils import Index
+from doublebeam.core.utils import Index, slowness_3D
 
 
 class Ray3D:
 
     def __init__(self, start_x: float, start_y: float, start_z: float,
-                 theta: float, phi: float):
+                 slowness: np.ndarray):
         """
+        :param start_x: x coordinate of start point of ray in m
+        :param start_y: y coordinate of start point of ray in m
+        :param start_z: z coordinate of start point of ray in m
+        :param slowness: Array of three floats: px, py, pz
+        """
+        self.start = np.array((start_x, start_y, start_z))
+        # These will be set after the ray is traced
+        self.path: List[np.ndarray] = []
+        slowness = np.reshape(slowness, (1, 3))
+        self.slowness: List[np.ndarray] = [slowness]
+        self.travel_time: List[np.ndarray] = []
+
+    @classmethod
+    # TODO refactor this and init to take tuple or array of coordinates
+    def from_angle(cls, start_x, start_y, start_z, theta: float,
+                   phi: float, velocity: float) -> "Ray3D":
+        """
+        Create a ray from angles and calculate slowness values
         :param start_x: x coordinate of start point of ray in m
         :param start_y: y coordinate of start point of ray in m
         :param start_z: z coordinate of start point of ray in m
@@ -18,20 +36,13 @@ class Ray3D:
         :param phi: Angle against x axis at start point in rad, with increasing
         angle towards the y axis
         0 <= phi <= 2*pi
+        :param velocity: Velocity in m/s at start point of the ray, used to
+        calculate slowness
+        :return:
         """
-        self.start = np.array((start_x, start_y, start_z))
-        self.theta = theta
-        self.phi = phi
-        # These will be set after the ray is traced
-        self.path: List[np.ndarray] = []
-        self.slowness: List[np.ndarray] = []
-        self.travel_time: List[np.ndarray] = []
+        p = slowness_3D(theta, phi, velocity)
+        return cls(start_x, start_y, start_z, p)
 
-    @classmethod
-    # TODO refactor this and init to take tuple or array
-    def from_slowness(cls, start_x, start_y, start_z, slowness_x: float,
-                      slowness_y: float) -> "Ray3D":
-        raise NotImplementedError
 
     @property
     def last_point(self) -> np.ndarray:

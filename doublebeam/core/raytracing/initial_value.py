@@ -1,6 +1,6 @@
 import enum
 from collections import namedtuple
-from math import sin, cos, asin, radians, copysign
+from math import sin, cos, asin, copysign
 from typing import Callable
 
 import numpy as np
@@ -9,8 +9,11 @@ from scipy.misc import derivative
 
 from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.core.raytracing.ray import Ray3D
-from doublebeam.core.utils import Index, angle, slowness_3D
+from doublebeam.core.utils import Index, angle
 from doublebeam.plotting import plot_ray_in_model_3D
+
+
+#TODO Use __all__ to specify which symbols can be imported from this module
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -190,7 +193,7 @@ class NumericRayTracer3D:
         """
         index = self.model.layer_index(ray.start[Index.Z])
         self.layer = self.model[index]
-        initial_slownesses = slowness_3D(ray.theta, ray.phi, self._velocity(self.layer, *ray.last_point))
+        initial_slownesses = ray.last_slowness
         self._trace_layer(ray, initial_slownesses, max_step)
         if ray_code is None:
             return
