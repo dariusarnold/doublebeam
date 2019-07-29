@@ -194,3 +194,30 @@ class TestVelocityModel3DNumberOfInterfaces(unittest.TestCase):
                 n = self.vm.num_of_interfaces_between(b, a)
                 self.assertEqual(n, correct, msg=self.generate_error_msg(a, b, correct, n))
 
+class TestVelocityModelVerticalExtent(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.test_data = {
+            "multiple_layers": [(0, 100, 1800, 4), (100, 200, 2400, 0),
+                           (200, 300, 2400, 1), (300, 400, 2700, 0),
+                           (400, 500, 2250, 1.5)],
+            "one_layer": [(0, 256, 0, 0)],
+            "non_zero_start": [(100, 200, 2400, 0), (200, 300, 2400, 1)]}
+        self.expected_results = {
+            "multiple_layers": (0, 500),
+            "one_layer": (0, 256),
+            "non_zero_start": (100, 300)}
+        self.test_data = {name: VelocityModel3D(layers) for name, layers in self.test_data.items()}
+
+    @staticmethod
+    def _msg(name: str) -> str:
+        return f"Wrong result for {name}"
+
+    def test_(self):
+        """
+        Test if method returns correct result
+        """
+        for name, model in self.test_data.items():
+            expected = self.expected_results[name]
+            with self.subTest(model=model, expected=expected):
+                self.assertEqual(model.vertical_boundaries(), expected, msg=self._msg(name))

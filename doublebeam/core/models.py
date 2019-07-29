@@ -167,5 +167,12 @@ class VelocityModel3D:
         l2 = self.layer_index(point2[Index.Z])
         return abs(l1 - l2)
 
+    def vertical_boundaries(self) -> Tuple[float, float]:
+        """
+        Return tuple of upper and lower boundary of the model
+        """
+        return self.interface_depths[0], self.interface_depths[-1]
+
+
     def __len__(self):
         return len(self.layers)
