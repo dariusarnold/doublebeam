@@ -25,14 +25,15 @@ class TwoPointRayTracing:
         self._n = len(velocity_model)
         self._z = velocity_model.interface_depths
 
-    def _v_M(self, source_position: np.ndarray, receiver_position: np.ndarray,
-             source_index: int) -> float:
+    def _v_M(self, source_position: np.ndarray,
+             receiver_position: np.ndarray) -> float:
         """
         Return v_M, the highest velocity of the layers the ray passes through
         """
         # TODO This assumes direct ray between source and receiver so only the
         #  layers between them matter. This doesn't work for reflections and
         #  turning rays
+        source_index = self._model.layer_index(source_position[Index.Z])
         # first, get all the top and bottom velocities from the interfaces
         # between the source and receiver
         receiver_index = self._model.layer_index(receiver_position[Index.Z])
@@ -154,7 +155,7 @@ class TwoPointRayTracing:
 
         source_below_receiver = source[Index.Z] > receiver[Index.Z]
         mu = np.array([_mu_k(k, s, n, source_below_receiver) for k in range(0, n + 1)])
-        vM = self._v_M(source, receiver, s)
+        vM = self._v_M(source, receiver)
 
         # eq. A10
         mu_tilde = np.divide(mu * vM, a, out=np.zeros_like(a), where=a != 0)
