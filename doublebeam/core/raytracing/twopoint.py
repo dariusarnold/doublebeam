@@ -214,7 +214,7 @@ class TwoPointRayTracing:
                 break
             q = q_next
 
-        horizontal_slowness = q_to_p(q, vM)
+        horizontal_slowness = _q_to_p(q, vM)
         c = self._model.eval_at(*source)
         vertical_slowness = math.sqrt(c**-2 - horizontal_slowness**2)
         if source_below_receiver:
@@ -249,7 +249,7 @@ def _mu_k(k, s, n, source_below_receiver: bool = True) -> int:
         return 1 - _mu_k(s, s, n, source_below_receiver)
 
 
-def q_to_p(q: float, v_M: float) -> float:
+def _q_to_p(q: float, v_M: float) -> float:
     """
     Backtransform modified ray parameter q to standard ray parameter p.
     Reordered from eq. 15.
