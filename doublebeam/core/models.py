@@ -3,10 +3,10 @@ from typing import Tuple, List, Union
 
 import numpy as np
 
-# Layer which has a linear velocity gradient over its depth
-# v(z) = intercept + z * gradient
 from doublebeam.core.utils import Index
 
+# Layer which has a linear velocity gradient over its depth
+# v(z) = intercept + z * gradient
 LinearVelocityLayer = np.dtype([
     ('top_depth', np.float64),
     ('bot_depth', np.float64),
@@ -28,7 +28,7 @@ class VelocityModel3D:
     """Simple vertical velocity model storing P and S wave velocity as well
     as density"""
 
-    def __init__(self, layers: List[Tuple[float, float, float, float]]):
+    def __init__(self, layers: Union[List[Tuple[float, float, float, float]], np.ndarray]):
         # TODO implement 3D part, ie. borders for x/y values
         self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
         depths = self.layers["top_depth"]
@@ -40,7 +40,7 @@ class VelocityModel3D:
         self.velocities_top = self.layers["intercept"] + self.layers["gradient"] * self.layers["top_depth"]
         self.velocities_bot = self.layers["intercept"] + self.layers["gradient"] * self.layers["bot_depth"]
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> np.ndarray:
         """
         Implement indexing to get layers
         :param index: Number of layer, 0 for top most, increasing downwards.
@@ -48,7 +48,8 @@ class VelocityModel3D:
         return self.layers[index]
 
     @classmethod
-    def convert_to_gradient_intercept(cls, layers: List[Tuple[float, float, float, float]]) -> np.ndarray:
+    def convert_to_gradient_intercept(cls, layers: Union[List[Tuple[float, float, float, float]],
+                                                         np.ndarray]) -> np.ndarray:
         """
         Convert layers specified by their top and bottom depth and their top and
         bottom velocity to intercept and gradient for the velocity
@@ -68,9 +69,12 @@ class VelocityModel3D:
                         dtype=LinearVelocityLayer)
 
     @classmethod
-    def from_file(cls, filepath: Union[Path, str]):
-        # Load model from file. Formatting and content of file is described
-        # in README.md
+    def from_file(cls, filepath: Union[Path, str]) -> "VelocityModel3D":
+        """
+        Load model from file. Formatting and content of file is described in
+        README.md.
+        :param filepath: Path to to file containing model data
+        """
         # TODO update README to reflect changes: Only LinearVelocityLayer is kept
         try:
             raw_data = np.loadtxt(str(filepath), delimiter=",")
@@ -81,10 +85,11 @@ class VelocityModel3D:
         return cls(raw_data)
 
     @classmethod
-    def from_string(cls, model: str):
+    def from_string(cls, model: str) -> "VelocityModel3D":
         """
         Create model from string description. The same rules as for model files
-        apply for creation from string
+        apply for creation from string.
+        :param model: Velocity model string.
         """
         # np.loadtxt also takes generators, so create one
         try:
@@ -98,7 +103,7 @@ class VelocityModel3D:
     def layer_index(self, depth: float) -> int:
         """
         Find the layer within the model that contains the depth and return
-        its index in self.layers
+        its index in self.layers. While the top of a layer
         """
         # workaround to include the bottom of the bottom most layer in the model
         if depth == self.interface_depths[-1]:
@@ -116,6 +121,13 @@ class VelocityModel3D:
             raise LookupError(f"No layer found in model at depth {depth}")
 
     def eval_at(self, x: float, y: float, z: float) -> float:
+        """
+        Return velocity at a point in the model
+        :param x: x coordinate in m
+        :param y: y coordinate in m
+        :param z: coordinate in m
+        :return: Velocity in m/s
+        """
         top_depth, bottom_depth = self.vertical_boundaries()
         if not top_depth <= z <= bottom_depth:
             raise LookupError(f"Can't evaluate model at negative depth {z}")
@@ -123,7 +135,12 @@ class VelocityModel3D:
         return layer["intercept"] + layer["gradient"] * z
 
     def interface_crossed(self, z1: float, z2: float) -> bool:
-        """Return true if at least one interface is between the depths z1 and z2."""
+        """
+        Return true if at least one interface is between the depths z1 and z2.
+        The depths do not have to be ordered.
+        :param z1: depth in m
+        :param z2: depth in m
+        """
         z_upper = min(z1, z2)  # higher point
         z_lower = max(z1, z2)  # lower point
         # get mask: true for all interfaces which lay between the two points
@@ -136,6 +153,7 @@ class VelocityModel3D:
         Return velocities above and below the closest interface.
         :param z: Depth in m
         :return: Tuple of: (velocity above interface, velocity below interface)
+        where both velocities are in m/s
         """
         index = self.layer_index(z)
         if index == 0:
@@ -166,10 +184,12 @@ class VelocityModel3D:
 
     def vertical_boundaries(self) -> Tuple[float, float]:
         """
-        Return tuple of upper and lower boundary of the model
+        Return tuple of upper and lower boundary of the model.
         """
         return self.interface_depths[0], self.interface_depths[-1]
 
-
-    def __len__(self):
+    def __len__(self) -> int:
+        """
+        Return number of layers in the model.
+        """
         return len(self.layers)
