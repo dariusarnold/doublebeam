@@ -28,28 +28,37 @@ class TwoPointRayTracing:
     def _v_M(self, source_position: np.ndarray,
              receiver_position: np.ndarray) -> float:
         """
-        Return v_M, the highest velocity of the layers the ray passes through
+        Return the highest velocity of the layers the direct ray passes through
+        on the way from source to receiver.
+        :param source_position: x, y, z triple of source coordinates
+        :param receiver_position: x, y, z triple of receiver coordinates
+        :return: Highest velocity (m/s) between source and receiver for a direct
+        ray
         """
         # TODO move this to free function in module taking velocity model as a
         #  parameter and unit test it
+        receiver_index = self._model.layer_index(receiver_position[Index.Z])
         source_index = self._model.layer_index(source_position[Index.Z])
+        if source_index == receiver_index:
+            return max(self._model.eval_at(*source_position),
+                       self._model.eval_at(*receiver_position))
         # first, get all the top and bottom velocities from the interfaces
         # between the source and receiver
-        receiver_index = self._model.layer_index(receiver_position[Index.Z])
         # sort indices because accessing array only works from low to high
         index_low = min(source_index, receiver_index)
         index_high = max(source_index, receiver_index)
-        if index_low == index_high:
-            # source and receiver are in the same layer
-            return max(self._model.eval_at(*source_position),
-                       self._model.eval_at(*receiver_position))
+        # dont +1 last index since the bottom of the bottom most layer is not
+        # passed by the ray. If the ray starts there, evaluating the velocity
+        # at source and receiver will catch it.
         velocities_bottom = self._model.velocities_bot[index_low:index_high]
-        # +1 to exclude top velocity of the layer containing the upper point.
+        # +1 for first index to exclude top velocity of the layer containing the
+        # upper point.
         # There are two cases:
         # - The point lays below the top of the layer, so the ray doesn't pass
         #   through the velocity at the top of the layer
         # - The point lays on the top depth, so the velocity should be included.
         #   This case in then handled by evaluating the velocity at both points.
+        # +1 last index to include top velocity of the bottom most layer
         velocities_top = self._model.velocities_top[index_low+1:index_high+1]
         # second, also get velocity at the end points (source and receiver)
         v = max(self._model.eval_at(*source_position),
