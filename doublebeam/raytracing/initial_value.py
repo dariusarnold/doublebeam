@@ -7,9 +7,9 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
-from doublebeam.core.models import VelocityModel3D, LinearVelocityLayer
-from doublebeam.core.raytracing.ray import Ray3D
-from doublebeam.core.utils import Index
+from doublebeam.models import VelocityModel3D, LinearVelocityLayer
+from doublebeam.raytracing.ray import Ray3D
+from doublebeam.utils import Index
 
 
 #TODO Use __all__ to specify which symbols can be imported from this module

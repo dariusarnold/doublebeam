@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.raytracing.ray import Ray3D
-from doublebeam.core.utils import Index
+from doublebeam.models import VelocityModel3D
+from doublebeam.raytracing.ray import Ray3D
+from doublebeam.utils import Index
 from mpl_toolkits.mplot3d import Axes3D
 
 

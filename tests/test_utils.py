@@ -3,7 +3,7 @@ from math import sqrt, radians, degrees
 
 import numpy as np
 
-from doublebeam.core.utils import horizontal_distance, angle, angle_clockwise
+from doublebeam.utils import horizontal_distance, angle, angle_clockwise
 
 
 class TestHorizontalDistance(unittest.TestCase):

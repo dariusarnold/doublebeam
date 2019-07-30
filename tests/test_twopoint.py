@@ -4,10 +4,10 @@ from typing import Tuple
 
 import numpy as np
 
-from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.raytracing.twopoint import TwoPointRayTracing
-from doublebeam.core.raytracing.initial_value import NumericRayTracer3D
-from doublebeam.core.raytracing.ray import Ray3D
+from doublebeam.models import VelocityModel3D
+from doublebeam.raytracing.twopoint import TwoPointRayTracing
+from doublebeam.raytracing.initial_value import NumericRayTracer3D
+from doublebeam.raytracing.ray import Ray3D
 
 
 class TestTwoPointRayTracing(unittest.TestCase):

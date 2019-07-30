@@ -3,8 +3,8 @@ from math import sqrt, sin, cos
 
 import numpy as np
 
-from doublebeam.core.models import VelocityModel3D
-from doublebeam.core.utils import Index, safe_divide, horizontal_distance, angle_clockwise
+from doublebeam.models import VelocityModel3D
+from doublebeam.utils import Index, safe_divide, horizontal_distance, angle_clockwise
 
 
 class TwoPointRayTracing:

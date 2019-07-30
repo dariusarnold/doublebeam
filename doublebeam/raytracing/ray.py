@@ -2,7 +2,7 @@ from typing import List, Union
 
 import numpy as np
 
-from doublebeam.core.utils import Index, slowness_3D
+from doublebeam.utils import Index, slowness_3D
 
 
 class Ray3D:

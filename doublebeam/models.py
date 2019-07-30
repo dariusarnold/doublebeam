@@ -3,7 +3,7 @@ from typing import Tuple, List, Union
 
 import numpy as np
 
-from doublebeam.core.utils import Index
+from doublebeam.utils import Index
 
 # Layer which has a linear velocity gradient over its depth
 # v(z) = intercept + z * gradient
