@@ -30,9 +30,8 @@ class TwoPointRayTracing:
         """
         Return v_M, the highest velocity of the layers the ray passes through
         """
-        # TODO This assumes direct ray between source and receiver so only the
-        #  layers between them matter. This doesn't work for reflections and
-        #  turning rays
+        # TODO move this to free function in module taking velocity model as a
+        #  parameter and unit test it
         source_index = self._model.layer_index(source_position[Index.Z])
         # first, get all the top and bottom velocities from the interfaces
         # between the source and receiver
