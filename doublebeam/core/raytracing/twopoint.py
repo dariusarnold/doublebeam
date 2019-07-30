@@ -256,13 +256,3 @@ def q_to_p(q: float, v_M: float) -> float:
     :param q: modified ray parameter
     """
     return sqrt(q**2 / (v_M**2 + v_M**2 * q**2))
-
-
-def p_to_angle(p: float, v: float) -> float:
-    """
-    Convert slowness to angle
-    :param p: slowness in s/m
-    :param v: velocity in m/s
-    :return: angle against vertical in rad
-    """
-    return math.asin(p * v)
