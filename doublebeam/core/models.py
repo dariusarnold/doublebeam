@@ -116,7 +116,8 @@ class VelocityModel3D:
             raise LookupError(f"No layer found in model at depth {depth}")
 
     def eval_at(self, x: float, y: float, z: float) -> float:
-        if z < 0:
+        top_depth, bottom_depth = self.vertical_boundaries()
+        if not top_depth <= z <= bottom_depth:
             raise LookupError(f"Can't evaluate model at negative depth {z}")
         layer = self.layers[self.layer_index(z)]
         return layer["intercept"] + layer["gradient"] * z
