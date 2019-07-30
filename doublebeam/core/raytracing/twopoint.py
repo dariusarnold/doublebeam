@@ -13,6 +13,8 @@ class TwoPointRayTracing:
     A fast and robust two-point ray tracing method in layered media with
     constant or linearly varying layer velocity (Xinding Fang and Xiaofei Chen
     2019)
+    This implementation only works for direct rays between the source and
+    receiver. Turning rays and reflected rays are not implemented.
     """
 
     def __init__(self, velocity_model: VelocityModel3D):
