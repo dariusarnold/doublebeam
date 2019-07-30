@@ -35,8 +35,6 @@ class TwoPointRayTracing:
         :return: Highest velocity (m/s) between source and receiver for a direct
         ray
         """
-        # TODO move this to free function in module taking velocity model as a
-        #  parameter and unit test it
         receiver_index = self._model.layer_index(receiver_position[Index.Z])
         source_index = self._model.layer_index(source_position[Index.Z])
         if source_index == receiver_index:

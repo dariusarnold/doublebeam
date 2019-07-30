@@ -1,5 +1,6 @@
 import unittest
 from math import radians, sin
+from typing import Tuple
 
 import numpy as np
 
@@ -68,3 +69,44 @@ class TestTwoPointRayTracing(unittest.TestCase):
         ray = Ray3D(*source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-9)
+
+
+class TestMethod_v_M(unittest.TestCase):
+
+    def setUp(self) -> None:
+        layers = [(0, 100, 2600, -4), (100, 200, 2400, 0), (200, 300, 2400, 1),
+                  (300, 400, 2700, 0), (400, 500, 2250, 1.5)]
+        self.vm = VelocityModel3D(layers)
+        self.tp = TwoPointRayTracing(self.vm)
+        # format for values: (top depth, bottom depth, expected return value
+        test_data = [(0, 500, 3000),
+                     (50, 500, 3000),
+                     (50, 450, 2925),
+                     (300, 400, 2850),
+                     (50, 150, 2400),
+                     (25, 150, 2500),
+                     (301, 302, 2700),
+                     (0, 1, 2600),
+                     (50, 250, 2650)]
+        self.test_data = [(*self.convert_testdata(z1, z2), v) for z1, z2, v in test_data]
+
+    @staticmethod
+    def convert_testdata(z1: float, z2: float) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Helper method to convert depth values to full coordinates represented
+        as np array of 3 values with depth as last entry
+        """
+        return np.array((0, 0, z1)), np.array((0, 0, z2))
+
+    @staticmethod
+    def msg_(p1: np.ndarray, p2: np.ndarray, got_velocity: float,
+             expected_velocity: float) -> str:
+        return (f"Error between {p1}, {p2}: expected {expected_velocity} m/s, "
+                f"got {got_velocity} m/s")
+
+    def test_method(self):
+        for p1, p2, expected in self.test_data:
+            with self.subTest(p1=p1, p2=p2, expected=expected):
+                actual = self.tp._v_M(p1, p2)
+                self.assertEqual(actual, expected, msg=self.msg_(p1, p2, actual, expected))
+
