@@ -184,8 +184,8 @@ class NumericRayTracer3D:
         :param ray: Ray to trace through the model
         :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
         at an interface in the model. "T" stands for the transmitted ray, "R"
-        for the reflected ray. If not given, the ray will only be traced through
-        the layer in which its starting point resides.
+        for the reflected ray. If not given or empty, the ray will only be
+        traced through the layer in which its starting point resides.
         :param max_step: Max step s for the integration.
         """
         top, bottom = self.model.vertical_boundaries()
@@ -196,7 +196,7 @@ class NumericRayTracer3D:
         self.layer = self.model[index]
         initial_slownesses = ray.last_slowness
         self._trace_layer(ray, initial_slownesses, max_step)
-        if ray_code is None:
+        if not ray_code:
             return
         for wave_type in ray_code:
             v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
