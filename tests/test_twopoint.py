@@ -54,7 +54,7 @@ class TestTwoPointRayTracing(unittest.TestCase):
         receiver = np.array((100, 200, 0))
         slowness = self.rt.trace(source, receiver)
         nrt = NumericRayTracer3D(self.vm)
-        ray = Ray3D(*source, slowness)
+        ray = Ray3D(source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-10)
 
@@ -67,7 +67,7 @@ class TestTwoPointRayTracing(unittest.TestCase):
         source = np.array((100, 200, 0))
         slowness = self.rt.trace(source, receiver)
         nrt = NumericRayTracer3D(self.vm)
-        ray = Ray3D(*source, slowness)
+        ray = Ray3D(source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-9)
 

@@ -7,15 +7,13 @@ from doublebeam.utils import Index, slowness_3D
 
 class Ray3D:
 
-    def __init__(self, start_x: float, start_y: float, start_z: float,
-                 slowness: np.ndarray):
+    def __init__(self, start_coordinates: np.ndarray, slowness: np.ndarray):
         """
-        :param start_x: x coordinate of start point of ray in m
-        :param start_y: y coordinate of start point of ray in m
-        :param start_z: z coordinate of start point of ray in m
+        :param start_coordinates: x, y, z coordinate triple of start point of
+        ray in m
         :param slowness: Array of three floats: px, py, pz
         """
-        self.start = np.array((start_x, start_y, start_z))
+        self.start = start_coordinates
         # These will be set after the ray is traced
         self.path: List[np.ndarray] = []
         slowness = np.reshape(slowness, (1, 3))
@@ -23,14 +21,12 @@ class Ray3D:
         self.travel_time: List[np.ndarray] = []
 
     @classmethod
-    # TODO refactor this and init to take tuple or array of coordinates
-    def from_angle(cls, start_x, start_y, start_z, theta: float,
+    def from_angle(cls, start_coordinates: np.ndarray, theta: float,
                    phi: float, velocity: float) -> "Ray3D":
         """
-        Create a ray from angles and calculate slowness values
-        :param start_x: x coordinate of start point of ray in m
-        :param start_y: y coordinate of start point of ray in m
-        :param start_z: z coordinate of start point of ray in m
+        Create a ray from angles and calculate slowness values.
+        :param start_coordinates: x, y, z coordinate triple of start point of
+        ray in m
         :param theta: Angle against downgoing vertical axis (z) at start
         point in rad, increasing upwards. 0 <= theta <= pi
         :param phi: Angle against x axis at start point in rad, with increasing
@@ -41,7 +37,7 @@ class Ray3D:
         :return:
         """
         p = slowness_3D(theta, phi, velocity)
-        return cls(start_x, start_y, start_z, p)
+        return cls(start_coordinates, p)
 
 
     @property
