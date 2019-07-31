@@ -1,3 +1,4 @@
+import itertools
 import unittest
 from math import radians, sin
 from typing import Tuple
@@ -69,6 +70,21 @@ class TestTwoPointRayTracing(unittest.TestCase):
         ray = Ray3D(*source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-9)
+
+    def test_raise_when_out_of_depth(self):
+        """
+        Test if a ValueError is raised when either source, receiver or both are
+        outside of the vertical boundaries of the model.
+        """
+        top, bottom = self.vm.vertical_boundaries()
+        to_high = np.array((0, 0, top-1))
+        to_low = np.array((0, 0, bottom+1))
+        in_model = np.array((0, 0, top + (bottom-top)/2))
+        permutations = itertools.permutations((to_high, to_low, in_model), 2)
+        for point_a, point_b in permutations:
+            with self.subTest(point_a=point_a, point_b=point_b):
+                with self.assertRaises(ValueError):
+                    self.rt.trace(point_a, point_b)
 
 
 class TestMethod_v_M(unittest.TestCase):

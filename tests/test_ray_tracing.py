@@ -1,3 +1,4 @@
+import itertools
 import math
 import unittest
 from math import radians
@@ -59,6 +60,35 @@ class TestRayTracingScipy(unittest.TestCase):
         self.assertEqual(len(ray.path), 3, msg="Wrong nuber of ray paths")
         self.assertAlmostEqual(ray.last_time, 1.864023576678209, places=4,
                                msg="Wrong travel time for ray")
+
+
+class TestExceptionWhenOutsideVerticalBoundaries(unittest.TestCase):
+
+    def setUp(self) -> None:
+        layers = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
+                  (300, 400, 2700, 0), (400, 500, 2250, 0)]
+        self.vm = VelocityModel3D(layers)
+        self.ray_tracer = NumericRayTracer3D(self.vm)
+
+    def test_raise_when_above_model(self):
+        """
+        Test if a ValueError is raised when ray starts above the model.
+        """
+        top, _ = self.vm.vertical_boundaries()
+        too_high = np.array((0, 0, top-1))
+        too_high = Ray3D(*too_high, np.array((0, 0, 0)))
+        with self.assertRaises(ValueError):
+            self.ray_tracer.trace_stack(too_high)
+
+    def test_raise_when_below_model(self):
+        """
+        Test if a ValueError is raised when ray starts below the model.
+        """
+        _, bottom = self.vm.vertical_boundaries()
+        too_low = np.array((0, 0, bottom+1))
+        too_low = Ray3D(*too_low, np.array((0, 0, 0)))
+        with self.assertRaises(ValueError):
+            self.ray_tracer.trace_stack(too_low)
 
 
 class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):

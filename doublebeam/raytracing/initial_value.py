@@ -188,7 +188,6 @@ class NumericRayTracer3D:
         the layer in which its starting point resides.
         :param max_step: Max step s for the integration.
         """
-        # TODO add unit test for this behaviour
         top, bottom = self.model.vertical_boundaries()
         if not top <= ray.start[Index.Z] <= bottom:
             raise ValueError(f"Ray {ray} starts outside of model")

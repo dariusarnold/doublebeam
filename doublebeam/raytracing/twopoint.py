@@ -126,7 +126,6 @@ class TwoPointRayTracing:
             else:
                 return q_minus
 
-        # TODO add unit tests for this behaviour
         top, bottom = self._model.vertical_boundaries()
         if not top <= source[Index.Z] <= bottom:
             raise ValueError(f"Source {source} outside of model")
