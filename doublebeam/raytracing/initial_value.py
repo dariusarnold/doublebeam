@@ -1,4 +1,5 @@
 import enum
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from math import sin, cos, asin, copysign
 from typing import Callable
@@ -88,12 +89,14 @@ _ODEStateKinematic3D = namedtuple("ODEStateKinematic3D", ["x", "y", "z", "px", "
 _IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
 
 
-class KinematicRayTracer3D:
+class RayTracerBase(ABC):
 
     def __init__(self, velocity_model: VelocityModel3D):
         self.model = velocity_model
         self.layer = None
 
+    # TODO change signature of _velocity to accept np array instead of
+    #  three floats
     @staticmethod
     def _velocity(layer: LinearVelocityLayer, x: float, y: float,
                   z: float) -> float:
@@ -103,6 +106,48 @@ class KinematicRayTracer3D:
         :param layer: The layer to evaluate
         """
         return layer["intercept"] + layer["gradient"] * z
+
+    @abstractmethod
+    def _trace_layer(self, ray: Ray3D, slowness: np.ndarray,
+                     max_step_s: float) -> None:
+        pass
+
+    def trace_stack(self, ray: Ray3D, ray_code: str = None,
+                    max_step: float = 1) -> None:
+        """
+        Trace ray through a stack of layers. The ray type at an interface is
+        chosen by the ray code.
+        :param ray: Ray to trace through the model
+        :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
+        at an interface in the model. "T" stands for the transmitted ray, "R"
+        for the reflected ray. If not given or empty, the ray will only be
+        traced through the layer in which its starting point resides.
+        :param max_step: Max step s for the integration.
+        """
+        top, bottom = self.model.vertical_boundaries()
+        if not top <= ray.start[Index.Z] <= bottom:
+            raise ValueError(f"Ray {ray} starts outside of model")
+
+        index = self.model.layer_index(ray.start[Index.Z])
+        self.layer = self.model[index]
+        initial_slownesses = ray.last_slowness
+        self._trace_layer(ray, initial_slownesses, max_step)
+        if not ray_code:
+            return
+        for wave_type in ray_code:
+            v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
+            if wave_type == "T":
+                # reflected waves stay in the layer and dont change the index
+                index += -1 if ray.direction == "up" else 1
+            self.layer = self.model[index]
+            if ray.direction == "down":
+                new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
+            else:
+                new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
+            self._trace_layer(ray, new_p, max_step)
+
+
+class KinematicRayTracer3D(RayTracerBase):
 
     def _trace(self, s: float, y: _ODEStateKinematic3D) -> _ODEStateKinematic3D:
         """
@@ -117,6 +162,8 @@ class KinematicRayTracer3D:
         dxds = px * v
         dyds = py * v
         dzds = pz * v
+        # TODO creating a lambda every iteration is probably not conducive to
+        #  performance.
         dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, x_, y, z)),
                            x, dx=0.0001)
         dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, x, y_, z)),
@@ -126,6 +173,7 @@ class KinematicRayTracer3D:
         dTds = 1. / v
         return _ODEStateKinematic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
+    # TODO rename slowness to singular
     def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
                      max_step_s: float) -> None:
         """
@@ -164,8 +212,6 @@ class KinematicRayTracer3D:
         lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
-        # TODO change signature of _velocity to accept np array instead of
-        #  three floats
         initial_state = _ODEStateKinematic3D(*ray.last_point, *initial_slownesses,
                                              ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
@@ -176,36 +222,4 @@ class KinematicRayTracer3D:
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
 
-    def trace_stack(self, ray: Ray3D, ray_code: str = None,
-                    max_step: float = 1) -> None:
-        """
-        Trace ray through a stack of layers. The ray type at an interface is
-        chosen by the ray code.
-        :param ray: Ray to trace through the model
-        :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
-        at an interface in the model. "T" stands for the transmitted ray, "R"
-        for the reflected ray. If not given or empty, the ray will only be
-        traced through the layer in which its starting point resides.
-        :param max_step: Max step s for the integration.
-        """
-        top, bottom = self.model.vertical_boundaries()
-        if not top <= ray.start[Index.Z] <= bottom:
-            raise ValueError(f"Ray {ray} starts outside of model")
 
-        index = self.model.layer_index(ray.start[Index.Z])
-        self.layer = self.model[index]
-        initial_slownesses = ray.last_slowness
-        self._trace_layer(ray, initial_slownesses, max_step)
-        if not ray_code:
-            return
-        for wave_type in ray_code:
-            v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
-            if wave_type == "T":
-                # reflected waves stay in the layer and dont change the index
-                index += -1 if ray.direction == "up" else 1
-            self.layer = self.model[index]
-            if ray.direction == "down":
-                new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
-            else:
-                new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
-            self._trace_layer(ray, new_p, max_step)
