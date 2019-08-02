@@ -7,7 +7,7 @@ import numpy as np
 
 from doublebeam.models import VelocityModel3D
 from doublebeam.raytracing.twopoint import TwoPointRayTracing
-from doublebeam.raytracing.initial_value import NumericRayTracer3D
+from doublebeam.raytracing.initial_value import KinematicRayTracer3D
 from doublebeam.raytracing.ray import Ray3D
 
 
@@ -53,7 +53,7 @@ class TestTwoPointRayTracing(unittest.TestCase):
         source = np.array((0, 0, 500))
         receiver = np.array((100, 200, 0))
         slowness = self.rt.trace(source, receiver)
-        nrt = NumericRayTracer3D(self.vm)
+        nrt = KinematicRayTracer3D(self.vm)
         ray = Ray3D(source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-10)
@@ -66,7 +66,7 @@ class TestTwoPointRayTracing(unittest.TestCase):
         receiver = np.array((0, 0, 500))
         source = np.array((100, 200, 0))
         slowness = self.rt.trace(source, receiver)
-        nrt = NumericRayTracer3D(self.vm)
+        nrt = KinematicRayTracer3D(self.vm)
         ray = Ray3D(source, slowness)
         nrt.trace_stack(ray, "TTTT")
         np.testing.assert_allclose(ray.last_point, receiver, atol=1e-9)

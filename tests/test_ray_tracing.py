@@ -6,7 +6,7 @@ from math import radians
 import numpy as np
 
 from doublebeam.raytracing.ray import Ray3D
-from doublebeam.raytracing.initial_value import VelocityModel3D, NumericRayTracer3D
+from doublebeam.raytracing.initial_value import VelocityModel3D, KinematicRayTracer3D
 
 
 class TestRay3D(unittest.TestCase):
@@ -46,7 +46,7 @@ class TestRayTracingScipy(unittest.TestCase):
                                                                 (1000, 101000, 6000, 156000)])
         vm = VelocityModel3D(layers)
         ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0, 0, 0))
-        tracer = NumericRayTracer3D(vm)
+        tracer = KinematicRayTracer3D(vm)
         tracer.trace_stack(ray, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
                                msg=f"x position wrong, got {ray.last_point[0]},"
@@ -80,7 +80,7 @@ class TestRayTracingScipy(unittest.TestCase):
         expected_endpoints = (469, 868, 2159, 2411)
         expected_endpoints = [np.array((x, 0, 0)) for x in expected_endpoints]
         vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
-        ray_tracer = NumericRayTracer3D(vm)
+        ray_tracer = KinematicRayTracer3D(vm)
         for slowness, target in zip(slownesses, expected_endpoints):
             with self.subTest(slowness=slowness, target=target):
                 ray = Ray3D(source, np.array(slowness))
@@ -94,7 +94,7 @@ class TestExceptionWhenOutsideVerticalBoundaries(unittest.TestCase):
         layers = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
                   (300, 400, 2700, 0), (400, 500, 2250, 0)]
         self.vm = VelocityModel3D(layers)
-        self.ray_tracer = NumericRayTracer3D(self.vm)
+        self.ray_tracer = KinematicRayTracer3D(self.vm)
 
     def test_raise_when_above_model(self):
         """
@@ -127,7 +127,7 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
         layers = [(0, 100, 1800, 0), (100, 200, 2400, 0), (200, 300, 2400, 0),
                   (300, 400, 2700, 0), (400, 500, 2250, 0)]
         vm = VelocityModel3D(layers)
-        nrt = NumericRayTracer3D(vm)
+        nrt = KinematicRayTracer3D(vm)
         ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(17.4576), radians(0), vm.eval_at(0, 0, 0))
         nrt.trace_stack(ray, "TTTTRTTTT")
         expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]

@@ -12,7 +12,7 @@ from doublebeam.raytracing.ray import Ray3D
 from doublebeam.utils import Index
 
 
-#TODO Use __all__ to specify which symbols can be imported from this module
+# TODO Use __all__ to specify which symbols can be imported from this module
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -82,12 +82,13 @@ class _IVPResultStatus(enum.IntEnum):
     TERMINATION_EVENT = 1
 
 
-_ODEState3D = namedtuple("ODEState3D", ["x", "y", "z", "px", "py", "pz", "T"])
+# Tuple containing state of ODE system for kinematic ray tracing
+_ODEStateKinematic3D = namedtuple("ODEStateKinematic3D", ["x", "y", "z", "px", "py", "pz", "T"])
 
-_IVPEventFunction = Callable[[float, _ODEState3D], float]
+_IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
 
 
-class NumericRayTracer3D:
+class KinematicRayTracer3D:
 
     def __init__(self, velocity_model: VelocityModel3D):
         self.model = velocity_model
@@ -103,7 +104,7 @@ class NumericRayTracer3D:
         """
         return layer["intercept"] + layer["gradient"] * z
 
-    def _trace(self, s: float, y: _ODEState3D) -> _ODEState3D:
+    def _trace(self, s: float, y: _ODEStateKinematic3D) -> _ODEStateKinematic3D:
         """
         Implement ray tracing system (3.1.10) from Cerveny - Seismic ray theory
         (2001).
@@ -123,7 +124,7 @@ class NumericRayTracer3D:
         dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
                            z, dx=0.0001)
         dTds = 1. / v
-        return _ODEState3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
+        return _ODEStateKinematic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
                      max_step_s: float) -> None:
@@ -166,8 +167,8 @@ class NumericRayTracer3D:
             func.terminal = True
         # TODO change signature of _velocity to accept np array instead of
         #  three floats
-        initial_state = _ODEState3D(*ray.last_point, *initial_slownesses,
-                                    ray.last_time)
+        initial_state = _ODEStateKinematic3D(*ray.last_point, *initial_slownesses,
+                                             ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
                            max_step=max_step_s, events=(upper_layer_event,
                                                         lower_layer_event))
