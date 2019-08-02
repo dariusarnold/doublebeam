@@ -137,10 +137,6 @@ class KinematicRayTracer3D:
         :param max_step_s: Max step the solver takes for the integration
         variable s.
         """
-        # workaround: events only activate after a step is taken because
-        # sometimes events trigger directly after tracing starts and the
-        # depth doesn't change enough. Keep event function artificially away
-        # from zero to avoid that
         if self.layer["gradient"] == 0:
             # constant velocity layer, use analytic ray tracing
             # this uses (A.1) and (4) from Analytical ray tracing system:
@@ -160,7 +156,10 @@ class KinematicRayTracer3D:
             ray.slowness.append(p0.reshape(1, 3))
             ray.travel_time.append(time)
             return
-
+        # workaround: make events active only after a step is taken because
+        # sometimes events trigger directly after tracing starts and the
+        # algorithm thinks an interface was reached. Keep event function
+        # artificially away from zero to avoid that
         upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
         lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
