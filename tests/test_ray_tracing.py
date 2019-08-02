@@ -62,6 +62,32 @@ class TestRayTracingScipy(unittest.TestCase):
                                msg="Wrong travel time for ray")
 
 
+    def test_ray_path(self):
+        """
+        Test if the same endpoint is reached as for the rays given in fig. 9
+        from the below publication.
+        Slowness values are computed by the two point ray tracing algorithm
+        introduced in "A fast and robust two point ray tracing method in layered
+        media with constant or linearly varying layer velocity" (Fang, Chen).
+        """
+        slownesses = [
+            [0.000166674323178,  0., 0.0005299638150872],
+            [0.0002545148149717, 0., 0.0004938260668176],
+            [0.0003320005004714, 0., 0.0004454409534331],
+            [0.000333271179152, 0., 0.0004444910532905]
+        ]
+        source = np.array((0, 0, 0))
+        expected_endpoints = (469, 868, 2159, 2411)
+        expected_endpoints = [np.array((x, 0, 0)) for x in expected_endpoints]
+        vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        ray_tracer = NumericRayTracer3D(vm)
+        for slowness, target in zip(slownesses, expected_endpoints):
+            with self.subTest(slowness=slowness, target=target):
+                ray = Ray3D(source, np.array(slowness))
+                ray_tracer.trace_stack(ray, "TTTTRTTTT")
+                np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
+
+
 class TestExceptionWhenOutsideVerticalBoundaries(unittest.TestCase):
 
     def setUp(self) -> None:
