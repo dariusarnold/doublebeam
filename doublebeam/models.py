@@ -29,6 +29,12 @@ class VelocityModel3D:
     as density"""
 
     def __init__(self, layers: Union[List[Tuple[float, float, float, float]], np.ndarray]):
+        """
+        :param layers: A layer is specified by the depth value of its top
+        coordinate, the depth of its bottom, the velocity intercept and the
+        velocity gradient. The values are given as a list of tuples, where every
+        tuple represents one layer. The order of values is as described above.
+        """
         # TODO implement 3D part, ie. borders for x/y values
         self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
         depths = self.layers["top_depth"]
