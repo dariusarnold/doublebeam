@@ -2,7 +2,7 @@ import enum
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from math import sin, cos, asin, copysign
-from typing import Callable
+from typing import Callable, List, Tuple
 
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -85,6 +85,9 @@ class _IVPResultStatus(enum.IntEnum):
 
 # Tuple containing state of ODE system for kinematic ray tracing
 _ODEStateKinematic3D = namedtuple("ODEStateKinematic3D", ["x", "y", "z", "px", "py", "pz", "T"])
+
+# Tuple containing state of ODE system for dynamic ray tracing
+_ODEStateDynamic3D = namedtuple("ODEStateDynamic3D", "x, y, z, px, py, pz, T, P00, P01, P10, P11, Q00, Q01, Q10, Q11 ")
 
 _IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
 
@@ -221,5 +224,73 @@ class KinematicRayTracer3D(RayTracerBase):
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
+
+
+class DynamicRayTracer3D(RayTracerBase):
+
+    def _trace(self, s: float, y: _ODEStateDynamic3D) -> _ODEStateDynamic3D:
+        x, y, z, px, py, pz, T, P00, P01, P10, P11, Q00, Q01, Q10, Q11 = y
+        v = self._velocity(self.layer, x, y, z)
+        dxds = px * v
+        dyds = py * v
+        dzds = pz * v
+        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, x_, y, z)),
+                           x, dx=0.0001)
+        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, x, y_, z)),
+                           y, dx=0.0001)
+        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
+                           z, dx=0.0001)
+        dTds = 1. / v
+        dQ00ds = v * P00
+        dQ01ds = v * P01
+        dQ10ds = v * P10
+        dQ11ds = v * P11
+        return _ODEStateDynamic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds,
+                                  0., 0., 0., 0.,
+                                  dQ00ds, dQ01ds, dQ10ds, dQ11ds)
+
+    def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
+                     max_step_s: float) -> None:
+        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
+        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
+        for func in (upper_layer_event, lower_layer_event):
+            func.terminal = True
+        V0 = self.model.eval_at(*ray.last_point)
+        # since solve_ivp cant deal with mixed matrix/scalar values, unpack the
+        # matrix to scalars
+        P00, P01, P10, P11 = [1j/V0, 0, 0, 1j/V0]
+        beam_width_m = 10
+        beam_frequency_Hz = 40
+        Q00, Q01, Q10, Q11 = [beam_frequency_Hz*beam_width_m**2 / V0, 0,
+                                0, beam_frequency_Hz*beam_width_m**2 / V0]
+        initial_state = _ODEStateDynamic3D(*ray.last_point, *initial_slowness,
+                                           ray.last_time, P00, P01, P10, P11, Q00, Q01, Q10, Q11)
+        result = solve_ivp(self._trace, (0, np.inf), initial_state,
+                           max_step=max_step_s, events=(upper_layer_event,
+                                                        lower_layer_event))
+        x, y, z, px, py, pz, t, *PQ = result.y
+        # reshape to get supposed matrix result
+        P = np.array(PQ[0:4]).reshape(-1, 2, 2)
+        Q = np.array(PQ[4:]).reshape(-1, 2, 2)
+        self.P.append(P)
+        self.Q.append(Q)
+        ray.path.append(np.vstack((x, y, z)).T)
+        ray.slowness.append(np.vstack((px, py, pz)).T)
+        ray.travel_time.append(t)
+
+    def trace_stack(self, ray: Ray3D, ray_code: str = None,
+                    max_step: float = 1) -> Tuple[np.ndarray, np.ndarray]:
+        # see chapter 4.1.3, point 4 in Cerveny2001
+        # If the ray is situated in a plane, e_2 can be chosen perpendicular to
+        # the plane at the initial point. e_2 will be constant along the whole
+        # ray. For the case of a velocity model made up of layers with simple
+        # horizontal borders, the ray wont have torsion and stay in the plane
+        # made by it starting slowness vector and a vertical plane
+        self.unit_vector_e2 = np.cross(ray.last_slowness, np.array((0, 0, 1)))
+        self.P: List[np.ndarray] = []
+        self.Q: List[np.ndarray] = []
+        super().trace_stack(ray, ray_code, max_step)
+        # TODO mutable list is not cleaned after exit
+        return self.P, self.Q
 
 
