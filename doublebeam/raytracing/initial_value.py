@@ -270,8 +270,12 @@ class DynamicRayTracer3D(RayTracerBase):
                                                         lower_layer_event))
         x, y, z, px, py, pz, t, *PQ = result.y
         # reshape to get supposed matrix result
-        P = np.array(PQ[0:4]).reshape(-1, 2, 2)
-        Q = np.array(PQ[4:]).reshape(-1, 2, 2)
+        # this make the last axis the number of points
+        P = np.array(PQ[0:4]).reshape(2, 2, -1)
+        # move number of points as first axis
+        P = np.moveaxis(P, -1, 0)
+        Q = np.array(PQ[4:]).reshape(2, 2, -1)
+        Q = np.moveaxis(Q, -1, 0)
         self.P.append(P)
         self.Q.append(Q)
         ray.path.append(np.vstack((x, y, z)).T)
