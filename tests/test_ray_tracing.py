@@ -82,7 +82,7 @@ class TestRayTracingScipy(unittest.TestCase):
         vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
         ray_tracer = KinematicRayTracer3D(vm)
         for slowness, target in zip(slownesses, expected_endpoints):
-            with self.subTest(slowness=slowness, target=target):
+            with self.subTest(target=target):
                 ray = Ray3D(source, np.array(slowness))
                 ray_tracer.trace_stack(ray, "TTTTRTTTT")
                 np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
