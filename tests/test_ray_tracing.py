@@ -6,7 +6,7 @@ from math import radians
 import numpy as np
 
 from doublebeam.raytracing.ray import Ray3D
-from doublebeam.raytracing.initial_value import VelocityModel3D, KinematicRayTracer3D
+from doublebeam.raytracing.initial_value import VelocityModel3D, KinematicRayTracer3D, DynamicRayTracer3D
 
 
 class TestRay3D(unittest.TestCase):
@@ -132,3 +132,22 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
         nrt.trace_stack(ray, "TTTTRTTTT")
         expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)
+
+
+class TestDynamicRayTracing_OneLayer(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        self.vm = VelocityModel3D([(0, 10, 2000, 1)])
+        self.drt = DynamicRayTracer3D(self.vm)
+
+    def test_credibility(self):
+        """
+        Basic checking of output format
+        """
+        source = np.array((0, 0, 0))
+        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+        P, Q = self.drt.trace_stack(ray)
+        self.assertEqual(len(P), 1)
+        self.assertEqual(len(Q), 1)
+        self.assertEqual(P[0].shape, Q[0].shape)

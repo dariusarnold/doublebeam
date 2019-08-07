@@ -5,7 +5,7 @@ from math import sin, cos, asin, copysign
 from typing import Callable, List, Tuple
 
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, cumtrapz
 from scipy.misc import derivative
 
 from doublebeam.models import VelocityModel3D, LinearVelocityLayer
@@ -87,7 +87,7 @@ class _IVPResultStatus(enum.IntEnum):
 _ODEStateKinematic3D = namedtuple("ODEStateKinematic3D", ["x", "y", "z", "px", "py", "pz", "T"])
 
 # Tuple containing state of ODE system for dynamic ray tracing
-_ODEStateDynamic3D = namedtuple("ODEStateDynamic3D", "x, y, z, px, py, pz, T, P00, P01, P10, P11, Q00, Q01, Q10, Q11 ")
+_ODEStateDynamic3D = namedtuple("ODEStateDynamic3D", "x, y, z, px, py, pz, T")
 
 _IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
 
@@ -229,7 +229,8 @@ class KinematicRayTracer3D(RayTracerBase):
 class DynamicRayTracer3D(RayTracerBase):
 
     def _trace(self, s: float, y: _ODEStateDynamic3D) -> _ODEStateDynamic3D:
-        x, y, z, px, py, pz, T, P00, P01, P10, P11, Q00, Q01, Q10, Q11 = y
+        # TODO same as kinematic ray tracing, maybe move to base class
+        x, y, z, px, py, pz, T = y
         v = self._velocity(self.layer, x, y, z)
         dxds = px * v
         dyds = py * v
@@ -241,41 +242,43 @@ class DynamicRayTracer3D(RayTracerBase):
         dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
                            z, dx=0.0001)
         dTds = 1. / v
-        dQ00ds = v * P00
-        dQ01ds = v * P01
-        dQ10ds = v * P10
-        dQ11ds = v * P11
-        return _ODEStateDynamic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds,
-                                  0., 0., 0., 0.,
-                                  dQ00ds, dQ01ds, dQ10ds, dQ11ds)
+        return _ODEStateDynamic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
-        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
-        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
+        # TODO factor out the common code between dynamic and kinematic ray tracing
+        #  for creating events by putting them into a function in the base class
+        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1.
+        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1.
         for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
         V0 = self.model.eval_at(*ray.last_point)
-        # since solve_ivp cant deal with mixed matrix/scalar values, unpack the
-        # matrix to scalars
-        P00, P01, P10, P11 = [1j/V0, 0, 0, 1j/V0]
+        # for a layer with constant gradient of velocity, P is constant
+        P = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
         beam_width_m = 10
         beam_frequency_Hz = 40
-        Q00, Q01, Q10, Q11 = [beam_frequency_Hz*beam_width_m**2 / V0, 0,
-                                0, beam_frequency_Hz*beam_width_m**2 / V0]
+        Q = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
+                      0, beam_frequency_Hz*beam_width_m**2 / V0],
+                     dtype=np.complex128).reshape(2, 2)
         initial_state = _ODEStateDynamic3D(*ray.last_point, *initial_slowness,
-                                           ray.last_time, P00, P01, P10, P11, Q00, Q01, Q10, Q11)
+                                           ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
                            max_step=max_step_s, events=(upper_layer_event,
                                                         lower_layer_event))
-        x, y, z, px, py, pz, t, *PQ = result.y
-        # reshape to get supposed matrix result
+        x, y, z, px, py, pz, t = result.y
+        # make P multi dimensional according to the number of steps by adding an
+        # empty last axis and repeating the array along it
+        num_steps = len(t)
+        P = np.repeat(P[..., None], num_steps, axis=-1)
         # this make the last axis the number of points
-        P = np.array(PQ[0:4]).reshape(2, 2, -1)
         # move number of points as first axis
         P = np.moveaxis(P, -1, 0)
-        Q = np.array(PQ[4:]).reshape(2, 2, -1)
-        Q = np.moveaxis(Q, -1, 0)
+        # use special case for layer with constant gradient of velocity
+        # see Cerveny2001, section 4.8.3
+        V = np.array([self.model.eval_at(*point) for point in zip(x, y, z)])
+        sigma = cumtrapz(V**2, t, initial=0)
+        Q = Q[np.newaxis, ...]
+        Q = Q + sigma[..., np.newaxis, np.newaxis] * P
         self.P.append(P)
         self.Q.append(Q)
         ray.path.append(np.vstack((x, y, z)).T)
@@ -284,13 +287,6 @@ class DynamicRayTracer3D(RayTracerBase):
 
     def trace_stack(self, ray: Ray3D, ray_code: str = None,
                     max_step: float = 1) -> Tuple[np.ndarray, np.ndarray]:
-        # see chapter 4.1.3, point 4 in Cerveny2001
-        # If the ray is situated in a plane, e_2 can be chosen perpendicular to
-        # the plane at the initial point. e_2 will be constant along the whole
-        # ray. For the case of a velocity model made up of layers with simple
-        # horizontal borders, the ray wont have torsion and stay in the plane
-        # made by it starting slowness vector and a vertical plane
-        self.unit_vector_e2 = np.cross(ray.last_slowness, np.array((0, 0, 1)))
         self.P: List[np.ndarray] = []
         self.Q: List[np.ndarray] = []
         super().trace_stack(ray, ray_code, max_step)
