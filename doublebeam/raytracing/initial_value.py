@@ -176,14 +176,13 @@ class KinematicRayTracer3D(RayTracerBase):
         dTds = 1. / v
         return _ODEStateKinematic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
-    # TODO rename slowness to singular
-    def _trace_layer(self, ray: Ray3D, initial_slownesses: np.ndarray,
+    def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
         """
         Trace a ray through a single layer of the model and set the parameters
         (path, slowness, traveltime) of the ray.
         :param ray: Ray to trace
-        :param initial_slownesses: Initial value of px, py, pz (slowness along
+        :param initial_slowness: Initial value of px, py, pz (slowness along
         the corresponding axis) of the ray in s/m.
         :param max_step_s: Max step the solver takes for the integration
         variable s.
@@ -194,7 +193,7 @@ class KinematicRayTracer3D(RayTracerBase):
             # Introducing art, a C-library designed for seismic applications
             # (Miqueles et al., 2013)
             c = self.layer["intercept"]
-            p0 = initial_slownesses
+            p0 = initial_slowness
             x0 = ray.last_point
             z0 = ray.last_point[Index.Z]
             z = self.layer["top_depth"] if p0[Index.Z] < 0 else self.layer["bot_depth"]
@@ -215,7 +214,7 @@ class KinematicRayTracer3D(RayTracerBase):
         lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
         for func in (upper_layer_event, lower_layer_event):
             func.terminal = True
-        initial_state = _ODEStateKinematic3D(*ray.last_point, *initial_slownesses,
+        initial_state = _ODEStateKinematic3D(*ray.last_point, *initial_slowness,
                                              ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
                            max_step=max_step_s, events=(upper_layer_event,
