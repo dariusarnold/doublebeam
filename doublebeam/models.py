@@ -134,6 +134,8 @@ class VelocityModel3D:
         :param z: coordinate in m
         :return: Velocity in m/s
         """
+        # TODO this raises LookupError if the ray has a negative depth due to
+        #  numerical inaccurycies. E.g. for z = -9.492406860545088e-15
         top_depth, bottom_depth = self.vertical_boundaries()
         if not top_depth <= z <= bottom_depth:
             raise LookupError(f"Can't evaluate model at negative depth {z}")
