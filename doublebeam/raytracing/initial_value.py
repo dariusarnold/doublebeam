@@ -195,7 +195,7 @@ class KinematicRayTracer3D(RayTracerBase):
             c = self.layer["intercept"]
             p0 = initial_slowness
             x0 = ray.last_point
-            z0 = ray.last_point[Index.Z]
+            z0 = x0[Index.Z]
             z = self.layer["top_depth"] if p0[Index.Z] < 0 else self.layer["bot_depth"]
             s_end = (z - z0) / (c * p0[Index.Z])
             num_steps = int(s_end / max_step_s)
