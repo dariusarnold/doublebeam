@@ -1,12 +1,11 @@
-import itertools
 import math
 import unittest
 from math import radians
 
 import numpy as np
 
-from doublebeam.raytracing.ray import Ray3D
 from doublebeam.raytracing.initial_value import VelocityModel3D, KinematicRayTracer3D, DynamicRayTracer3D
+from doublebeam.raytracing.ray import Ray3D
 
 
 class TestRay3D(unittest.TestCase):
@@ -38,9 +37,11 @@ class TestRay3D(unittest.TestCase):
 class TestRayTracingScipy(unittest.TestCase):
 
     def test_last_point(self):
-        """This just tests if the last point of the ray is the same as
+        """
+        This just tests if the last point of the ray is the same as
         previously calculated. Changes in the structure of the function should
-        not change the result."""
+        not change the result.
+        """
         last_point_expected = (9403.354242360037, 0, 0)
         layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
                                                                 (1000, 101000, 6000, 156000)])
@@ -183,7 +184,7 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)
 
 
-class TestDynamicRayTracing_OneLayer(unittest.TestCase):
+class TestDynamicRayTracingOneLayer(unittest.TestCase):
 
     def setUp(self) -> None:
 
