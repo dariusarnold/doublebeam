@@ -100,35 +100,35 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
 class TestInterfaceVelocities(unittest.TestCase):
 
     def setUp(self) -> None:
-        layers = np.array([(0, 10000, 5800, 0),
-                           (10000, 11000, -5000, 1),
-                           (11000, 12000, 18000, -1)],
+        layers = np.array([(0, 100, 1000, 0),
+                           (100, 200, 1500, 1),
+                           (200, 300, 3000, -1)],
                           dtype=LinearVelocityLayer)
         self.v = VelocityModel3D(layers)
 
     def test_interface_velocities_evaluation(self):
         """Test if method returns velocity from above and below the closest
         interface to the depth."""
-        for z in (9999, 10000, 10001):
-            with self.subTest(z=z):
-                v_top, v_bottom = self.v.interface_velocities(z)
-                self.assertEqual(v_top, 5800)
-                self.assertEqual(v_bottom, 5000)
+        for z in (99, 100, 101):
+            v_top, v_bottom = self.v.interface_velocities(z)
+            with self.subTest(depth=z):
+                self.assertEqual(v_top, 1000)
+                self.assertEqual(v_bottom, 1600)
 
     def test_interface_velocites_top(self):
-        """For depths above the top layers mid point, the interface between the
-        first and the second layer (from the top) should be returned, since the
-        interface between the first layer and the air is not defined."""
+        """For depths above the top layers mid point, the interface is between
+        the first layer from the top and the air. The velocity returned for air
+        should be 0."""
         v_top, v_bottom = self.v.interface_velocities(10)
-        self.assertEqual(v_top, 5800)
-        self.assertEqual(v_bottom, 5000)
+        self.assertEqual(v_top, 0)
+        self.assertEqual(v_bottom, 1000)
 
     def test_interface_velocities_bottom(self):
-        """For depths below the bottom layers mid point, the interface between
-        it and the layer above should be used."""
-        v_top, v_bottom = self.v.interface_velocities(11999)
-        self.assertEqual(v_top, 6000)
-        self.assertEqual(v_bottom, 7000)
+        """For depths below the bottom layers mid point, return 0 as velocity
+        below bottom layer"""
+        v_top, v_bottom = self.v.interface_velocities(299)
+        self.assertEqual(v_top, 2700)
+        self.assertEqual(v_bottom, 0)
 
 
 class TestInterfaceVelocitiesSingleLayerModel(unittest.TestCase):
