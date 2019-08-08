@@ -109,7 +109,9 @@ class VelocityModel3D:
     def layer_index(self, depth: float) -> int:
         """
         Find the layer within the model that contains the depth and return
-        its index in self.layers. While the top of a layer
+        its index in self.layers. While the top of a layer belongs to the layer,
+        the bottom depth belongs to the layer below, except for the bottom most
+        layer which includes its bottom depth.
         """
         # workaround to include the bottom of the bottom most layer in the model
         if depth == self.interface_depths[-1]:
