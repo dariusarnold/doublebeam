@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import numpy as np
 
@@ -7,13 +7,14 @@ from doublebeam.utils import Index, slowness_3D
 
 class Ray3D:
 
-    def __init__(self, start_coordinates: np.ndarray, slowness: np.ndarray):
+    def __init__(self, start_coordinates: Union[np.ndarray, Tuple[float, float, float]],
+                 slowness: np.ndarray):
         """
         :param start_coordinates: x, y, z coordinate triple of start point of
         ray in m
         :param slowness: Array of three floats: px, py, pz
         """
-        self.start = start_coordinates
+        self.start = np.asarray(start_coordinates)
         # These will be set after the ray is traced
         self.path: List[np.ndarray] = []
         slowness = np.reshape(slowness, (1, 3))
@@ -21,8 +22,8 @@ class Ray3D:
         self.travel_time: List[np.ndarray] = []
 
     @classmethod
-    def from_angle(cls, start_coordinates: np.ndarray, theta: float,
-                   phi: float, velocity: float) -> "Ray3D":
+    def from_angle(cls, start_coordinates: Union[np.ndarray, Tuple[float, float, float]],
+                   theta: float, phi: float, velocity: float) -> "Ray3D":
         """
         Create a ray from angles and calculate slowness values.
         :param start_coordinates: x, y, z coordinate triple of start point of
