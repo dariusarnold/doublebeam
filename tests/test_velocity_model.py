@@ -96,6 +96,16 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         z2 = np.nextafter(z1, 11000)
         self.assertEqual(self.v.interface_crossed(z1, z2), False)
 
+
+class TestInterfaceVelocities(unittest.TestCase):
+
+    def setUp(self) -> None:
+        layers = np.array([(0, 10000, 5800, 0),
+                           (10000, 11000, -5000, 1),
+                           (11000, 12000, 18000, -1)],
+                          dtype=LinearVelocityLayer)
+        self.v = VelocityModel3D(layers)
+
     def test_interface_velocities_evaluation(self):
         """Test if method returns velocity from above and below the closest
         interface to the depth."""
@@ -119,6 +129,29 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         v_top, v_bottom = self.v.interface_velocities(11999)
         self.assertEqual(v_top, 6000)
         self.assertEqual(v_bottom, 7000)
+
+
+class TestInterfaceVelocitiesSingleLayerModel(unittest.TestCase):
+    """
+    Test interface velocity for a model consisting of only one layer
+    """
+
+    def setUp(self) -> None:
+        self.vm = VelocityModel3D([(0, 1000, 2000, 2)])
+
+    def test_top(self):
+        depths = (0, 1, 100, 200, 499)
+        for depth in depths:
+            v = self.vm.interface_velocities(depth)
+            with self.subTest(depth=depth):
+                self.assertEqual(v, (0, 2000))
+
+    def test_bottom(self):
+        depths = (501, 600, 855, 999, 1000)
+        for depth in depths:
+            v = self.vm.interface_velocities(depth)
+            with self.subTest(depth=depth):
+                self.assertEqual(v, (4000, 0))
 
 
 class TestVelocityModel3DLayerIndex(unittest.TestCase):
