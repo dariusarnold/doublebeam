@@ -88,6 +88,55 @@ class TestRayTracingScipy(unittest.TestCase):
                 np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
 
 
+class TestRayTracingSingleLayer(unittest.TestCase):
+
+    def setUp(self) -> None:
+        layer_gradient = [(0, 100, 2000, 1)]
+        layer_constant = [(0, 100, 2000, 0)]
+        self.vm_gradient = VelocityModel3D(layer_gradient)
+        self.vm_constant = VelocityModel3D(layer_constant)
+        self.rt_gradient = KinematicRayTracer3D(self.vm_gradient)
+        self.rt_constant = KinematicRayTracer3D(self.vm_constant)
+
+    def test_constant_layer_reflect_bottom(self):
+        """
+        Shoot a ray downward and reflect from bottom in constant velocity layer
+        """
+        ray = Ray3D.from_angle((0, 0, 0), radians(45), radians(45),
+                               self.vm_constant.eval_at(0, 0, 0))
+        self.rt_constant.trace_stack(ray, "R")
+        np.testing.assert_allclose(ray.last_point, np.array((math.sqrt(2)*100, math.sqrt(2)*100, 0.)))
+
+    def test_gradient_layer_reflect_bottom(self):
+        """
+        Shoot a ray downward and reflect from bottom in velocity gradient layer
+        """
+        ray = Ray3D.from_angle((0, 0, 0), radians(45), radians(0),
+                               self.vm_gradient.eval_at(0, 0, 0))
+        self.rt_gradient.trace_stack(ray, "R")
+        np.testing.assert_allclose(ray.last_point, np.array((210.54093570105533, 0, 0)),
+                                   atol=1E-14)
+
+    def test_constant_layer_reflect_top(self):
+        """
+        Shoot a ray upward and reflect from top in constant velocity layer
+        """
+        ray = Ray3D.from_angle((0, 0, 100), radians(135), radians(0),
+                               self.vm_constant.eval_at(0, 0, 100))
+        self.rt_constant.trace_stack(ray, "R")
+        np.testing.assert_allclose(ray.last_point, np.array((200, 0, 100)), atol=1E-14)
+
+    def test_gradient_layer_reflect_top(self):
+        """
+        Shoot a ray upward and reflect from top in velocity gradient layer
+        """
+        ray = Ray3D.from_angle((0, 0, 100), radians(135), radians(0),
+                               self.vm_gradient.eval_at(0, 0, 100))
+        self.rt_gradient.trace_stack(ray, "R")
+        np.testing.assert_allclose(ray.last_point, np.array((190.89968, 0, 100.)),
+                                   atol=1E-14)
+
+
 class TestExceptionWhenOutsideVerticalBoundaries(unittest.TestCase):
 
     def setUp(self) -> None:
