@@ -159,21 +159,21 @@ class VelocityModel3D:
     def interface_velocities(self, z: float) -> Tuple[float, float]:
         """
         Return velocities above and below the closest interface.
+        0 is returned for the velocity outside of the model, e.g. when the
+        interface between the top layer and the one above is requested.
         :param z: Depth in m
         :return: Tuple of: (velocity above interface, velocity below interface)
         where both velocities are in m/s
         """
         index = self.layer_index(z)
-        if index == 0:
-            # special case of top layer
-            return (self.velocities_bot[index],
-                    self.velocities_top[index+1])
-        elif index == len(self.layers) - 1:
-            # special case of bottom layer
-            return (self.velocities_bot[index-1],
-                    self.velocities_top[index])
         midpoint_height = self.layers[index]["top_depth"] + self.layer_heights[index] / 2
-        if midpoint_height < z:
+        if index == 0 and z < midpoint_height:
+            # above half depth of top layer
+            return 0., self.velocities_top[index]
+        if index == len(self) - 1 and z > midpoint_height:
+            # below half depth of bottom layer
+            return self.velocities_bot[index], 0.
+        if z > midpoint_height:
             # eval interface with layer below
             return (self.velocities_bot[index],
                     self.velocities_top[index+1])
