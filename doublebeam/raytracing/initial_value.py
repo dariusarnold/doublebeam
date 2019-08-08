@@ -10,7 +10,7 @@ from scipy.misc import derivative
 
 from doublebeam.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.raytracing.ray import Ray3D
-from doublebeam.utils import Index
+from doublebeam.utils import Index, DIGITS_PRECISION
 
 
 # TODO Use __all__ to specify which symbols can be imported from this module
@@ -205,6 +205,12 @@ class KinematicRayTracer3D(RayTracerBase):
             ray.path.append(path)
             ray.slowness.append(p0.reshape(1, 3))
             ray.travel_time.append(time)
+            # workaround numerical issue where target is sometimes "overshot"
+            # TODO add this to dynamic ray tracing
+            # TODO deduplicate this for constant velocity and linear gradient
+            if (path.T[Index.Z][-1] > self.layer["bot_depth"]
+                    or path.T[Index.Z][-1] < self.layer["top_depth"]):
+                path.T[Index.Z][-1] = round(path.T[Index.Z][-1], ndigits=DIGITS_PRECISION)
             return
         # workaround: make events active only after a step is taken because
         # sometimes events trigger directly after tracing starts and the
@@ -220,6 +226,11 @@ class KinematicRayTracer3D(RayTracerBase):
                            max_step=max_step_s, events=(upper_layer_event,
                                                         lower_layer_event))
         x, y, z, px, py, pz, t = result.y
+        # workaround numerical issue where target is sometimes "overshot"
+        # TODO add this to dynamic ray tracing
+        # TODO deduplicate this for constant velocity and linear gradient
+        if z[-1] > self.layer["bot_depth"] or z[-1] < self.layer["top_depth"]:
+            z[-1] = round(z[-1], ndigits=DIGITS_PRECISION)
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)

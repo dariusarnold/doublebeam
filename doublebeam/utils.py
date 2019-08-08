@@ -8,6 +8,11 @@ Common and general functions and classes
 """
 
 
+# constant specifying to how many digits a number should be rounded to remedy
+# numeric issues where a float falls slightly outside of its valid range.
+DIGITS_PRECISION = 13
+
+
 class Index(enum.IntEnum):
     """
     Class that improves indexing readability by replacing "magic" 0,1,2 by names
