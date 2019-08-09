@@ -184,6 +184,66 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)
 
 
+class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
+    """
+    This tests if the dynamic ray tracer achieves the same result for the ray
+    path as the kinematic one.
+    # TODO find way to parametrize the test instead of duplicating
+    """
+
+    def test_last_point(self):
+        """
+        This just tests if the last point of the ray is the same as
+        previously calculated. Changes in the structure of the function should
+        not change the result.
+        """
+        last_point_expected = (9403.354242360037, 0, 0)
+        layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
+                                                                (1000, 101000, 6000, 156000)])
+        vm = VelocityModel3D(layers)
+        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0, 0, 0))
+        tracer = DynamicRayTracer3D(vm)
+        tracer.trace_stack(ray, "TT", 10)
+        self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
+                               msg=f"x position wrong, got {ray.last_point[0]},"
+                               f" expected {last_point_expected[0]}")
+        self.assertAlmostEqual(last_point_expected[1], ray.last_point[1], places=4,
+                               msg=f"z position wrong, got {ray.last_point[1]},"
+                               f" expected {last_point_expected[1]}")
+        self.assertAlmostEqual(last_point_expected[2], ray.last_point[2], places=4,
+                               msg=f"z position wrong, got {ray.last_point[2]},"
+                               f" expected {last_point_expected[2]}")
+        self.assertEqual(len(ray.path), 3, msg="Wrong nuber of ray paths")
+        self.assertAlmostEqual(ray.last_time, 1.864023576678209, places=4,
+                               msg="Wrong travel time for ray")
+
+
+    def test_ray_path(self):
+        """
+        Test if the same endpoint is reached as for the rays given in fig. 9
+        from the below publication.
+        Slowness values are computed by the two point ray tracing algorithm
+        introduced in "A fast and robust two point ray tracing method in layered
+        media with constant or linearly varying layer velocity" (Fang, Chen).
+        """
+        slownesses = [
+            [0.000166674323178,  0., 0.0005299638150872],
+            [0.0002545148149717, 0., 0.0004938260668176],
+            [0.0003320005004714, 0., 0.0004454409534331],
+            [0.000333271179152, 0., 0.0004444910532905]
+        ]
+        source = np.array((0, 0, 0))
+        expected_endpoints = (469, 868, 2159, 2411)
+        expected_endpoints = [np.array((x, 0, 0)) for x in expected_endpoints]
+        vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        ray_tracer = DynamicRayTracer3D(vm)
+        for slowness, target in zip(slownesses, expected_endpoints):
+            with self.subTest(target=target):
+                ray = Ray3D(source, np.array(slowness))
+                ray_tracer.trace_stack(ray, "TTTTRTTTT")
+                np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
+
+
 class TestDynamicRayTracingOneLayer(unittest.TestCase):
 
     def setUp(self) -> None:

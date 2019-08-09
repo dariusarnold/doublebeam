@@ -206,7 +206,6 @@ class KinematicRayTracer3D(RayTracerBase):
             ray.slowness.append(p0.reshape(1, 3))
             ray.travel_time.append(time)
             # workaround numerical issue where target is sometimes "overshot"
-            # TODO add this to dynamic ray tracing
             # TODO deduplicate this for constant velocity and linear gradient
             if (path.T[Index.Z][-1] > self.layer["bot_depth"]
                     or path.T[Index.Z][-1] < self.layer["top_depth"]):
@@ -227,7 +226,6 @@ class KinematicRayTracer3D(RayTracerBase):
                                                         lower_layer_event))
         x, y, z, px, py, pz, t = result.y
         # workaround numerical issue where target is sometimes "overshot"
-        # TODO add this to dynamic ray tracing
         # TODO deduplicate this for constant velocity and linear gradient
         if z[-1] > self.layer["bot_depth"] or z[-1] < self.layer["top_depth"]:
             z[-1] = round(z[-1], ndigits=DIGITS_PRECISION)
@@ -236,32 +234,11 @@ class KinematicRayTracer3D(RayTracerBase):
         ray.travel_time.append(t)
 
 
-class DynamicRayTracer3D(RayTracerBase):
-
-    def _trace(self, s: float, y: _ODEStateDynamic3D) -> _ODEStateDynamic3D:
-        # TODO same as kinematic ray tracing, maybe move to base class
-        x, y, z, px, py, pz, T = y
-        v = self._velocity(self.layer, x, y, z)
-        dxds = px * v
-        dyds = py * v
-        dzds = pz * v
-        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, x_, y, z)),
-                           x, dx=0.0001)
-        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, x, y_, z)),
-                           y, dx=0.0001)
-        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
-                           z, dx=0.0001)
-        dTds = 1. / v
-        return _ODEStateDynamic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
+class DynamicRayTracer3D(KinematicRayTracer3D):
 
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
-        # TODO factor out the common code between dynamic and kinematic ray tracing
-        #  for creating events by putting them into a function in the base class
-        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1.
-        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1.
-        for func in (upper_layer_event, lower_layer_event):
-            func.terminal = True
+        super()._trace_layer(ray, initial_slowness, max_step_s)
         V0 = self.model.eval_at(*ray.last_point)
         # for a layer with constant gradient of velocity, P is constant
         P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
@@ -270,30 +247,21 @@ class DynamicRayTracer3D(RayTracerBase):
         Q0 = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
                       0, beam_frequency_Hz*beam_width_m**2 / V0],
                       dtype=np.complex128).reshape(2, 2)
-        initial_state = _ODEStateDynamic3D(*ray.last_point, *initial_slowness,
-                                           ray.last_time)
-        result = solve_ivp(self._trace, (0, np.inf), initial_state,
-                           max_step=max_step_s, events=(upper_layer_event,
-                                                        lower_layer_event))
-        x, y, z, px, py, pz, t = result.y
         # make P multi dimensional according to the number of steps by adding an
         # empty last axis and repeating the array along it
-        num_steps = len(t)
+        num_steps = len(ray.travel_time[-1])
         P0 = np.repeat(P0[..., None], num_steps, axis=-1)
         # this make the last axis the number of points
         # move number of points as first axis
         P0 = np.moveaxis(P0, -1, 0)
         # use special case for layer with constant gradient of velocity
         # see Cerveny2001, section 4.8.3
-        V = np.array([self.model.eval_at(*point) for point in zip(x, y, z)])
-        sigma = cumtrapz(V**2, t, initial=0)
+        V = np.array([self.model.eval_at(*point) for point in ray.path[-1]])
+        sigma = cumtrapz(V**2, ray.travel_time[-1], initial=0)
         Q0 = Q0[np.newaxis, ...]
         Q0 = Q0 + sigma[..., np.newaxis, np.newaxis] * P0
         self.P.append(P0)
         self.Q.append(Q0)
-        ray.path.append(np.vstack((x, y, z)).T)
-        ray.slowness.append(np.vstack((px, py, pz)).T)
-        ray.travel_time.append(t)
 
     def trace_stack(self, ray: Ray3D, ray_code: str = None,
                     max_step: float = 1) -> Tuple[np.ndarray, np.ndarray]:
