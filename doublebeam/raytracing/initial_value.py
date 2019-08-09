@@ -264,12 +264,12 @@ class DynamicRayTracer3D(RayTracerBase):
             func.terminal = True
         V0 = self.model.eval_at(*ray.last_point)
         # for a layer with constant gradient of velocity, P is constant
-        P = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
+        P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
         beam_width_m = 10
         beam_frequency_Hz = 40
-        Q = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
+        Q0 = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
                       0, beam_frequency_Hz*beam_width_m**2 / V0],
-                     dtype=np.complex128).reshape(2, 2)
+                      dtype=np.complex128).reshape(2, 2)
         initial_state = _ODEStateDynamic3D(*ray.last_point, *initial_slowness,
                                            ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
@@ -279,18 +279,18 @@ class DynamicRayTracer3D(RayTracerBase):
         # make P multi dimensional according to the number of steps by adding an
         # empty last axis and repeating the array along it
         num_steps = len(t)
-        P = np.repeat(P[..., None], num_steps, axis=-1)
+        P0 = np.repeat(P0[..., None], num_steps, axis=-1)
         # this make the last axis the number of points
         # move number of points as first axis
-        P = np.moveaxis(P, -1, 0)
+        P0 = np.moveaxis(P0, -1, 0)
         # use special case for layer with constant gradient of velocity
         # see Cerveny2001, section 4.8.3
         V = np.array([self.model.eval_at(*point) for point in zip(x, y, z)])
         sigma = cumtrapz(V**2, t, initial=0)
-        Q = Q[np.newaxis, ...]
-        Q = Q + sigma[..., np.newaxis, np.newaxis] * P
-        self.P.append(P)
-        self.Q.append(Q)
+        Q0 = Q0[np.newaxis, ...]
+        Q0 = Q0 + sigma[..., np.newaxis, np.newaxis] * P0
+        self.P.append(P0)
+        self.Q.append(Q0)
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
