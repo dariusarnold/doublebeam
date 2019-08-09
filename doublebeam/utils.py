@@ -10,7 +10,8 @@ Common and general functions and classes
 
 # constant specifying to how many digits a number should be rounded to remedy
 # numeric issues where a float falls slightly outside of its valid range.
-DIGITS_PRECISION = 13
+# Lower this because 13 still had issues
+DIGITS_PRECISION = 12
 
 
 class Index(enum.IntEnum):
