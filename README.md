@@ -44,3 +44,9 @@ VelocityModel1D file formatting
    depth_top, depth_bottom, p velocity, s velocity, density
  - for a linear layer the order of values in a line is 
    depth top, depth bottom, p velocity top, p velocity bottom, s velocity top, s velocity bottom, density top, density bottom
+   
+## Literature/References
+
+In the code, literature is often referred by a shorthand first author + year notation.
+In case the title and full author list is not mentioned in the source code:  
+Cerveny2001: Seismic ray theory - Cerveny 2001
