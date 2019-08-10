@@ -238,8 +238,9 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
 
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
+        start_point_of_ray = ray.last_point
         super()._trace_layer(ray, initial_slowness, max_step_s)
-        V0 = self.model.eval_at(*ray.last_point)
+        V0 = self.model.eval_at(*start_point_of_ray)
         # for a layer with constant gradient of velocity, P is constant
         P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
         beam_width_m = 10
@@ -270,5 +271,3 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         super().trace_stack(ray, ray_code, max_step)
         # TODO mutable list is not cleaned after exit
         return self.P, self.Q
-
-
