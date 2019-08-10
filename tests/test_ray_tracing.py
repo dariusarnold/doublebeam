@@ -1,6 +1,7 @@
 import math
 import unittest
 from math import radians
+from pathlib import Path
 
 import numpy as np
 
@@ -261,3 +262,19 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
         self.assertEqual(len(P), 1)
         self.assertEqual(len(Q), 1)
         self.assertEqual(P[0].shape, Q[0].shape)
+
+class TestForRegressionDynamicRayTracing(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.P_desired = np.load(Path("data/P_analytic.npy"))
+        self.Q_desired = np.load(Path("data/Q_analytic.npy"))
+        vm = VelocityModel3D([(0, 10, 2000, 1)])
+        self.drt = DynamicRayTracer3D(vm)
+        self.ray = Ray3D.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0, 0, 0))
+        self.P_actual, self.Q_actual = self.drt.trace_stack(self.ray)
+
+    def test_P_by_comparison(self):
+        np.testing.assert_allclose(self.P_actual, self.P_desired)
+
+    def test_Q_by_comparison(self):
+        np.testing.assert_allclose(self.Q_actual, self.Q_desired)
