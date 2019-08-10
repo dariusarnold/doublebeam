@@ -236,22 +236,18 @@ class KinematicRayTracer3D(RayTracerBase):
 
 class DynamicRayTracer3D(KinematicRayTracer3D):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.P: List[np.ndarray] = []
+        self.Q: List[np.ndarray] = []
+        
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
-        start_point_of_ray = ray.last_point
         super()._trace_layer(ray, initial_slowness, max_step_s)
-        V0 = self.model.eval_at(*start_point_of_ray)
-        # for a layer with constant gradient of velocity, P is constant
-        P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
-        beam_width_m = 10
-        beam_frequency_Hz = 40
-        Q0 = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
-                      0, beam_frequency_Hz*beam_width_m**2 / V0],
-                      dtype=np.complex128).reshape(2, 2)
         # make P multi dimensional according to the number of steps by adding an
         # empty last axis and repeating the array along it
         num_steps = len(ray.travel_time[-1])
-        P0 = np.repeat(P0[..., None], num_steps, axis=-1)
+        P0 = np.repeat(self.P0[..., None], num_steps, axis=-1)
         # this make the last axis the number of points
         # move number of points as first axis
         P0 = np.moveaxis(P0, -1, 0)
@@ -259,15 +255,23 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         # see Cerveny2001, section 4.8.3
         V = np.array([self.model.eval_at(*point) for point in ray.path[-1]])
         sigma = cumtrapz(V**2, ray.travel_time[-1], initial=0)
-        Q0 = Q0[np.newaxis, ...]
+        Q0 = self.Q0[np.newaxis, ...]
         Q0 = Q0 + sigma[..., np.newaxis, np.newaxis] * P0
         self.P.append(P0)
         self.Q.append(Q0)
 
     def trace_stack(self, ray: Ray3D, ray_code: str = None,
-                    max_step: float = 1) -> Tuple[np.ndarray, np.ndarray]:
-        self.P: List[np.ndarray] = []
-        self.Q: List[np.ndarray] = []
+                    max_step: float = 1) -> Tuple[List[np.ndarray],
+                                                  List[np.ndarray]]:
+        V0 = self.model.eval_at(*ray.last_point)
+        beam_width_m = 10
+        beam_frequency_Hz = 40
+        # for a layer with constant gradient of velocity, P is constant
+        self.P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
+        self.Q0 = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
+                      0, beam_frequency_Hz*beam_width_m**2 / V0],
+                      dtype=np.complex128).reshape(2, 2)
         super().trace_stack(ray, ray_code, max_step)
-        # TODO mutable list is not cleaned after exit
-        return self.P, self.Q
+        P, Q = self.P, self.Q
+        self.P, self.Q = [], []
+        return P, Q
