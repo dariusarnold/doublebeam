@@ -97,6 +97,7 @@ class RayTracerBase(ABC):
     def __init__(self, velocity_model: VelocityModel3D):
         self.model = velocity_model
         self.layer = None
+        self.index: int = None
 
     # TODO change signature of _velocity to accept np array instead of
     #  three floats
@@ -131,23 +132,27 @@ class RayTracerBase(ABC):
         if not top <= ray.start[Index.Z] <= bottom:
             raise ValueError(f"Ray {ray} starts outside of model")
 
-        index = self.model.layer_index(ray.start[Index.Z])
-        self.layer = self.model[index]
+        self.index = self.model.layer_index(ray.start[Index.Z])
+        self.layer = self.model[self.index]
         initial_slownesses = ray.last_slowness
         self._trace_layer(ray, initial_slownesses, max_step)
         if not ray_code:
             return
         for wave_type in ray_code:
-            v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
-            if wave_type == "T":
-                # reflected waves stay in the layer and dont change the index
-                index += -1 if ray.direction == "up" else 1
-            self.layer = self.model[index]
-            if ray.direction == "down":
-                new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
-            else:
-                new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
+            new_p = self.continue_ray_across_interface(ray, wave_type)
             self._trace_layer(ray, new_p, max_step)
+    
+    def continue_ray_across_interface(self, ray: Ray3D, wave_type: str):
+        v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
+        if wave_type == "T":
+            # reflected waves stay in the layer and dont change the index
+            self.index += -1 if ray.direction == "up" else 1
+        self.layer = self.model[self.index]
+        if ray.direction == "down":
+            new_p = snells_law(ray.last_slowness, v_top, v_bottom, wave_type)
+        else:
+            new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
+        return new_p
 
 
 class KinematicRayTracer3D(RayTracerBase):
