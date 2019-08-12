@@ -240,7 +240,7 @@ class KinematicRayTracer3D(RayTracerBase):
         ray.travel_time.append(t)
 
 
-class InterfacePropagatorMatrix:
+class InterfacePropagator:
     """
     This class implements the required methods to transform matrices P and Q,
     which are calculated during dynamic ray tracing, across an interface.
@@ -362,9 +362,9 @@ class InterfacePropagatorMatrix:
         """
         return np.zeros((2, 2))
 
-    def do(self, P: np.ndarray, Q: np.ndarray, i_S: float, i_R: float,
-                 wave_type: str, V_before: float, V_after: float,
-                 epsilon:float, old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
+    def __call__(self, P: np.ndarray, Q: np.ndarray, i_S: float, i_R: float,
+           wave_type: str, V_before: float, V_after: float,
+           epsilon: float, old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
         """
         Transform P, Q with interface propagator matrix.
         :param P:
@@ -395,8 +395,8 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         super().__init__(*args, **kwargs)
         self.P: List[np.ndarray] = []
         self.Q: List[np.ndarray] = []
-        self.ic = InterfacePropagatorMatrix()
-        
+        self.interface_continuation = InterfacePropagator()
+
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
         super()._trace_layer(ray, initial_slowness, max_step_s)
@@ -434,9 +434,9 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
             V_before, V_after = V_bottom, V_top
         if wave_type == "R":
             V_after = V_before
-        self.P0, self.Q0 = self.ic.do(self.last_P, self.last_Q, i_S, i_R, wave_type,
-                                    V_before, V_after, epsilon, old_gradient,
-                                    new_gradient)
+        self.P0, self.Q0 = self.interface_continuation(self.last_P, self.last_Q, i_S, i_R, wave_type,
+                                                       V_before, V_after, epsilon, old_gradient,
+                                                       new_gradient)
 
         return new_slowness
 
