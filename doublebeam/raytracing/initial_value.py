@@ -45,7 +45,7 @@ def critical_angle(v1: float, v2: float) -> float:
     :return: critical angle in rad
     """
     if v1 < v2:
-        return asin(v1/v2)
+        return asin(v1 / v2)
     return np.pi
 
 
@@ -142,7 +142,7 @@ class RayTracerBase(ABC):
         for wave_type in ray_code:
             new_p = self.continue_ray_across_interface(ray, wave_type)
             self._trace_layer(ray, new_p, max_step)
-    
+
     def continue_ray_across_interface(self, ray: Ray3D, wave_type: str):
         v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
         if wave_type == "T":
@@ -294,7 +294,6 @@ class InterfacePropagatorMatrix:
         :param i_S: Acute angle of incidence, 0 <= i_S <= pi/2
         :param i_R: Acute angle of reflection/transmission
         """
-
         minus_plus = -1 if wave_type == "T" else 1
         return epsilon * (1. / V * cos(i_S) + minus_plus * 1. / V_tilde * cos(i_R))
 
@@ -435,7 +434,6 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
             V_before, V_after = V_bottom, V_top
         if wave_type == "R":
             V_after = V_before
-
         self.P0, self.Q0 = self.ic.do(self.last_P, self.last_Q, i_S, i_R, wave_type,
                                     V_before, V_after, epsilon, old_gradient,
                                     new_gradient)
@@ -450,10 +448,10 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         beam_width_m = 10
         beam_frequency_Hz = 40
         # for a layer with constant gradient of velocity, P is constant
-        self.P0 = np.array([1j/V0, 0, 0, 1j/V0]).reshape(2, 2)
-        self.Q0 = np.array([beam_frequency_Hz*beam_width_m**2 / V0, 0,
-                      0, beam_frequency_Hz*beam_width_m**2 / V0],
-                      dtype=np.complex128).reshape(2, 2)
+        self.P0 = np.array([1j / V0, 0, 0, 1j / V0]).reshape(2, 2)
+        self.Q0 = np.array([beam_frequency_Hz * beam_width_m**2 / V0, 0,
+                            0, beam_frequency_Hz * beam_width_m**2 / V0],
+                           dtype=np.complex128).reshape(2, 2)
         super().trace_stack(ray, ray_code, max_step)
         P, Q = self.P, self.Q
         self.P, self.Q = [], []
