@@ -53,6 +53,20 @@ class TestAngle(unittest.TestCase):
         self.assertAlmostEqual(angle(a, b), radians(45))
         self.assertAlmostEqual(angle(a, b, acute=False), radians(135))
 
+    def test_order_of_input_vectors_acute(self):
+        a = np.array((2, 1, 0))
+        b = np.array((1, 0, 0))
+        angle1_acute = angle(a, b)
+        angle2_acute = angle(b, a)
+        self.assertEqual(angle1_acute, angle2_acute)
+
+    def test_order_of_input_vectors_obtuse(self):
+        a = np.array((2, 1, 0))
+        b = np.array((1, 0, 0))
+        angle1_obtuse = angle(a, b, acute=False)
+        angle2_obtuse = angle(b, a, acute=False)
+        self.assertEqual(angle1_obtuse, angle2_obtuse)
+
 
 class TestClockwiseAngle(unittest.TestCase):
 
