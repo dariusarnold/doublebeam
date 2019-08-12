@@ -367,8 +367,17 @@ class InterfacePropagator:
            epsilon: float, old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
         """
         Transform P, Q with interface propagator matrix.
-        :param P:
-        :param Q:
+        :param P: Previous value of matrix P before the interface.
+        :param Q: Previous value of matrix Q before the interface.
+        :param new_gradient: Velocity gradient after the interface
+        :param old_gradient: Velocity gradient before the interface.
+        :param V_before: Velocity before the interface, in m/s
+        :param V_after: Velocity behind the interface, in m/s.
+        :param epsilon: parameter introduced by eq. 2.4.71, Cerveny2001
+        :param wave_type: String specifying wave type. "R" for reflected wave,
+        "T" for transmitted wave. TODO create WaveType class instead
+        :param i_S: Acute angle of incidence in radians, 0 <= i_S <= pi/2
+        :param i_R: Acute angle of reflection/transmission in radians
         :return: Tuple of transformed matrices P, Q
         """
         # TODO fix order of operations where G_tilde has to be called before G
