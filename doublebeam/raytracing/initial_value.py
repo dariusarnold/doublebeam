@@ -2,7 +2,7 @@ import enum
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from math import sin, cos, asin, copysign
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional
 
 import numpy as np
 from scipy.integrate import solve_ivp, cumtrapz
@@ -10,10 +10,11 @@ from scipy.misc import derivative
 
 from doublebeam.models import VelocityModel3D, LinearVelocityLayer
 from doublebeam.raytracing.ray import Ray3D
-from doublebeam.utils import Index, DIGITS_PRECISION
+from doublebeam.utils import Index, DIGITS_PRECISION, angle
 
 
-# TODO Use __all__ to specify which symbols can be imported from this module
+# TODO Use __all__ to specify which symbols can be imported from this module.
+#  Even better would be to create the ability for a top level import from doublebeam package
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -239,12 +240,163 @@ class KinematicRayTracer3D(RayTracerBase):
         ray.travel_time.append(t)
 
 
+class InterfacePropagatorMatrix:
+    """
+    This class implements the required methods to transform matrices P and Q,
+    which are calculated during dynamic ray tracing, across an interface.
+    The main equation used is eq. 4.4.75 from Cerveny2001.
+    Values corresponding to a point behind the interface are marked with a tilde.
+
+    Table of symbols
+    ----------------------
+    x_i: general Cartesian coordinate system.
+    z_i: coordinates of the local Cartesian coordinate system at Q.
+    i_n^(z): basis vectors of the local Cartesian coordinate system, with its
+        origin at point Q, defined by eq. 4.4.21 Cerveny2001.
+        Its unit vector i_3^(z) coincides with the unit vector normal to the
+        interface at Q. The other two vectors are specified arbitrarily in the
+        tangent plane so that the system is mutually orthogonal and right-handed.
+        For a velocity model containing only horizontal interfaces, the i_3^(z)
+        axis coincides with the z-axis of the general Cartesian coordinate
+        system.
+    q_i: Coordinates of the ray centered coordinate system.
+    e_i: Basis vectors of the ray centered coordinate system of the incident
+        wave at Q.
+        e_3 is the unit tangent to the ray. e_1 and e_2 are perpendicular to the
+        ray. General definition can be found in chapter 4.1.1, Cerveny2001.
+    kappa: angle between e_2 and i_2^(z) (p. 293 Cerveny2001)
+        0 <= kappa <= 2*pi
+        cos(kappa) = e_2 * i_2^(z)
+        sin(kappa) = e_1 * i_2^(z)
+    For the special case of V = V(z) and horizontal interfaces:
+        Rays will be planar, e_2 will be constant and can be chosen to be
+        orthogonal to the ray plane. Using 4.4.21 for i_2 means that it also
+        will be orthogonal to the ray plane. This means kappa is 0.
+    # TODO find a good compromise between different style of member functions and attributes
+    """
+
+    def __init__(self):
+        # cache these in class to save array creation and only change one value
+        self.G_parallel = np.identity(2)
+        self.G_parallel_tilde = np.identity(2)
+        self.G_orthogonal: np.ndarray
+        self.G_orthogonal_tilde: np.ndarray
+
+
+    def u(self, wave_type: str, V: float, V_tilde: float, i_S: float,
+          i_R: float, epsilon: float) -> float:
+        """
+        Eq. 4.4.51 from Cerveny2001
+        :param wave_type: String specifying wave type, valid values are "T" for
+        transmitted and "R" for reflected
+        :param V: Velocity before the interface, in m/s
+        :param V_tilde: Velocity after the interface, in m/s
+        :param i_S: Acute angle of incidence, 0 <= i_S <= pi/2
+        :param i_R: Acute angle of reflection/transmission
+        """
+
+        minus_plus = -1 if wave_type == "T" else 1
+        return epsilon * (1. / V * cos(i_S) + minus_plus * 1. / V_tilde * cos(i_R))
+
+    def G(self, epsilon: float, i_S: float, i_R: float, wave_type: str) -> np.ndarray:
+        """
+        Left eq. from 4.4.48, Cerveny2001
+        :return:
+        """
+        self.G_parallel[0][0] = epsilon * cos(i_S)
+        # upper sign probably corresponds to transmitted wave
+        plus_minus = 1 if wave_type == "T" else -1
+        self.G_orthogonal[0][0] = plus_minus * epsilon * cos(i_R)
+        return self.G_parallel @ self.G_orthogonal
+
+    def G_tilde(self, kappa: float) -> np.ndarray:
+        """
+        Right equation from 4.4.48, Cerveny2001
+        :return:
+        """
+        cos_kappa, sin_kappa = cos(kappa), sin(kappa)
+        self.G_orthogonal = np.array(((cos_kappa, -sin_kappa),
+                                      (sin_kappa, cos_kappa)))
+        self.G_orthogonal_tilde = self.G_orthogonal
+        return self.G_parallel_tilde @ self.G_orthogonal_tilde
+
+    def E(self, V, i_S, i_R, epsilon, old_gradient) -> np.ndarray:
+        """
+        Eq. 4.4.53 from Cerveny2001
+        :return:
+        """
+        # TODO modify this to work with a more general velocity model
+        # dV_dzi means the derivative of the velocity after the z_i coordinate
+        # for V=V(z)
+        dV_dz1 = 0
+        dV_dz2 = 0
+        dV_dz3 = old_gradient
+        E11 = -sin(i_S) * V**-2 * ((1 + cos(i_S)**2) * dV_dz1 - epsilon * cos(i_S) * sin(i_S) * dV_dz3)
+        E12 = -sin(i_S) * V**-2 * dV_dz2
+        E22 = 0
+        return np.array(((E11, E12),
+                         (E12, E22)))
+
+    def E_tilde(self, wave_type: str, V_tilde, i_R, i_S, epsilon, new_gradient):
+        """
+        Eq. 4.4.54 from Cerveny2001
+        :return:
+        """
+        dV_tilde_dz1 = 0
+        dV_tilde_dz2 = 0
+        dV_tilde_dz3 = new_gradient
+        minus_plus = -1 if wave_type == "R" else 1
+        E11 = -sin(i_R) * V_tilde**-2 * ((1 + cos(i_R)**2) * dV_tilde_dz1 + minus_plus * epsilon * cos(i_R) * sin(i_R) * dV_tilde_dz3)
+        E12 = -sin(i_R) * V_tilde**-2 * dV_tilde_dz2
+        E22 = 0
+        return np.array(((E11, E12),
+                         (E12, E22)))
+
+    def D(self) -> np.ndarray:
+        """
+        Eq. 4.4.15 from Cerveny2001
+        For the currently implemented velocity layer with horizontal interfaces
+        only this function is zero everywhere since it contains the second
+        derivative of the interface function Sigma in the numerator.
+        Sigma = Sigma(z3) for horizontal interfaces.
+        :return:
+        """
+        return np.zeros((2, 2))
+
+    def do(self, P: np.ndarray, Q: np.ndarray, i_S: float, i_R: float,
+                 wave_type: str, V_before: float, V_after: float,
+                 epsilon:float, old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Transform P, Q with interface propagator matrix.
+        :param P:
+        :param Q:
+        :return: Tuple of transformed matrices P, Q
+        """
+        # TODO fix order of operations where G_tilde has to be called before G
+        # TODO this is only valid for the simple velocity model V = V(z) and horizontal interfaces
+        kappa = 0.
+        G_tilde = self.G_tilde(kappa)
+        G = self.G(epsilon, i_S, i_R, wave_type)
+        G_inverted = np.linalg.inv(G)
+        G_tilde_inverted = np.linalg.inv(G_tilde)
+        E = self.E(V_before, i_S, i_R, epsilon, old_gradient)
+        E_tilde = self.E_tilde(wave_type, V_after, i_R, i_S, epsilon, new_gradient)
+        u = self.u(wave_type, V_before, V_after, i_S, i_R, epsilon)
+        D = self.D()
+        # eq. 4.4.67
+        P_tilde = G_tilde_inverted @ (G @ P + (E - E_tilde - u * D) @ G_inverted.T @ Q)
+        # eq. 4.4.64
+        Q_tilde = G_tilde.T @ G_inverted.T @ Q
+        return P_tilde, Q_tilde
+
+
 class DynamicRayTracer3D(KinematicRayTracer3D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.P: List[np.ndarray] = []
         self.Q: List[np.ndarray] = []
+        self.ic = InterfacePropagatorMatrix()
         
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
@@ -265,6 +417,32 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         self.P.append(P0)
         self.Q.append(Q0)
 
+    def continue_ray_across_interface(self, ray: Ray3D, wave_type: str):
+        # TODO modify unit vector of interface for a more general velocity model
+        interface_unit_vector = np.array((0, 0, 1.))
+        V_top, V_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
+        i_S = angle(ray.last_slowness, interface_unit_vector)
+        direction = ray.direction
+        old_gradient = self.model.gradients[self.index]
+        new_slowness = super().continue_ray_across_interface(ray, wave_type)
+        new_gradient = self.model.gradients[self.index]
+        i_R = angle(new_slowness, interface_unit_vector) if wave_type == "T" else i_S
+        # epsilon is introduced by eq. 2.4.71, Cerveny2001
+        epsilon = copysign(1., ray.last_slowness @ interface_unit_vector)
+        if direction == "down":
+            V_before, V_after = V_top, V_bottom
+        else:
+            V_before, V_after = V_bottom, V_top
+        if wave_type == "R":
+            V_after = V_before
+
+        self.P0, self.Q0 = self.ic.do(self.last_P, self.last_Q, i_S, i_R, wave_type,
+                                    V_before, V_after, epsilon, old_gradient,
+                                    new_gradient)
+
+        return new_slowness
+
+    # TODO change function signature to take GaussBeam class instead which is an extended Ray
     def trace_stack(self, ray: Ray3D, ray_code: str = None,
                     max_step: float = 1) -> Tuple[List[np.ndarray],
                                                   List[np.ndarray]]:
@@ -280,3 +458,17 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         P, Q = self.P, self.Q
         self.P, self.Q = [], []
         return P, Q
+
+    @property
+    def last_P(self) -> Optional[np.ndarray]:
+        try:
+            return self.P[-1][-1]
+        except IndexError:
+            return None
+
+    @property
+    def last_Q(self) -> Optional[np.ndarray]:
+        try:
+            return self.Q[-1][-1]
+        except IndexError:
+            return None

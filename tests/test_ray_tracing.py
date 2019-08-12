@@ -263,6 +263,7 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
         self.assertEqual(len(Q), 1)
         self.assertEqual(P[0].shape, Q[0].shape)
 
+
 class TestForRegressionDynamicRayTracing(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -278,3 +279,23 @@ class TestForRegressionDynamicRayTracing(unittest.TestCase):
 
     def test_Q_by_comparison(self):
         np.testing.assert_allclose(self.Q_actual, self.Q_desired)
+
+
+class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.vm = VelocityModel3D([(0, 10, 2000, 1),
+                                   (10, 20, 2000, -1)])
+        self.drt = DynamicRayTracer3D(self.vm)
+
+    def test_credibility(self):
+        """
+        Basic checking of output format
+        """
+        source = np.array((0, 0, 0.))
+        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+        P, Q = self.drt.trace_stack(ray, "TRT")
+        self.assertEqual((len(P), len(Q)), (4, 4))
+        for p, q in zip(P, Q):
+            with self.subTest():
+                self.assertEqual(p.shape, q.shape)
