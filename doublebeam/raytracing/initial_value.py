@@ -279,9 +279,8 @@ class InterfacePropagator:
         # cache these in class to save array creation and only change one value
         self.G_parallel = np.identity(2)
         self.G_parallel_tilde = np.identity(2)
-        self.G_orthogonal: np.ndarray
-        self.G_orthogonal_tilde: np.ndarray
-
+        self.G_orthogonal: np.ndarray = None
+        self.G_orthogonal_tilde: np.ndarray = None
 
     def u(self, wave_type: str, V: float, V_tilde: float, i_S: float,
           i_R: float, epsilon: float) -> float:
@@ -313,10 +312,6 @@ class InterfacePropagator:
         Right equation from 4.4.48, Cerveny2001
         :return:
         """
-        cos_kappa, sin_kappa = cos(kappa), sin(kappa)
-        self.G_orthogonal = np.array(((cos_kappa, -sin_kappa),
-                                      (sin_kappa, cos_kappa)))
-        self.G_orthogonal_tilde = self.G_orthogonal
         return self.G_parallel_tilde @ self.G_orthogonal_tilde
 
     def E(self, V, i_S, i_R, epsilon, old_gradient) -> np.ndarray:
@@ -380,11 +375,14 @@ class InterfacePropagator:
         :param i_R: Acute angle of reflection/transmission in radians
         :return: Tuple of transformed matrices P, Q
         """
-        # TODO fix order of operations where G_tilde has to be called before G
-        # TODO this is only valid for the simple velocity model V = V(z) and horizontal interfaces
+        # TODO this kappa is only valid for the simple velocity model V = V(z) and horizontal interfaces
         kappa = 0.
-        G_tilde = self.G_tilde(kappa)
+        cos_kappa, sin_kappa = cos(kappa), sin(kappa)
+        self.G_orthogonal = np.array(((cos_kappa, -sin_kappa),
+                                      (sin_kappa, cos_kappa)))
+        self.G_orthogonal_tilde = self.G_orthogonal
         G = self.G(epsilon, i_S, i_R, wave_type)
+        G_tilde = self.G_tilde(kappa)
         G_inverted = np.linalg.inv(G)
         G_tilde_inverted = np.linalg.inv(G_tilde)
         E = self.E(V_before, i_S, i_R, epsilon, old_gradient)
@@ -402,6 +400,8 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.P0: np.ndarray = None
+        self.Q0: np.ndarray = None
         self.P: List[np.ndarray] = []
         self.Q: List[np.ndarray] = []
         self.interface_continuation = InterfacePropagator()
