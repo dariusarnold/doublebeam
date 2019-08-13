@@ -284,6 +284,7 @@ class InterfacePropagator:
         :param V_tilde: Velocity after the interface, in m/s
         :param i_S: Acute angle of incidence, 0 <= i_S <= pi/2
         :param i_R: Acute angle of reflection/transmission
+        :param epsilon: sign(p * n)
         """
         minus_plus = -1 if wave_type == "T" else 1
         return epsilon * (1. / V * cos(i_S) + minus_plus * 1. / V_tilde * cos(i_R))
@@ -291,7 +292,6 @@ class InterfacePropagator:
     def G(self, epsilon: float, i_S: float, i_R: float, wave_type: str) -> np.ndarray:
         """
         Left eq. from 4.4.48, Cerveny2001
-        :return:
         """
         self.G_parallel[0][0] = epsilon * cos(i_S)
         # upper sign probably corresponds to transmitted wave
@@ -299,17 +299,15 @@ class InterfacePropagator:
         self.G_orthogonal[0][0] = plus_minus * epsilon * cos(i_R)
         return self.G_parallel @ self.G_orthogonal
 
-    def G_tilde(self, kappa: float) -> np.ndarray:
+    def G_tilde(self) -> np.ndarray:
         """
         Right equation from 4.4.48, Cerveny2001
-        :return:
         """
         return self.G_parallel_tilde @ self.G_orthogonal_tilde
 
-    def E(self, V, i_S, i_R, epsilon, old_gradient) -> np.ndarray:
+    def E(self, V, i_S, epsilon, old_gradient) -> np.ndarray:
         """
         Eq. 4.4.53 from Cerveny2001
-        :return:
         """
         # TODO modify this to work with a more general velocity model
         # dV_dzi means the derivative of the velocity after the z_i coordinate
@@ -317,22 +315,25 @@ class InterfacePropagator:
         dV_dz1 = 0
         dV_dz2 = 0
         dV_dz3 = old_gradient
-        E11 = -sin(i_S) * V**-2 * ((1 + cos(i_S)**2) * dV_dz1 - epsilon * cos(i_S) * sin(i_S) * dV_dz3)
+        E11 = -sin(i_S) * V**-2 * ((1 + cos(i_S)**2) * dV_dz1
+                                   - epsilon * cos(i_S) * sin(i_S) * dV_dz3)
         E12 = -sin(i_S) * V**-2 * dV_dz2
         E22 = 0
         return np.array(((E11, E12),
                          (E12, E22)))
 
-    def E_tilde(self, wave_type: str, V_tilde, i_R, i_S, epsilon, new_gradient):
+    def E_tilde(self, wave_type: str, V_tilde: float, i_R: float, epsilon: float,
+                new_gradient: float) -> np.ndarray:
         """
         Eq. 4.4.54 from Cerveny2001
-        :return:
         """
         dV_tilde_dz1 = 0
         dV_tilde_dz2 = 0
         dV_tilde_dz3 = new_gradient
         minus_plus = -1 if wave_type == "R" else 1
-        E11 = -sin(i_R) * V_tilde**-2 * ((1 + cos(i_R)**2) * dV_tilde_dz1 + minus_plus * epsilon * cos(i_R) * sin(i_R) * dV_tilde_dz3)
+        E11 = -sin(i_R) * V_tilde**-2
+        E11 *= ((1 + cos(i_R)**2) * dV_tilde_dz1
+                + minus_plus * epsilon * cos(i_R) * sin(i_R) * dV_tilde_dz3)
         E12 = -sin(i_R) * V_tilde**-2 * dV_tilde_dz2
         E22 = 0
         return np.array(((E11, E12),
@@ -350,8 +351,8 @@ class InterfacePropagator:
         return np.zeros((2, 2))
 
     def __call__(self, P: np.ndarray, Q: np.ndarray, i_S: float, i_R: float,
-           wave_type: str, V_before: float, V_after: float,
-           epsilon: float, old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
+                 wave_type: str, V_before: float, V_after: float, epsilon: float,
+                 old_gradient: float, new_gradient: float) -> Tuple[np.ndarray, np.ndarray]:
         """
         Transform P, Q with interface propagator matrix.
         :param P: Previous value of matrix P before the interface.
@@ -374,11 +375,11 @@ class InterfacePropagator:
                                       (sin_kappa, cos_kappa)))
         self.G_orthogonal_tilde = self.G_orthogonal
         G = self.G(epsilon, i_S, i_R, wave_type)
-        G_tilde = self.G_tilde(kappa)
+        G_tilde = self.G_tilde()
         G_inverted = np.linalg.inv(G)
         G_tilde_inverted = np.linalg.inv(G_tilde)
-        E = self.E(V_before, i_S, i_R, epsilon, old_gradient)
-        E_tilde = self.E_tilde(wave_type, V_after, i_R, i_S, epsilon, new_gradient)
+        E = self.E(V_before, i_S, epsilon, old_gradient)
+        E_tilde = self.E_tilde(wave_type, V_after, i_R, epsilon, new_gradient)
         u = self.u(wave_type, V_before, V_after, i_S, i_R, epsilon)
         D = self.D()
         # eq. 4.4.67
