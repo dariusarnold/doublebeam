@@ -93,7 +93,7 @@ _ODEStateDynamic3D = namedtuple("ODEStateDynamic3D", "x, y, z, px, py, pz, T")
 _IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
 
 
-class RayTracerBase(ABC):
+class KinematicRayTracer3D:
 
     def __init__(self, velocity_model: VelocityModel3D):
         self.model = velocity_model
@@ -112,37 +112,6 @@ class RayTracerBase(ABC):
         """
         return layer["intercept"] + layer["gradient"] * z
 
-    @abstractmethod
-    def _trace_layer(self, ray: Ray3D, slowness: np.ndarray,
-                     max_step_s: float) -> None:
-        pass
-
-    def trace_stack(self, ray: Ray3D, ray_code: str = None,
-                    max_step: float = 1) -> None:
-        """
-        Trace ray through a stack of layers. The ray type at an interface is
-        chosen by the ray code.
-        :param ray: Ray to trace through the model
-        :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
-        at an interface in the model. "T" stands for the transmitted ray, "R"
-        for the reflected ray. If not given or empty, the ray will only be
-        traced through the layer in which its starting point resides.
-        :param max_step: Max step s for the integration.
-        """
-        top, bottom = self.model.vertical_boundaries()
-        if not top <= ray.start[Index.Z] <= bottom:
-            raise ValueError(f"Ray {ray} starts outside of model")
-
-        self.index = self.model.layer_index(ray.start[Index.Z])
-        self.layer = self.model[self.index]
-        initial_slownesses = ray.last_slowness
-        self._trace_layer(ray, initial_slownesses, max_step)
-        if not ray_code:
-            return
-        for wave_type in ray_code:
-            new_p = self.continue_ray_across_interface(ray, wave_type)
-            self._trace_layer(ray, new_p, max_step)
-
     def continue_ray_across_interface(self, ray: Ray3D, wave_type: str):
         v_top, v_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
         if wave_type == "T":
@@ -154,9 +123,6 @@ class RayTracerBase(ABC):
         else:
             new_p = snells_law(ray.last_slowness, v_bottom, v_top, wave_type)
         return new_p
-
-
-class KinematicRayTracer3D(RayTracerBase):
 
     def _trace(self, s: float, y: _ODEStateKinematic3D) -> _ODEStateKinematic3D:
         """
@@ -238,6 +204,32 @@ class KinematicRayTracer3D(RayTracerBase):
         ray.path.append(np.vstack((x, y, z)).T)
         ray.slowness.append(np.vstack((px, py, pz)).T)
         ray.travel_time.append(t)
+
+    def trace_stack(self, ray: Ray3D, ray_code: str = None,
+                    max_step: float = 1) -> None:
+        """
+        Trace ray through a stack of layers. The ray type at an interface is
+        chosen by the ray code.
+        :param ray: Ray to trace through the model
+        :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
+        at an interface in the model. "T" stands for the transmitted ray, "R"
+        for the reflected ray. If not given or empty, the ray will only be
+        traced through the layer in which its starting point resides.
+        :param max_step: Max step s for the integration.
+        """
+        top, bottom = self.model.vertical_boundaries()
+        if not top <= ray.start[Index.Z] <= bottom:
+            raise ValueError(f"Ray {ray} starts outside of model")
+
+        self.index = self.model.layer_index(ray.start[Index.Z])
+        self.layer = self.model[self.index]
+        initial_slownesses = ray.last_slowness
+        self._trace_layer(ray, initial_slownesses, max_step)
+        if not ray_code:
+            return
+        for wave_type in ray_code:
+            new_p = self.continue_ray_across_interface(ray, wave_type)
+            self._trace_layer(ray, new_p, max_step)
 
 
 class InterfacePropagator:
@@ -396,10 +388,10 @@ class InterfacePropagator:
         return P_tilde, Q_tilde
 
 
-class DynamicRayTracer3D(KinematicRayTracer3D):
+class DynamicRayTracer3D:
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.krt = KinematicRayTracer3D(*args, **kwargs)
         self.P0: np.ndarray = None
         self.Q0: np.ndarray = None
         self.P: List[np.ndarray] = []
@@ -408,7 +400,7 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
 
     def _trace_layer(self, ray: Ray3D, initial_slowness: np.ndarray,
                      max_step_s: float) -> None:
-        super()._trace_layer(ray, initial_slowness, max_step_s)
+        self.krt._trace_layer(ray, initial_slowness, max_step_s)
         # make P multi dimensional according to the number of steps by adding an
         # empty last axis and repeating the array along it
         num_steps = len(ray.travel_time[-1])
@@ -418,7 +410,7 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         P0 = np.moveaxis(P0, -1, 0)
         # use special case for layer with constant gradient of velocity
         # see Cerveny2001, section 4.8.3
-        V = np.array([self.model.eval_at(*point) for point in ray.path[-1]])
+        V = np.array([self.krt.model.eval_at(*point) for point in ray.path[-1]])
         sigma = cumtrapz(V**2, ray.travel_time[-1], initial=0)
         Q0 = self.Q0[np.newaxis, ...]
         Q0 = Q0 + sigma[..., np.newaxis, np.newaxis] * P0
@@ -428,12 +420,12 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
     def continue_ray_across_interface(self, ray: Ray3D, wave_type: str):
         # TODO modify unit vector of interface for a more general velocity model
         interface_unit_vector = np.array((0, 0, 1.))
-        V_top, V_bottom = self.model.interface_velocities(ray.last_point[Index.Z])
+        V_top, V_bottom = self.krt.model.interface_velocities(ray.last_point[Index.Z])
         i_S = angle(ray.last_slowness, interface_unit_vector)
         direction = ray.direction
-        old_gradient = self.model.gradients[self.index]
-        new_slowness = super().continue_ray_across_interface(ray, wave_type)
-        new_gradient = self.model.gradients[self.index]
+        old_gradient = self.krt.model.gradients[self.krt.index]
+        new_slowness = self.krt.continue_ray_across_interface(ray, wave_type)
+        new_gradient = self.krt.model.gradients[self.krt.index]
         i_R = angle(new_slowness, interface_unit_vector) if wave_type == "T" else i_S
         # epsilon is introduced by eq. 2.4.71, Cerveny2001
         epsilon = copysign(1., ray.last_slowness @ interface_unit_vector)
@@ -446,22 +438,45 @@ class DynamicRayTracer3D(KinematicRayTracer3D):
         self.P0, self.Q0 = self.interface_continuation(self.last_P, self.last_Q, i_S, i_R, wave_type,
                                                        V_before, V_after, epsilon, old_gradient,
                                                        new_gradient)
-
         return new_slowness
 
-    # TODO change function signature to take GaussBeam class instead which is an extended Ray
-    def trace_stack(self, ray: Ray3D, ray_code: str = None,
-                    max_step: float = 1) -> Tuple[List[np.ndarray],
-                                                  List[np.ndarray]]:
-        V0 = self.model.eval_at(*ray.last_point)
-        beam_width_m = 10
-        beam_frequency_Hz = 40
+    def trace_stack(self, ray: Ray3D, beam_width_m: float,
+                    beam_frequency_Hz: float, ray_code: str = None,
+                    max_step: float = 1) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        # TODO change function signature to take Gauss beam instead of Ray
+        """
+        Trace ray through a stack of layers. The ray type at an interface is
+        chosen by the ray code.
+        :param ray: Ray to trace through the model
+        :param beam_width_m: Width of gauss beam in m
+        :param beam_frequency_Hz: Frequency of gauss beam
+        :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
+        at an interface in the model. "T" stands for the transmitted ray, "R"
+        for the reflected ray. If not given or empty, the ray will only be
+        traced through the layer in which its starting point resides.
+        :param max_step: Max step s for the integration.
+        """
+        V0 = self.krt.model.eval_at(*ray.last_point)
         # for a layer with constant gradient of velocity, P is constant
         self.P0 = np.array([1j / V0, 0, 0, 1j / V0]).reshape(2, 2)
         self.Q0 = np.array([beam_frequency_Hz * beam_width_m**2 / V0, 0,
                             0, beam_frequency_Hz * beam_width_m**2 / V0],
                            dtype=np.complex128).reshape(2, 2)
-        super().trace_stack(ray, ray_code, max_step)
+        top, bottom = self.krt.model.vertical_boundaries()
+        if not top <= ray.start[Index.Z] <= bottom:
+            raise ValueError(f"Ray {ray} starts outside of model")
+
+        self.krt.index = self.krt.model.layer_index(ray.start[Index.Z])
+        self.krt.layer = self.krt.model[self.krt.index]
+        initial_slownesses = ray.last_slowness
+        self._trace_layer(ray, initial_slownesses, max_step)
+        if not ray_code:
+            P, Q = self.P, self.Q
+            self.P, self.Q = [], []
+            return P, Q
+        for wave_type in ray_code:
+            new_p = self.continue_ray_across_interface(ray, wave_type)
+            self._trace_layer(ray, new_p, max_step)
         P, Q = self.P, self.Q
         self.P, self.Q = [], []
         return P, Q

@@ -204,7 +204,7 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         vm = VelocityModel3D(layers)
         ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0, 0, 0))
         tracer = DynamicRayTracer3D(vm)
-        tracer.trace_stack(ray, "TT", 10)
+        tracer.trace_stack(ray, 10, 40, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
                                msg=f"x position wrong, got {ray.last_point[0]},"
                                f" expected {last_point_expected[0]}")
@@ -241,7 +241,7 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         for slowness, target in zip(slownesses, expected_endpoints):
             with self.subTest(target=target):
                 ray = Ray3D(source, np.array(slowness))
-                ray_tracer.trace_stack(ray, "TTTTRTTTT")
+                ray_tracer.trace_stack(ray, 10, 40, "TTTTRTTTT")
                 np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
 
 
@@ -258,7 +258,7 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
         """
         source = np.array((0, 0, 0))
         ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
-        P, Q = self.drt.trace_stack(ray)
+        P, Q = self.drt.trace_stack(ray, 10, 40)
         self.assertEqual(len(P), 1)
         self.assertEqual(len(Q), 1)
         self.assertEqual(P[0].shape, Q[0].shape)
@@ -272,7 +272,7 @@ class TestForRegressionDynamicRayTracing(unittest.TestCase):
         vm = VelocityModel3D([(0, 10, 2000, 1)])
         self.drt = DynamicRayTracer3D(vm)
         self.ray = Ray3D.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0, 0, 0))
-        self.P_actual, self.Q_actual = self.drt.trace_stack(self.ray)
+        self.P_actual, self.Q_actual = self.drt.trace_stack(self.ray, 10, 40)
 
     def test_P_by_comparison(self):
         np.testing.assert_allclose(self.P_actual, self.P_desired)
@@ -294,8 +294,8 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         """
         source = np.array((0, 0, 0.))
         ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
-        P, Q = self.drt.trace_stack(ray, "TRT")
-        self.assertEqual((len(P), len(Q)), (4, 4))
+        P, Q = self.drt.trace_stack(ray, 10, 40, "TRT")
+        self.assertEqual((4, 4), (len(P), len(Q)))
         for p, q in zip(P, Q):
             with self.subTest():
                 self.assertEqual(p.shape, q.shape)
