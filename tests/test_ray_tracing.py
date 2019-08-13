@@ -299,3 +299,24 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         for p, q in zip(P, Q):
             with self.subTest():
                 self.assertEqual(p.shape, q.shape)
+
+    def test_regression(self):
+        """
+        Load previous result from file and compare with current one.
+        """
+        def generate_data():
+            source = np.array((0, 0, 0.))
+            ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+            return self.drt.trace_stack(ray, 10, 40, "TRT")
+
+        P_expected = list(np.load(Path("data/P_multilayer.npy")))
+        Q_expected = list(np.load(Path("data/Q_multilayer.npy")))
+        P_actual, Q_actual = generate_data()
+
+        # do segment wise comparison of the matrices
+        with self.subTest("Comparing matrix P"):
+            for segment_actual, segment_expected in zip(P_actual, P_expected):
+                np.testing.assert_allclose(segment_actual, segment_expected)
+        with self.subTest("Comparing matrix Q"):
+            for segment_actual, segment_expected in zip(Q_actual, Q_expected):
+                np.testing.assert_allclose(segment_actual, segment_expected)
