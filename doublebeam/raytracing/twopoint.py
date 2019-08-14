@@ -37,8 +37,8 @@ class TwoPointRayTracing:
         :return: Highest velocity (m/s) between source and receiver for a direct
         ray
         """
-        receiver_index = self._model.layer_index(receiver_position[Index.Z])
-        source_index = self._model.layer_index(source_position[Index.Z])
+        receiver_index = self._model.layer_index(receiver_position)
+        source_index = self._model.layer_index(source_position)
         if source_index == receiver_index:
             return max(self._model.eval_at(*source_position),
                        self._model.eval_at(*receiver_position))

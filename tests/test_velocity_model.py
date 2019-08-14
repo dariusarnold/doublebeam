@@ -1,10 +1,12 @@
 import unittest
+from typing import Sequence
 
 import numpy as np
 from numpy.testing import assert_array_equal
 from utils_testing import TempFile
 
 from doublebeam.models import LinearVelocityLayer, VelocityModel3D
+from doublebeam.utils import Index
 
 
 class TestVelocityModel3DLinearLayers(unittest.TestCase):
@@ -254,3 +256,35 @@ class TestVelocityModelVerticalExtent(unittest.TestCase):
             expected = self.expected_results[name]
             with self.subTest(model=model, expected=expected):
                 self.assertEqual(model.vertical_boundaries(), expected, msg=self._msg(name))
+
+
+def generate_points_from_depth(depths: Sequence[float]) -> np.ndarray:
+    """
+    Generate 3D points with x and y coordinate zero at the given depth values
+    """
+    points = np.zeros((len(depths), 3))
+    points.T[Index.Z] = np.asarray(depths)
+    return points
+
+
+class TestLayerIndexEvaluationMultiplePoints(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.vm = VelocityModel3D([(0, 100, 0, 0),
+                                   (100, 200, 0, 0),
+                                   (200, 300, 0, 0)])
+
+    def msg(self, index_expected, index_got):
+        return f"Expected index {index_expected}, got {index_got}. "
+
+
+    def test_evaluating_array_of_points(self):
+        depths = (0, 25, 75, 100, 125, 175, 200, 250, 300)
+        points = generate_points_from_depth(depths)
+
+        indices_expected = (0, 0, 0, 1, 1, 1, 2, 2, 2)
+        indices_got = self.vm.layer_index(points)
+
+        for depth, index_expected, index_got in zip(depths, indices_expected, indices_got):
+            with self.subTest(depth=depth):
+                self.assertEqual(index_expected, index_got, msg=self.msg(index_expected, index_got))
