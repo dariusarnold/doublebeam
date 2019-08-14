@@ -1,8 +1,7 @@
 import enum
-from abc import ABC, abstractmethod
 from collections import namedtuple
 from math import sin, cos, asin, copysign
-from typing import Callable, List, Tuple, Optional
+from typing import Tuple, Optional
 
 import numpy as np
 from scipy.integrate import solve_ivp, cumtrapz
@@ -14,7 +13,8 @@ from doublebeam.utils import Index, DIGITS_PRECISION, angle
 
 
 # TODO Use __all__ to specify which symbols can be imported from this module.
-#  Even better would be to create the ability for a top level import from doublebeam package
+#  Even better would be to create the ability for a top level import from
+#  doublebeam package
 
 
 def cartesian_to_ray_s(x, z, xm, _theta):
@@ -133,13 +133,10 @@ class KinematicRayTracer3D:
     def __init__(self, velocity_model: VelocityModel3D):
         self.model = velocity_model
         self.layer = None
-        self.index: int = None
+        self.index: Optional[int] = None
 
-    # TODO change signature of _velocity to accept np array instead of
-    #  three floats
     @staticmethod
-    def _velocity(layer: LinearVelocityLayer, x: float, y: float,
-                  z: float) -> float:
+    def _velocity(layer: LinearVelocityLayer, z: float) -> float:
         """
         Evaluate velocity at a given depth in a layer with linearly varying
         velocity
@@ -168,17 +165,18 @@ class KinematicRayTracer3D:
         :return: New state
         """
         x, y, z, px, py, pz, T = y
-        v = self._velocity(self.layer, x, y, z)
+        v = self._velocity(self.layer, z)
         dxds = px * v
         dyds = py * v
         dzds = pz * v
         # TODO creating a lambda every iteration is probably not conducive to
-        #  performance.
-        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, x_, y, z)),
+        #  performance. Also, this can be further simplified for the horizontal
+        #  layer velocity model I am currently using.
+        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, z)),
                            x, dx=0.0001)
-        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, x, y_, z)),
+        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, z)),
                            y, dx=0.0001)
-        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, x, y, z_)),
+        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, z_)),
                            z, dx=0.0001)
         dTds = 1. / v
         return _ODEStateKinematic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
@@ -300,8 +298,8 @@ class InterfacePropagator:
         # cache these in class to save array creation and only change one value
         self.G_parallel = np.identity(2)
         self.G_parallel_tilde = np.identity(2)
-        self.G_orthogonal: np.ndarray = None
-        self.G_orthogonal_tilde: np.ndarray = None
+        self.G_orthogonal: Optional[np.ndarray] = None
+        self.G_orthogonal_tilde: Optional[np.ndarray] = None
 
     def u(self, wave_type: str, V: float, V_tilde: float, i_S: float,
           i_R: float, epsilon: float) -> float:
@@ -422,8 +420,8 @@ class DynamicRayTracer3D:
 
     def __init__(self, *args, **kwargs):
         self.krt = KinematicRayTracer3D(*args, **kwargs)
-        self.P0: np.ndarray = None
-        self.Q0: np.ndarray = None
+        self.P0: Optional[np.ndarray] = None
+        self.Q0: Optional[np.ndarray] = None
         self.interface_continuation = InterfacePropagator()
 
     def _trace_layer(self, gauss_beam: GaussBeam, initial_slowness: np.ndarray,
@@ -475,11 +473,9 @@ class DynamicRayTracer3D:
         #  of requiring one. Probably best done with a factory function that
         #  creates the beam and traces it.
         """
-        Trace ray through a stack of layers. The ray type at an interface is
+        Trace beam through a stack of layers. The ray type at an interface is
         chosen by the ray code.
         :param gauss_beam: Gaussian beam to trace through the model
-        :param beam_width_m: Width of gauss beam in m
-        :param beam_frequency_Hz: Frequency of gauss beam
         :param ray_code: Specifies which ray (Transmitted/Reflected) to follow
         at an interface in the model. "T" stands for the transmitted ray, "R"
         for the reflected ray. If not given or empty, the ray will only be
@@ -493,8 +489,8 @@ class DynamicRayTracer3D:
         V0 = self.krt.model.eval_at(gauss_beam.last_point)
         # for a layer with constant gradient of velocity, P is constant
         self.P0 = np.array([1j / V0, 0, 0, 1j / V0]).reshape(2, 2)
-        self.Q0 = np.array([gauss_beam.beam_frequency * gauss_beam.beam_width**2 / V0, 0,
-                            0, gauss_beam.beam_frequency * gauss_beam.beam_width**2 / V0],
+        self.Q0 = np.array([gauss_beam.frequency * gauss_beam.width**2 / V0, 0,
+                            0, gauss_beam.frequency * gauss_beam.width**2 / V0],
                            dtype=np.complex128).reshape(2, 2)
         self.krt.index = self.krt.model.layer_index(gauss_beam.start[Index.Z])
         self.krt.layer = self.krt.model[self.krt.index]
