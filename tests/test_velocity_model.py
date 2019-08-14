@@ -277,7 +277,6 @@ class TestLayerIndexEvaluationMultiplePoints(unittest.TestCase):
     def msg(self, index_expected, index_got):
         return f"Expected index {index_expected}, got {index_got}. "
 
-
     def test_evaluating_array_of_points(self):
         depths = (0, 25, 75, 100, 125, 175, 200, 250, 300)
         points = generate_points_from_depth(depths)
@@ -288,3 +287,42 @@ class TestLayerIndexEvaluationMultiplePoints(unittest.TestCase):
         for depth, index_expected, index_got in zip(depths, indices_expected, indices_got):
             with self.subTest(depth=depth):
                 self.assertEqual(index_expected, index_got, msg=self.msg(index_expected, index_got))
+
+class TestVelocityEvaluationMultiplePoints(unittest.TestCase):
+
+    def setUp(self) -> None:
+        layers = [(0, 100, 2000, 2000),
+                  (100, 200, 2000, 2100),
+                  (200, 300, 2100, 2000)]
+        layers = VelocityModel3D.convert_to_gradient_intercept(layers)
+        self.vm = VelocityModel3D(layers)
+
+    def test_evaluating_array_of_points(self):
+        depths = np.array((0, 25, 75, 100, 150, 200, 250, 300))
+        points = generate_points_from_depth(depths)
+
+        velocities_expected = 2000, 2000, 2000, 2000, 2050, 2100, 2050, 2000
+        velocities = self.vm.eval_at(points)
+
+        for depth, velocity_expected, velocity_got in zip(depths, velocities_expected, velocities):
+            with self.subTest(depth=depth):
+                self.assertEqual(velocity_expected, velocity_got)
+
+    def test_raises_error_above_model(self):
+        """
+        Raise Exception when one value is outside of model range (above model top)
+        """
+        depths = (12, 99, -1E-14)
+        points = generate_points_from_depth(depths)
+        with self.assertRaises(LookupError):
+            self.vm.eval_at(points)
+
+    def test_raises_error_below_model(self):
+        """
+        Raise Exception when one value is below model bottom.
+        """
+        depths = (10, np.nextafter(300, 301), 99)
+        points = generate_points_from_depth(depths)
+        with self.assertRaises(LookupError):
+            self.vm.eval_at(points)
+
