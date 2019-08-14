@@ -1,14 +1,19 @@
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import numpy as np
 
 from doublebeam.utils import Index, slowness_3D
 
 
+# TODO move this to utils or types
+# Array of x, y, z
+Coordinates = Union[np.ndarray, Tuple[float, float, float]]
+
+
+# TODO remove 3D since there is no 2D class
 class Ray3D:
 
-    def __init__(self, start_coordinates: Union[np.ndarray, Tuple[float, float, float]],
-                 slowness: np.ndarray):
+    def __init__(self, start_coordinates: Coordinates, slowness: np.ndarray):
         """
         :param start_coordinates: x, y, z coordinate triple of start point of
         ray in m
@@ -22,8 +27,8 @@ class Ray3D:
         self.travel_time: List[np.ndarray] = []
 
     @classmethod
-    def from_angle(cls, start_coordinates: Union[np.ndarray, Tuple[float, float, float]],
-                   theta: float, phi: float, velocity: float) -> "Ray3D":
+    def from_angle(cls, start_coordinates: Coordinates, theta: float,
+                   phi: float, velocity: float, *args, **kwargs) -> "Ray3D":
         """
         Create a ray from angles and calculate slowness values.
         :param start_coordinates: x, y, z coordinate triple of start point of
@@ -40,7 +45,6 @@ class Ray3D:
         p = slowness_3D(theta, phi, velocity)
         return cls(start_coordinates, p)
 
-
     @property
     def last_point(self) -> np.ndarray:
         """
@@ -53,7 +57,7 @@ class Ray3D:
             return self.start
 
     @property
-    def last_slowness(self) -> Union[np.ndarray, None]:
+    def last_slowness(self) -> Optional[np.ndarray]:
         """
         Return last slowness value. If the ray hasn't been traced yet, return
         None.
@@ -88,3 +92,36 @@ class Ray3D:
             return "up"
         elif pz > 0:
             return "down"
+
+
+class GaussBeam(Ray3D):
+
+    def __init__(self, start_coordinates: Coordinates, slowness: np.ndarray,
+                 beam_width: float, beam_frequency: float):
+        super().__init__(start_coordinates, slowness)
+        self.P: List[np.ndarray] = []
+        self.Q: List[np.ndarray] = []
+        self.v: List[np.ndarray] = []
+        self.beam_width = beam_width
+        self.beam_frequency = beam_frequency
+
+    @classmethod
+    def from_angle(cls, start_coordinates: Coordinates, theta: float,
+                   phi: float, velocity: float, beam_width: float = 0,
+                   beam_frequency: float = 0) -> "GaussBeam":
+        slowness = slowness_3D(theta, phi, velocity)
+        return cls(start_coordinates, slowness, beam_width, beam_frequency)
+
+    @property
+    def last_P(self) -> Optional[np.ndarray]:
+        try:
+            return self.P[-1][-1]
+        except IndexError:
+            return None
+
+    @property
+    def last_Q(self) -> Optional[np.ndarray]:
+        try:
+            return self.Q[-1][-1]
+        except IndexError:
+            return None

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from doublebeam.raytracing.initial_value import VelocityModel3D, KinematicRayTracer3D, DynamicRayTracer3D
-from doublebeam.raytracing.ray import Ray3D
+from doublebeam.raytracing.ray import Ray3D, GaussBeam
 
 
 class TestRay3D(unittest.TestCase):
@@ -202,20 +202,20 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
                                                                 (1000, 101000, 6000, 156000)])
         vm = VelocityModel3D(layers)
-        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0))
+        beam = GaussBeam.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0), 10, 40)
         tracer = DynamicRayTracer3D(vm)
-        tracer.trace_stack(ray, 10, 40, "TT", 10)
-        self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
-                               msg=f"x position wrong, got {ray.last_point[0]},"
+        tracer.trace_stack(beam, "TT", 10)
+        self.assertAlmostEqual(last_point_expected[0], beam.last_point[0], places=4,
+                               msg=f"x position wrong, got {beam.last_point[0]},"
                                f" expected {last_point_expected[0]}")
-        self.assertAlmostEqual(last_point_expected[1], ray.last_point[1], places=4,
-                               msg=f"z position wrong, got {ray.last_point[1]},"
+        self.assertAlmostEqual(last_point_expected[1], beam.last_point[1], places=4,
+                               msg=f"z position wrong, got {beam.last_point[1]},"
                                f" expected {last_point_expected[1]}")
-        self.assertAlmostEqual(last_point_expected[2], ray.last_point[2], places=4,
-                               msg=f"z position wrong, got {ray.last_point[2]},"
+        self.assertAlmostEqual(last_point_expected[2], beam.last_point[2], places=4,
+                               msg=f"z position wrong, got {beam.last_point[2]},"
                                f" expected {last_point_expected[2]}")
-        self.assertEqual(len(ray.path), 3, msg="Wrong nuber of ray paths")
-        self.assertAlmostEqual(ray.last_time, 1.864023576678209, places=4,
+        self.assertEqual(len(beam.path), 3, msg="Wrong nuber of ray paths")
+        self.assertAlmostEqual(beam.last_time, 1.864023576678209, places=4,
                                msg="Wrong travel time for ray")
 
 
@@ -240,9 +240,9 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         ray_tracer = DynamicRayTracer3D(vm)
         for slowness, target in zip(slownesses, expected_endpoints):
             with self.subTest(target=target):
-                ray = Ray3D(source, np.array(slowness))
-                ray_tracer.trace_stack(ray, 10, 40, "TTTTRTTTT")
-                np.testing.assert_allclose(ray.last_point, target, atol=1e-6)
+                beam = GaussBeam(source, np.array(slowness), 10, 40)
+                ray_tracer.trace_stack(beam, "TTTTRTTTT")
+                np.testing.assert_allclose(beam.last_point, target, atol=1e-6)
 
 
 class TestDynamicRayTracingOneLayer(unittest.TestCase):
@@ -257,8 +257,9 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
         Basic checking of output format
         """
         source = np.array((0, 0, 0))
-        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
-        P, Q = self.drt.trace_stack(ray, 10, 40)
+        beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
+        self.drt.trace_stack(beam)
+        P, Q = beam.P, beam.Q
         self.assertEqual(len(P), 1)
         self.assertEqual(len(Q), 1)
         self.assertEqual(P[0].shape, Q[0].shape)
@@ -271,8 +272,9 @@ class TestForRegressionDynamicRayTracing(unittest.TestCase):
         self.Q_desired = np.load(Path("data/Q_analytic.npy"))
         vm = VelocityModel3D([(0, 10, 2000, 1)])
         self.drt = DynamicRayTracer3D(vm)
-        self.ray = Ray3D.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0))
-        self.P_actual, self.Q_actual = self.drt.trace_stack(self.ray, 10, 40)
+        self.beam = GaussBeam.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0), 10, 40)
+        self.drt.trace_stack(self.beam)
+        self.P_actual, self.Q_actual = self.beam.P, self.beam.Q
 
     def test_P_by_comparison(self):
         np.testing.assert_allclose(self.P_actual, self.P_desired)
@@ -293,8 +295,9 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         Basic checking of output format
         """
         source = np.array((0, 0, 0.))
-        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
-        P, Q = self.drt.trace_stack(ray, 10, 40, "TRT")
+        beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
+        self.drt.trace_stack(beam, "TRT")
+        P, Q = beam.P, beam.Q
         self.assertEqual((4, 4), (len(P), len(Q)))
         for p, q in zip(P, Q):
             with self.subTest():
@@ -306,8 +309,9 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         """
         def generate_data():
             source = np.array((0, 0, 0.))
-            ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
-            return self.drt.trace_stack(ray, 10, 40, "TRT")
+            beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
+            self.drt.trace_stack(beam, "TRT")
+            return beam.P, beam.Q
 
         P_expected = list(np.load(Path("data/P_multilayer.npy")))
         Q_expected = list(np.load(Path("data/Q_multilayer.npy")))
