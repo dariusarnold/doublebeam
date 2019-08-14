@@ -457,16 +457,16 @@ class DynamicRayTracer3D:
         traced through the layer in which its starting point resides.
         :param max_step: Max step s for the integration.
         """
+        top, bottom = self.krt.model.vertical_boundaries()
+        if not top <= ray.start[Index.Z] <= bottom:
+            raise ValueError(f"Ray {ray} starts outside of model")
+        
         V0 = self.krt.model.eval_at(*ray.last_point)
         # for a layer with constant gradient of velocity, P is constant
         self.P0 = np.array([1j / V0, 0, 0, 1j / V0]).reshape(2, 2)
         self.Q0 = np.array([beam_frequency_Hz * beam_width_m**2 / V0, 0,
                             0, beam_frequency_Hz * beam_width_m**2 / V0],
                            dtype=np.complex128).reshape(2, 2)
-        top, bottom = self.krt.model.vertical_boundaries()
-        if not top <= ray.start[Index.Z] <= bottom:
-            raise ValueError(f"Ray {ray} starts outside of model")
-
         self.krt.index = self.krt.model.layer_index(ray.start[Index.Z])
         self.krt.layer = self.krt.model[self.krt.index]
         initial_slownesses = ray.last_slowness
