@@ -106,25 +106,25 @@ class VelocityModel3D:
         raw_data = cls.convert_to_gradient_intercept(raw_data)
         return cls(raw_data)
 
-    def layer_index(self, point: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def layer_index(self, points: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         """
         Find the layer within the model that contains the point and return
         its index in self.layers. While the top of a layer belongs to the layer,
         the bottom depth belongs to the layer below, except for the bottom most
         layer which includes its bottom depth.
-        :param point: Single float value specifying depth or array of shape
+        :param points: Single float value specifying depth or array of shape
         (N, 3) where every entry is a x, y, z coordinate triple.
         """
         try:
-            depths = point.T[Index.Z]
+            depths = points.T[Index.Z]
         except (AttributeError, IndexError):
-            depths = np.array(point)
+            depths = np.array(points)
         top, bottom = self.vertical_boundaries()
         if np.any(np.logical_or(depths < top, depths > bottom)):
             raise LookupError(f"Depth {depths} contains values out of model "
                              f"range: {top}, {bottom}")
         # wrap in asarray since searchsorted returns scalar for single point
-        # which then doesn't support assignemnt
+        # which then doesn't support assignment
         indices = np.asarray(np.searchsorted(self.interface_depths, depths,
                                              side="right") - 1)
         indices[indices >= len(self)] -= 1
