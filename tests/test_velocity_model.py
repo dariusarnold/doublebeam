@@ -49,22 +49,22 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         assert_array_equal(self.v.layers, mod.layers)
 
     def test_prop_access_success(self):
-        self.assertEqual(self.v.eval_at(0, 0, 0), 5800)
-        self.assertEqual(self.v.eval_at(0, 0, 5000), 5800)
-        self.assertEqual(self.v.eval_at(0, 0, 9999), 5800)
-        self.assertEqual(self.v.eval_at(0, 0, 10001), 5001)
-        self.assertEqual(self.v.eval_at(0, 0, 10500), 5500)
+        self.assertEqual(self.v.eval_at(0), 5800)
+        self.assertEqual(self.v.eval_at(5000), 5800)
+        self.assertEqual(self.v.eval_at(9999), 5800)
+        self.assertEqual(self.v.eval_at(10001), 5001)
+        self.assertEqual(self.v.eval_at(10500), 5500)
 
     def test_layer_top_inclusivity(self):
         # since upper boundary is inclusive, value of lower layer should be
         # returned here
-        self.assertEqual(self.v.eval_at(0, 0, 10000),  5000)
+        self.assertEqual(self.v.eval_at(10000),  5000)
 
     def test_raises_when_depth_out_of_model_range(self):
         with self.assertRaises(LookupError, msg="Model evaluation at negative depth not raising correct exception"):
-            self.v.eval_at(0, 0, -5.5)
+            self.v.eval_at(-5.5)
         with self.assertRaises(LookupError, msg="Model evaluation below lowest layer not raising correct exception"):
-            self.v.eval_at(0, 0, 99999999999)
+            self.v.eval_at(99999999999)
 
     def test_interface_depths_correct(self):
         assert_array_equal(self.v.interface_depths, np.insert(self.layers_correct["bot_depth"], 0, 0))

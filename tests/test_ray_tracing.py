@@ -47,7 +47,7 @@ class TestRayTracingScipy(unittest.TestCase):
         layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
                                                                 (1000, 101000, 6000, 156000)])
         vm = VelocityModel3D(layers)
-        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0, 0, 0))
+        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0))
         tracer = KinematicRayTracer3D(vm)
         tracer.trace_stack(ray, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
@@ -105,7 +105,7 @@ class TestRayTracingSingleLayer(unittest.TestCase):
         Shoot a ray downward and reflect from bottom in constant velocity layer
         """
         ray = Ray3D.from_angle((0, 0, 0), radians(45), radians(45),
-                               self.vm_constant.eval_at(0, 0, 0))
+                               self.vm_constant.eval_at(0))
         self.rt_constant.trace_stack(ray, "R")
         np.testing.assert_allclose(ray.last_point, np.array((math.sqrt(2)*100, math.sqrt(2)*100, 0.)))
 
@@ -114,7 +114,7 @@ class TestRayTracingSingleLayer(unittest.TestCase):
         Shoot a ray downward and reflect from bottom in velocity gradient layer
         """
         ray = Ray3D.from_angle((0, 0, 0), radians(45), radians(0),
-                               self.vm_gradient.eval_at(0, 0, 0))
+                               self.vm_gradient.eval_at(0))
         self.rt_gradient.trace_stack(ray, "R")
         np.testing.assert_allclose(ray.last_point, np.array((210.54093570105533, 0, 0)),
                                    atol=1E-14)
@@ -124,7 +124,7 @@ class TestRayTracingSingleLayer(unittest.TestCase):
         Shoot a ray upward and reflect from top in constant velocity layer
         """
         ray = Ray3D.from_angle((0, 0, 100), radians(135), radians(0),
-                               self.vm_constant.eval_at(0, 0, 100))
+                               self.vm_constant.eval_at(100))
         self.rt_constant.trace_stack(ray, "R")
         np.testing.assert_allclose(ray.last_point, np.array((200, 0, 100)), atol=1E-14)
 
@@ -133,7 +133,7 @@ class TestRayTracingSingleLayer(unittest.TestCase):
         Shoot a ray upward and reflect from top in velocity gradient layer
         """
         ray = Ray3D.from_angle((0, 0, 100), radians(135), radians(0),
-                               self.vm_gradient.eval_at(0, 0, 100))
+                               self.vm_gradient.eval_at(100))
         self.rt_gradient.trace_stack(ray, "R")
         np.testing.assert_allclose(ray.last_point, np.array((190.89968, 0, 100.)),
                                    atol=1E-14)
@@ -179,7 +179,7 @@ class TestAnalyticalRayTracingConstantVelocity(unittest.TestCase):
                   (300, 400, 2700, 0), (400, 500, 2250, 0)]
         vm = VelocityModel3D(layers)
         nrt = KinematicRayTracer3D(vm)
-        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(17.4576), radians(0), vm.eval_at(0, 0, 0))
+        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(17.4576), radians(0), vm.eval_at(0))
         nrt.trace_stack(ray, "TTTTRTTTT")
         expected_last_point = [4.19155952e+02,  0.00000000e+00, -3.05311332e-15]
         np.testing.assert_array_almost_equal(ray.last_point, expected_last_point)
@@ -202,7 +202,7 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         layers = VelocityModel3D.convert_to_gradient_intercept([(0, 1000, 3000, 4000),
                                                                 (1000, 101000, 6000, 156000)])
         vm = VelocityModel3D(layers)
-        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0, 0, 0))
+        ray = Ray3D.from_angle(np.array((0, 0, 0)), radians(20), 0, vm.eval_at(0))
         tracer = DynamicRayTracer3D(vm)
         tracer.trace_stack(ray, 10, 40, "TT", 10)
         self.assertAlmostEqual(last_point_expected[0], ray.last_point[0], places=4,
@@ -257,7 +257,7 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
         Basic checking of output format
         """
         source = np.array((0, 0, 0))
-        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
         P, Q = self.drt.trace_stack(ray, 10, 40)
         self.assertEqual(len(P), 1)
         self.assertEqual(len(Q), 1)
@@ -271,7 +271,7 @@ class TestForRegressionDynamicRayTracing(unittest.TestCase):
         self.Q_desired = np.load(Path("data/Q_analytic.npy"))
         vm = VelocityModel3D([(0, 10, 2000, 1)])
         self.drt = DynamicRayTracer3D(vm)
-        self.ray = Ray3D.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0, 0, 0))
+        self.ray = Ray3D.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0))
         self.P_actual, self.Q_actual = self.drt.trace_stack(self.ray, 10, 40)
 
     def test_P_by_comparison(self):
@@ -293,7 +293,7 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         Basic checking of output format
         """
         source = np.array((0, 0, 0.))
-        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+        ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
         P, Q = self.drt.trace_stack(ray, 10, 40, "TRT")
         self.assertEqual((4, 4), (len(P), len(Q)))
         for p, q in zip(P, Q):
@@ -306,7 +306,7 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
         """
         def generate_data():
             source = np.array((0, 0, 0.))
-            ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(*source))
+            ray = Ray3D.from_angle(source, radians(20), radians(0), self.vm.eval_at(source))
             return self.drt.trace_stack(ray, 10, 40, "TRT")
 
         P_expected = list(np.load(Path("data/P_multilayer.npy")))

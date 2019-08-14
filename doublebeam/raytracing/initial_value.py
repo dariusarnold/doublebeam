@@ -411,7 +411,7 @@ class DynamicRayTracer3D:
         P0 = np.moveaxis(P0, -1, 0)
         # use special case for layer with constant gradient of velocity
         # see Cerveny2001, section 4.8.3
-        V = np.array([self.krt.model.eval_at(*point) for point in ray.path[-1]])
+        V = np.array([self.krt.model.eval_at(point) for point in ray.path[-1]])
         sigma = cumtrapz(V**2, ray.travel_time[-1], initial=0)
         Q0 = self.Q0[np.newaxis, ...]
         Q0 = Q0 + sigma[..., np.newaxis, np.newaxis] * P0
@@ -461,7 +461,7 @@ class DynamicRayTracer3D:
         if not top <= ray.start[Index.Z] <= bottom:
             raise ValueError(f"Ray {ray} starts outside of model")
         
-        V0 = self.krt.model.eval_at(*ray.last_point)
+        V0 = self.krt.model.eval_at(ray.last_point)
         # for a layer with constant gradient of velocity, P is constant
         self.P0 = np.array([1j / V0, 0, 0, 1j / V0]).reshape(2, 2)
         self.Q0 = np.array([beam_frequency_Hz * beam_width_m**2 / V0, 0,

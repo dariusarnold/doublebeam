@@ -130,20 +130,21 @@ class VelocityModel3D:
         indices[indices >= len(self)] -= 1
         return indices
 
-    def eval_at(self, x: float, y: float, z: float) -> float:
+    def eval_at(self, points: Union[float, np.ndarray]) -> float:
         """
         Return velocity at a point in the model
-        :param x: x coordinate in m
-        :param y: y coordinate in m
-        :param z: coordinate in m
+        :param points: Array of points of shape (N, 3) where every entry is a
+        tuple of three x, y, z coordinates
         :return: Velocity in m/s
         """
-        # TODO this raises LookupError if the ray has a negative depth due to
-        #  numerical inaccurycies. E.g. for z = -9.492406860545088e-15
+        try:
+            z = points.T[Index.Z]
+        except (AttributeError, IndexError):
+            z = np.array(points)
         top_depth, bottom_depth = self.vertical_boundaries()
-        if not top_depth <= z <= bottom_depth:
+        if np.any(np.logical_or(z < top_depth,  z > bottom_depth)):
             raise LookupError(f"Can't evaluate model at negative depth {z}")
-        layer = self.layers[self.layer_index(z)]
+        layer = self.layers[self.layer_index(points)]
         return layer["intercept"] + layer["gradient"] * z
 
     def interface_crossed(self, z1: float, z2: float) -> bool:

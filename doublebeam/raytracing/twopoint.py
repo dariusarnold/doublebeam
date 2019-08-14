@@ -40,8 +40,8 @@ class TwoPointRayTracing:
         receiver_index = self._model.layer_index(receiver_position)
         source_index = self._model.layer_index(source_position)
         if source_index == receiver_index:
-            return max(self._model.eval_at(*source_position),
-                       self._model.eval_at(*receiver_position))
+            return max(self._model.eval_at(source_position),
+                       self._model.eval_at(receiver_position))
         # first, get all the top and bottom velocities from the interfaces
         # between the source and receiver
         # sort indices because accessing array only works from low to high
@@ -61,8 +61,8 @@ class TwoPointRayTracing:
         # +1 last index to include top velocity of the bottom most layer
         velocities_top = self._model.velocities_top[index_low+1:index_high+1]
         # second, also get velocity at the end points (source and receiver)
-        v = max(self._model.eval_at(*source_position),
-                self._model.eval_at(*receiver_position))
+        v = max(self._model.eval_at(source_position),
+                self._model.eval_at(receiver_position))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
     def trace(self, source: np.ndarray, receiver: np.ndarray,
@@ -214,7 +214,7 @@ class TwoPointRayTracing:
             q = q_next
 
         horizontal_slowness = _q_to_p(q, vM)
-        c = self._model.eval_at(*source)
+        c = self._model.eval_at(source)
         vertical_slowness = math.sqrt(c**-2 - horizontal_slowness**2)
         if source_below_receiver:
             # ray should travel upward from source in this case
