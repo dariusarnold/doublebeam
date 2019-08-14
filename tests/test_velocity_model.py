@@ -36,7 +36,7 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         self.v = VelocityModel3D(self.layers_correct)
 
     def test_converting(self):
-        """Test iconverting the values to intercept+gradient"""
+        """Test converting the values to intercept+gradient"""
         layers_converted = VelocityModel3D.convert_to_gradient_intercept(self.layers)
         assert_array_equal(layers_converted, self.layers_correct)
 
@@ -49,7 +49,6 @@ class TestVelocityModel3DLinearLayers(unittest.TestCase):
         assert_array_equal(self.v.layers, mod.layers)
 
     def test_prop_access_success(self):
-        msg = "{} evaluation failed or incorrect"
         self.assertEqual(self.v.eval_at(0, 0, 0), 5800)
         self.assertEqual(self.v.eval_at(0, 0, 5000), 5800)
         self.assertEqual(self.v.eval_at(0, 0, 9999), 5800)
@@ -228,6 +227,7 @@ class TestVelocityModel3DNumberOfInterfaces(unittest.TestCase):
             with self.subTest(a=a, b=b, correct=correct):
                 n = self.vm.num_of_interfaces_between(b, a)
                 self.assertEqual(n, correct, msg=self.generate_error_msg(a, b, correct, n))
+
 
 class TestVelocityModelVerticalExtent(unittest.TestCase):
 
