@@ -90,7 +90,42 @@ _ODEStateKinematic3D = namedtuple("ODEStateKinematic3D", ["x", "y", "z", "px", "
 # Tuple containing state of ODE system for dynamic ray tracing
 _ODEStateDynamic3D = namedtuple("ODEStateDynamic3D", "x, y, z, px, py, pz, T")
 
-_IVPEventFunction = Callable[[float, _ODEStateKinematic3D], float]
+
+class LayerEventFunction:
+    """
+    workaround: make events active only after a step is taken because sometimes
+    events trigger directly after tracing starts and the algorithm thinks an
+    interface was reached. Keep event function artificially away from zero by
+    returning a sentinel value that leads the algorithm to believe it is still
+    in the current layer.
+    """
+
+    def __init__(self, layer, event_type: str, max_step_s: float, terminal: bool = True):
+        """
+
+        :param layer: Current layer
+        :param event_type: Select for which layer the event should trigger: "upper"
+        for upper layer, "lower" for lower layer
+        :param max_step_s: Dont trigger event until algorithm has progressed
+        past this value.
+        :param terminal: If True, halt integration when this event occurs, else
+        only log event.
+        """
+        if event_type == "upper":
+            self.event_depth = layer["top_depth"]
+            self.sentinel = 1
+        elif event_type == "lower":
+            self.event_depth = layer["bot_depth"]
+            self.sentinel = -1
+        else:
+            raise ValueError(f"Invalid value: {event_type}. "
+                             f"Select from ('upper', 'lower')")
+        self.max_step_s = max_step_s
+        self.terminal = terminal
+
+    def __call__(self, s: float, y: _ODEStateKinematic3D) -> float:
+        # y[2] contains z coordinate
+        return y[2] - self.event_depth if s > self.max_step_s else self.sentinel
 
 
 class KinematicRayTracer3D:
@@ -183,14 +218,8 @@ class KinematicRayTracer3D:
                     or path.T[Index.Z][-1] < self.layer["top_depth"]):
                 path.T[Index.Z][-1] = round(path.T[Index.Z][-1], ndigits=DIGITS_PRECISION)
             return
-        # workaround: make events active only after a step is taken because
-        # sometimes events trigger directly after tracing starts and the
-        # algorithm thinks an interface was reached. Keep event function
-        # artificially away from zero to avoid that
-        upper_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["top_depth"] if s > max_step_s else 1
-        lower_layer_event: _IVPEventFunction = lambda s, y_: y_[2] - self.layer["bot_depth"] if s > max_step_s else -1
-        for func in (upper_layer_event, lower_layer_event):
-            func.terminal = True
+        upper_layer_event = LayerEventFunction(self.layer, "upper", max_step_s)
+        lower_layer_event = LayerEventFunction(self.layer, "lower", max_step_s)
         initial_state = _ODEStateKinematic3D(*ray.last_point, *initial_slowness,
                                              ray.last_time)
         result = solve_ivp(self._trace, (0, np.inf), initial_state,
