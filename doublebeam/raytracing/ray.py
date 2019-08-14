@@ -1,13 +1,9 @@
-from typing import List, Union, Tuple, Optional
+from typing import List, Optional
 
 import numpy as np
 
+from doublebeam.type_shorthands import Coordinates
 from doublebeam.utils import Index, slowness_3D
-
-
-# TODO move this to utils or types
-# Array of x, y, z
-Coordinates = Union[np.ndarray, Tuple[float, float, float]]
 
 
 # TODO remove 3D since there is no 2D class
