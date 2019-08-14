@@ -288,6 +288,25 @@ class TestLayerIndexEvaluationMultiplePoints(unittest.TestCase):
             with self.subTest(depth=depth):
                 self.assertEqual(index_expected, index_got, msg=self.msg(index_expected, index_got))
 
+    def test_raises_error_above_model(self):
+        """
+        Raise Exception when one value is outside of model range (above model top)
+        """
+        depths = (12, 99, -1E-14)
+        points = generate_points_from_depth(depths)
+        with self.assertRaises(LookupError):
+            self.vm.layer_index(points)
+
+    def test_raises_error_below_model(self):
+        """
+        Raise Exception when one value is below model bottom.
+        """
+        depths = (10, np.nextafter(300, 301), 99)
+        points = generate_points_from_depth(depths)
+        with self.assertRaises(LookupError):
+            self.vm.layer_index(points)
+
+
 class TestVelocityEvaluationMultiplePoints(unittest.TestCase):
 
     def setUp(self) -> None:
