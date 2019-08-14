@@ -106,27 +106,29 @@ class VelocityModel3D:
         raw_data = cls.convert_to_gradient_intercept(raw_data)
         return cls(raw_data)
 
-    def layer_index(self, depth: float) -> int:
+    def layer_index(self, point: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         """
-        Find the layer within the model that contains the depth and return
+        Find the layer within the model that contains the point and return
         its index in self.layers. While the top of a layer belongs to the layer,
         the bottom depth belongs to the layer below, except for the bottom most
         layer which includes its bottom depth.
+        :param point: Single float value specifying depth or array of shape
+        (N, 3) where every entry is a x, y, z coordinate triple.
         """
-        # workaround to include the bottom of the bottom most layer in the model
-        if depth == self.interface_depths[-1]:
-            return len(self.layers) - 1
-        # Get mask: True for the layer in which the depth is
-        layer = np.logical_and(self.layers['top_depth'] <= depth,
-                               depth < self.layers['bot_depth'])
-        # get indices of the True value. meaning index of the wanted layer
-        layer = np.where(layer)[0]
-        if len(layer):
-            # return the layer which top depth is directly above depth_km
-            return layer[0]
-        else:
-            # depth must have been outside of VelocityModel since all indices were false
-            raise LookupError(f"No layer found in model at depth {depth}")
+        try:
+            depths = point.T[Index.Z]
+        except (AttributeError, IndexError):
+            depths = np.array(point)
+        top, bottom = self.vertical_boundaries()
+        if np.any(np.logical_or(depths < top, depths > bottom)):
+            raise LookupError(f"Depth {depths} contains values out of model "
+                             f"range: {top}, {bottom}")
+        # wrap in asarray since searchsorted returns scalar for single point
+        # which then doesn't support assignemnt
+        indices = np.asarray(np.searchsorted(self.interface_depths, depths,
+                                             side="right") - 1)
+        indices[indices >= len(self)] -= 1
+        return indices
 
     def eval_at(self, x: float, y: float, z: float) -> float:
         """
