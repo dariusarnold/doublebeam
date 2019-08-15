@@ -25,17 +25,22 @@ def evaluate_at_linear(layer: LinearVelocityLayer, depth: float) -> float:
 
 
 class VelocityModel3D:
-    """Simple vertical velocity model storing P and S wave velocity as well
-    as density"""
+    """Velocity model storing wave velocity for horizontal layers."""
 
-    def __init__(self, layers: Union[List[Tuple[float, float, float, float]], np.ndarray]):
+    def __init__(self, layers: Union[List[Tuple[float, float, float, float]], np.ndarray],
+                 x_width: float = 0., y_width: float = 0.):
         """
         :param layers: A layer is specified by the depth value of its top
         coordinate, the depth of its bottom, the velocity intercept and the
         velocity gradient. The values are given as a list of tuples, where every
-        tuple represents one layer. The order of values is as described above.
+        tuple represents one layer. The order of values in the tuple is as
+        described above.
+        # TODO Will it be necessary to implement checking these in eval functions?
+        :param x_width: Width of model in meters along x axis.
+        :param y_width: Width of model in meters along y axis.
         """
-        # TODO implement 3D part, ie. borders for x/y values
+        self.x_width = x_width
+        self.y_width = y_width
         self.layers = np.asarray(layers, dtype=LinearVelocityLayer)
         depths = self.layers["top_depth"]
         depths = np.append(depths, self.layers["bot_depth"][-1])
