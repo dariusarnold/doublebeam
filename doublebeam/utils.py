@@ -46,15 +46,16 @@ def angle(vector1: np.ndarray, vector2: np.ndarray, acute: bool = True) -> float
 
 def angle_clockwise(vector1: np.ndarray, vector2: np.ndarray) -> float:
     """
-    Calculate the clockwise angle between two vectors.
+    Calculate the clockwise angle from the first vector to the second vector in
+    the x-y horizontal plane.
     :return: Clockwise angle from vector1 to vector2 in radians
     """
     angle1 = atan2(*vector1[0:2])
     angle2 = atan2(*vector2[0:2])
-    difference = angle1 - angle2
+    difference = angle2 - angle1
     if difference < 0:
         # special case in the bottom right quadrant
-        return 2*np.pi + difference
+        return 2 * np.pi + difference
     return difference
 
 

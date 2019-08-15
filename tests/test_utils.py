@@ -77,13 +77,13 @@ class TestClockwiseAngle(unittest.TestCase):
     def setUp(self) -> None:
         self.x_axis = np.array((1, 0, 0))
         self.test_data = {radians(0): np.array((1, 0, 0)),
-                          radians(45): np.array((1, 1, 0)),
-                          radians(90): np.array((0, 1, 0)),
-                          radians(135): np.array((-1, 1, 0)),
+                          radians(315): np.array((1, 1, 0)),
+                          radians(270): np.array((0, 1, 0)),
+                          radians(225): np.array((-1, 1, 0)),
                           radians(180): np.array((-1, 0, 0)),
-                          radians(225): np.array((-1, -1, 0)),
-                          radians(270): np.array((0, -1, 0)),
-                          radians(315): np.array((1, -1, 0))}
+                          radians(135): np.array((-1, -1, 0)),
+                          radians(90): np.array((0, -1, 0)),
+                          radians(45): np.array((1, -1, 0))}
 
     def test_normal(self):
         """

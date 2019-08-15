@@ -222,7 +222,7 @@ class TwoPointRayTracing:
         receiver_surface_projection = receiver - source
         receiver_surface_projection[Index.Z] = 0
         x_axis = np.array((1, 0, 0))
-        phi = angle_clockwise(x_axis, receiver_surface_projection)
+        phi = angle_clockwise(receiver_surface_projection, x_axis)
         px = cos(phi) * horizontal_slowness
         py = sin(phi) * horizontal_slowness
         return np.array((px, py, vertical_slowness))
