@@ -91,3 +91,12 @@ def slowness_3D(theta: float, phi: float, velocity: float) -> np.ndarray:
     py = 1/velocity * sin(theta) * sin(phi)
     pz = 1/velocity * cos(theta)
     return np.array((px, py, pz))
+
+
+def unit_vector(v: np.ndarray) -> np.ndarray:
+    """
+    Create unit vector.
+    :param v: Vector specifying direction.
+    :return: Same vector with length 1.
+    """
+    return v / length(v)

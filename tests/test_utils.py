@@ -3,7 +3,7 @@ from math import sqrt, radians, degrees
 
 import numpy as np
 
-from doublebeam.utils import horizontal_distance, angle, angle_clockwise
+from doublebeam.utils import horizontal_distance, angle, angle_clockwise, length, unit_vector
 
 
 class TestHorizontalDistance(unittest.TestCase):
@@ -106,3 +106,22 @@ class TestClockwiseAngle(unittest.TestCase):
                 # modulo 360° since for 0° the function will not return 360°
                 expected = (radians(360) - angle) % (2*np.pi)
                 self.assertEqual(x, expected, msg=self._msg(x, expected))
+
+
+class TestUnitVector(unittest.TestCase):
+
+    def test_normal_case(self):
+        vectors = np.array([(1, 2, 3),
+                            (4, 5, 6),
+                            (-1, -1, 0),
+                            (.1, 0, -.2),
+                            (1, 0, 0),
+                            (0, 1, 0),
+                            (0, 0, -1)])
+        for vector in vectors:
+            with self.subTest(vector=vector):
+                u = unit_vector(vector)
+                self.assertAlmostEqual(length(u), 1, places=7,
+                                 msg=f"Length != 1: Got {length(u)}")
+                self.assertAlmostEqual(angle(vector, u), 0, places=7,
+                                 msg=f"Angle not 0°: {degrees(angle(vector, u))}°")
