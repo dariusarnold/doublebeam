@@ -63,3 +63,24 @@ def plot_ray_in_model_3D(ray: Ray3D, velocity_model: VelocityModel3D) -> None:
         z = np.full_like(x, depth)
         ax.plot_surface(x, y, z, color="lightgrey", alpha=.25)
     plt.show()
+
+
+def plot_velocity_model_diagram(model: VelocityModel3D) -> None:
+    """
+    Create plot like fig. 3 from Fang2019 for a velocity model where v = v(z).
+    """
+    top, bottom = model.vertical_boundaries()
+    number_of_evaluation_points = 1000
+    points = np.zeros((number_of_evaluation_points, 3))
+    points.T[Index.Z] = np.linspace(top, bottom, 1000)
+    velocities = model.eval_at(points)
+    plt.plot(velocities, points.T[Index.Z])
+    interface_depths = model.interface_depths
+    plt.hlines(interface_depths, *plt.xlim(), linestyle="--", alpha=0.4)
+    plt.xlabel("Velocity (m/s)")
+    plt.ylabel("Depth (m)")
+    ax = plt.gca()
+    ax.invert_yaxis()
+    plt.title("Velocity model")
+    plt.show()
+
