@@ -101,3 +101,36 @@ def unit_vector(v: np.ndarray) -> np.ndarray:
     :return: Same vector with length 1.
     """
     return v / length(v)
+
+
+def pairwise(iterable):
+    """
+    Create pairwise iterator from iterable which returns pairs of values.
+    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+    :param iterable:
+    """
+    a = iter(iterable)
+    return zip(a, a)
+
+
+def generate_vector_arc(num_values: int, central_direction: np.ndarray):
+    """
+    Generate num_values of unit vectors representing fracture orientation.
+    The range of vectors returned will have an angle from 0° to 180° increasing
+    in clockwise direction. The first vector will have a clockwise angle of -90°
+    or 270° degrees of the central direction, the last vector will have a
+    clockwise angle of 90°. All vectors will be in the horizontal plane, and the
+    axis will be projected on the horizontal plane as well.
+    :param num_values: How many vectors to return.
+    :param central_direction: Direction of the center of the vectors.
+    :return: Array of shape (num_values, 3) containing the vectors.
+    """
+    x_axis = np.array((1., 0, 0))
+    angles = np.linspace(0, radians(180), num_values)
+    # -90° to rotate to the left
+    angle_against_axis = angle_clockwise(x_axis, central_direction) - radians(90)
+    angles += angle_against_axis
+    vectors = np.zeros((num_values, 3))
+    vectors[:, Index.X] = np.cos(angles)
+    vectors[:, Index.Y] = -np.sin(angles)
+    return vectors
