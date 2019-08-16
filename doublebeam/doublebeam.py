@@ -4,7 +4,7 @@ import numpy as np
 
 from doublebeam.models import VelocityModel3D
 from doublebeam.raytracing.twopoint import TwoPointRayTracing
-from doublebeam.utils import generate_grid_coordinates, unit_vector
+from doublebeam.utils import generate_grid_coordinates, Index, unit_vector
 
 
 class FractureParameters:
@@ -41,4 +41,17 @@ class DoubleBeam:
     def generate_source_beam_centers(self, num_x: int, num_y: int) -> None:
         self.source_beam_centers = generate_grid_coordinates(self.model.vertical_boundaries()[0], (0, self.model.x_width),
                                                              (0, self.model.y_width), num_x, num_y)
+
+    def scattered_slowness(self, slowness: np.ndarray, phi_hat: np.ndarray,
+                           fracture_spacing: float, frequency: float) -> np.ndarray:
+        """
+        Create new slowness vector for wave scattered from fractures.
+        :param slowness: Incoming slowness vector.
+        :param phi_hat: unit vector orthogonal to fracture planes.
+        :param fracture_spacing: Distance between fracture planes in m.
+        :param frequency: Frequency of seismic wave in Hz.
+        :return: Modified slowness vector.
+        """
+        ps = slowness[:Index.Z]
+        return ps - np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat
 
