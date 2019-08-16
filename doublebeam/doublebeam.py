@@ -1,8 +1,10 @@
 from typing import Optional
+
 import numpy as np
+
 from doublebeam.models import VelocityModel3D
 from doublebeam.raytracing.twopoint import TwoPointRayTracing
-from doublebeam.utils import unit_vector
+from doublebeam.utils import generate_grid_coordinates, unit_vector
 
 
 class FractureParameters:
@@ -31,3 +33,12 @@ class DoubleBeam:
         self.source_beam_centers: Optional[np.ndarray] = None
         self.window_length = window_length
         self.twopoint = TwoPointRayTracing(model)
+
+    def generate_targets(self, num_x: int, num_y: int) -> None:
+        self.target_locations = generate_grid_coordinates(self.fracture_info.depth, (0, self.model.x_width),
+                                                          (0, self.model.y_width), num_x, num_y)
+
+    def generate_source_beam_centers(self, num_x: int, num_y: int) -> None:
+        self.source_beam_centers = generate_grid_coordinates(self.model.vertical_boundaries()[0], (0, self.model.x_width),
+                                                             (0, self.model.y_width), num_x, num_y)
+

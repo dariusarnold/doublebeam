@@ -1,5 +1,6 @@
 import enum
 from math import acos, cos, sin, atan2, radians
+from typing import Tuple
 
 import numpy as np
 
@@ -92,6 +93,26 @@ def slowness_3D(theta: float, phi: float, velocity: float) -> np.ndarray:
     py = 1/velocity * sin(theta) * sin(phi)
     pz = 1/velocity * cos(theta)
     return np.array((px, py, pz))
+
+
+def generate_grid_coordinates(target_depth: float, x_extent: Tuple[float, float],
+                              y_extent: Tuple[float, float], num_x: int,
+                              num_y: int) -> np.ndarray:
+    """
+    Generate coordinates of a evenly spaced grid.
+    :param x_extent: x_start, x_end tuple.
+    :param y_extent: y_start, y_end tuple.
+    :param target_depth: Depth of fractures in m.
+    :param num_x: Number of targets along x-axis.
+    :param num_y: Number of targets along y-axis.
+    :return: Array containing all target locations with shape (num_x, num_y, 3)
+    where the first axis is the x axis, the second axis the y axis and the third
+    axis contains the z value.
+    """
+    x = np.linspace(*x_extent, num_x)
+    y = np.linspace(*y_extent, num_y)
+    xx, yy = np.meshgrid(x, y)
+    return np.ascontiguousarray(np.stack((xx, yy, np.full_like(xx.shape, target_depth))).T)
 
 
 def unit_vector(v: np.ndarray) -> np.ndarray:
