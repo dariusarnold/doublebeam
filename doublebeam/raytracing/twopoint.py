@@ -67,8 +67,10 @@ class TwoPointRayTracing:
 
     def trace(self, source: np.ndarray, receiver: np.ndarray,
               accuracy: float = 1E-10) -> np.ndarray:
+        # TODO implement model borders
+        # TODO vectorize this function for multiple arrays (sources, receivers)
         """
-        Two point ray tracing from source to receiver position
+        Two point ray tracing from source to receiver position.
         :param source: array of shape (3,) which contains the x y z coordinates
         of the source point
         :param receiver: array of shape (3,) which contains the x y z
@@ -105,20 +107,20 @@ class TwoPointRayTracing:
                    - (1 - delta_a) * 3 * h_tilde * epsilon_tilde * q / (1 + epsilon_tilde * q**2)**2.5
 
         def f_tilde(q):
-            return np.sum(X_tilde(q)) - X
+            return np.nansum(X_tilde(q)) - X
 
         def f_tilde_prime(q):
-            return np.sum(X_tilde_prime(q))
+            return np.nansum(X_tilde_prime(q))
 
         def f_tilde_double_prime(q):
-            return np.sum(X_tilde_double_prime(q))
+            return np.nansum(X_tilde_double_prime(q))
 
         def next_q(q_old):
             A = 0.5 * f_tilde_double_prime(q)
             B = f_tilde_prime(q)
             C = f_tilde(q)
-            delta_q_plus = (-B + sqrt(B**2 - 4 * A * C)) / (2 * A)
-            delta_q_minus = (-B - sqrt(B**2 - 4 * A * C)) / (2 * A)
+            delta_q_plus = safe_divide(-B + sqrt(B**2 - 4 * A * C), (2 * A))
+            delta_q_minus = safe_divide(-B - sqrt(B**2 - 4 * A * C), (2 * A))
             q_plus = q_old + delta_q_plus
             q_minus = q_old + delta_q_minus
             if abs(f_tilde(q_plus)) < abs(f_tilde(q_minus)):
@@ -180,7 +182,7 @@ class TwoPointRayTracing:
         delta_a = np.abs(np.sign(a))
 
         # eq. C13
-        d1 = np.sum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) + (1 - delta_a) * h_tilde)
+        d1 = np.nansum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) + (1 - delta_a) * h_tilde)
 
         # eq. C18
         delta_epsilon = np.abs(np.sign(epsilon_tilde))
@@ -192,16 +194,16 @@ class TwoPointRayTracing:
         c0 = (delta_a * mu_tilde * (delta_epsilon * np.sqrt(epsilon_tilde) - delta_omega * np.sqrt(omega_tilde))
               + np.divide((1 - delta_a) * delta_epsilon * h_tilde, np.sqrt(epsilon_tilde), out=np.zeros_like(a),
                           where=epsilon_tilde != 0))
-        c0 = np.sum(c0)
+        c0 = np.nansum(c0)
 
         # eq. C16
-        cminus1 = np.sum(delta_a * (delta_omega - delta_epsilon) * mu_tilde)
+        cminus1 = np.nansum(delta_a * (delta_omega - delta_epsilon) * mu_tilde)
 
         # eq. C17
         cminus2 = (delta_a * 0.5 * mu_tilde * (
                 safe_divide(delta_epsilon, np.sqrt(epsilon_tilde)) - safe_divide(delta_omega, np.sqrt(omega_tilde)))
                    - safe_divide((1 - delta_a) * delta_epsilon * h_tilde, (2 * epsilon_tilde**1.5)))
-        cminus2 = np.sum(cminus2)
+        cminus2 = np.nansum(cminus2)
 
         # horizontal distance between source and receiver
         X = horizontal_distance(source, receiver)

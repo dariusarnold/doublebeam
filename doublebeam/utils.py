@@ -1,4 +1,5 @@
 import enum
+from functools import singledispatch
 from math import acos, cos, sin, atan2, radians
 from typing import Tuple
 
@@ -69,11 +70,22 @@ def horizontal_distance(point1: np.ndarray, point2: np.ndarray) -> float:
     return length(vector)
 
 
-def safe_divide(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+@singledispatch
+def safe_divide(a, b):
+    return a / b
+
+
+@safe_divide.register(np.ndarray)
+def _divide_arrays(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
     Divide a by b but return 0 on places where b is zero without dividing
     """
     return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+
+@safe_divide.register(np.float64)
+def _divide_float(a: np.float64, b: np.float64) -> float:
+    return 0 if a == 0 else a / b
 
 
 def slowness_3D(theta: float, phi: float, velocity: float) -> np.ndarray:
