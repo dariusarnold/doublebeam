@@ -1,5 +1,5 @@
 import math
-from math import sqrt, sin, cos
+from math import sqrt, sin, cos, isfinite
 
 import numpy as np
 
@@ -208,12 +208,14 @@ class TwoPointRayTracing:
         # horizontal distance between source and receiver
         X = horizontal_distance(source, receiver)
         q = initial_q()
-        while True:
+        while isfinite(q):
             q_next = next_q(q)
             if abs(q - q_next) < accuracy:
                 q = q_next
                 break
             q = q_next
+        else:
+            raise ArithmeticError("Iteration yielded invalid ray parameter!")
 
         horizontal_slowness = _q_to_p(q, vM)
         c = self._model.eval_at(source)
