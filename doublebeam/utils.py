@@ -112,7 +112,7 @@ def generate_grid_coordinates(target_depth: float, x_extent: Tuple[float, float]
     x = np.linspace(*x_extent, num_x)
     y = np.linspace(*y_extent, num_y)
     xx, yy = np.meshgrid(x, y)
-    return np.ascontiguousarray(np.stack((xx, yy, np.full_like(xx.shape, target_depth))).T)
+    return np.ascontiguousarray(np.stack((xx, yy, np.full_like(xx, target_depth))).T)
 
 
 def unit_vector(v: np.ndarray) -> np.ndarray:
