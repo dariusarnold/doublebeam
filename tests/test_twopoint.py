@@ -126,3 +126,19 @@ class TestMethod_v_M(unittest.TestCase):
                 actual = self.tp._v_M(p1, p2)
                 self.assertEqual(actual, expected, msg=self.msg_(p1, p2, actual, expected))
 
+
+class TestStraightDown(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        self.tp = TwoPointRayTracing(self.vm)
+        self.iv = KinematicRayTracer3D(self.vm)
+
+    def test(self):
+        source = np.array((0, 0, 0))
+        target = np.array((0, 0, 400))
+        slowness = self.tp.trace(source, target)
+        ray = Ray3D(source, slowness)
+        self.iv.trace_stack(ray, "TTT")
+        np.testing.assert_array_equal(ray.last_point, target)
+
