@@ -40,6 +40,8 @@ class DoubleBeam:
 
     def __init__(self, model: VelocityModel3D, window_length: float,
                  fracture_parameters: FractureParameters):
+        if model.x_width == 0 or model.y_width == 0:
+            raise ValueError("Model width can't be 0!")
         self.model = model
         self.fracture_info = fracture_parameters
         target_num_x, target_num_y = 10, 10
