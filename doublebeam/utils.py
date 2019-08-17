@@ -1,5 +1,5 @@
 import enum
-from functools import singledispatch
+from functools import singledispatch, wraps
 from math import acos, cos, sin, atan2, radians
 from typing import Tuple
 
@@ -167,3 +167,17 @@ def generate_vector_arc(num_values: int, central_direction: np.ndarray):
     vectors[:, Index.X] = np.cos(angles)
     vectors[:, Index.Y] = -np.sin(angles)
     return vectors
+
+
+def ignore_numpy_warnings(function):
+    """
+    Ignore numpy warnings and re-enable them when exiting the function.
+    :param function: Callable for which warnings are ignored.
+    """
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        old_settings = np.seterr(all="ignore")
+        result = function(*args, **kwargs)
+        np.seterr(**old_settings)
+        return result
+    return wrapper

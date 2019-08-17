@@ -4,7 +4,7 @@ from math import sqrt, sin, cos, isfinite
 import numpy as np
 
 from doublebeam.models import VelocityModel3D
-from doublebeam.utils import Index, safe_divide, horizontal_distance, angle_clockwise
+from doublebeam.utils import Index, safe_divide, horizontal_distance, angle_clockwise, ignore_numpy_warnings
 
 
 class TwoPointRayTracing:
@@ -65,6 +65,8 @@ class TwoPointRayTracing:
                 self._model.eval_at(receiver_position))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
+    # TODO fix twopoint algorithm to not throw warnings
+    @ignore_numpy_warnings
     def trace(self, source: np.ndarray, receiver: np.ndarray,
               accuracy: float = 1E-10) -> np.ndarray:
         # TODO implement model borders
