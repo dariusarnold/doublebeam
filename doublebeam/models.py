@@ -80,10 +80,12 @@ class VelocityModel3D:
                         dtype=LinearVelocityLayer)
 
     @classmethod
-    def from_file(cls, filepath: Union[Path, str]) -> "VelocityModel3D":
+    def from_file(cls, filepath: Union[Path, str], *args, **kwargs) -> "VelocityModel3D":
         """
         Load model from file. Formatting and content of file is described in
         README.md.
+        Use args or kwargs to pass additional parameters, such as the width, to
+        the model constructor.
         :param filepath: Path to to file containing model data
         """
         # TODO update README to reflect changes: Only LinearVelocityLayer is kept
@@ -93,13 +95,15 @@ class VelocityModel3D:
             msg = f"Error parsing velocity model file {str(filepath)}"
             raise ValueError(msg)
         raw_data = cls.convert_to_gradient_intercept(raw_data)
-        return cls(raw_data)
+        return cls(raw_data, *args, **kwargs)
 
     @classmethod
-    def from_string(cls, model: str) -> "VelocityModel3D":
+    def from_string(cls, model: str, *args, **kwargs) -> "VelocityModel3D":
         """
         Create model from string description. The same rules as for model files
         apply for creation from string.
+        Use args or kwargs to pass additional parameters, such as the width, to
+        the model constructor.
         :param model: Velocity model string.
         """
         # np.loadtxt also takes generators, so create one
@@ -109,7 +113,7 @@ class VelocityModel3D:
             msg = f"Error parsing velocity model string {model}"
             raise ValueError(msg)
         raw_data = cls.convert_to_gradient_intercept(raw_data)
-        return cls(raw_data)
+        return cls(raw_data, *args, **kwargs)
 
     def layer_index(self, points: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         """
@@ -142,6 +146,7 @@ class VelocityModel3D:
         tuple of three x, y, z coordinates
         :return: Velocity in m/s
         """
+        # TODO add exception when an array of the wrong shape is passed
         try:
             z = points.T[Index.Z]
         except (AttributeError, IndexError):
