@@ -50,3 +50,5 @@ VelocityModel1D file formatting
 In the code, literature is often referred by a shorthand first author + year notation.
 In case the title and full author list is not mentioned in the source code:  
 Cerveny2001: Seismic ray theory - Cerveny 2001
+Hill2001: Prestack Gaussian beam depth migration - Hill 1990
+Fang2019: A fast and robust two-point ray tracing method in layered media with constant or linearly varying layer velocity - Fang, Chen 2019
