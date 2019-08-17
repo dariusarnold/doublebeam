@@ -6,6 +6,20 @@ from doublebeam.raytracing.twopoint import TwoPointRayTracing
 from doublebeam.utils import generate_grid_coordinates, Index, unit_vector
 
 
+def scattered_slowness(slowness: np.ndarray, phi_hat: np.ndarray,
+                       fracture_spacing: float, frequency: float) -> np.ndarray:
+    """
+    Create new slowness vector for wave scattered from fractures.
+    :param slowness: Incoming slowness vector.
+    :param phi_hat: unit vector orthogonal to fracture planes.
+    :param fracture_spacing: Distance between fracture planes in m.
+    :param frequency: Frequency of seismic wave in Hz.
+    :return: Modified slowness vector.
+    """
+    ps = slowness[:Index.Z]
+    return ps - np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat
+
+
 class FractureParameters:
 
     def __init__(self, fracture_depth: float, fracture_spacing: float,
@@ -39,17 +53,4 @@ class DoubleBeam:
         self.twopoint = TwoPointRayTracing(model)
 
 
-
-    def scattered_slowness(self, slowness: np.ndarray, phi_hat: np.ndarray,
-                           fracture_spacing: float, frequency: float) -> np.ndarray:
-        """
-        Create new slowness vector for wave scattered from fractures.
-        :param slowness: Incoming slowness vector.
-        :param phi_hat: unit vector orthogonal to fracture planes.
-        :param fracture_spacing: Distance between fracture planes in m.
-        :param frequency: Frequency of seismic wave in Hz.
-        :return: Modified slowness vector.
-        """
-        ps = slowness[:Index.Z]
-        return ps - np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat
 
