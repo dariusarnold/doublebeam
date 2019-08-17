@@ -1,4 +1,3 @@
-from typing import Optional
 
 import numpy as np
 
@@ -29,18 +28,17 @@ class DoubleBeam:
                  fracture_parameters: FractureParameters):
         self.model = model
         self.fracture_info = fracture_parameters
-        self.target_locations = None
-        self.source_beam_centers: Optional[np.ndarray] = None
+        target_num_x, target_num_y = 10, 10
+        self.target_locations = generate_grid_coordinates(self.fracture_info.depth, (0, self.model.x_width),
+                                                          (0, self.model.y_width), target_num_x, target_num_y)
+        source_num_x, source_num_y = 20, 20
+        self.source_beam_centers = generate_grid_coordinates(self.model.vertical_boundaries()[0],
+                                                             (0, self.model.x_width), (0, self.model.y_width),
+                                                             source_num_x, source_num_y)
         self.window_length = window_length
         self.twopoint = TwoPointRayTracing(model)
 
-    def generate_targets(self, num_x: int, num_y: int) -> None:
-        self.target_locations = generate_grid_coordinates(self.fracture_info.depth, (0, self.model.x_width),
-                                                          (0, self.model.y_width), num_x, num_y)
 
-    def generate_source_beam_centers(self, num_x: int, num_y: int) -> None:
-        self.source_beam_centers = generate_grid_coordinates(self.model.vertical_boundaries()[0], (0, self.model.x_width),
-                                                             (0, self.model.y_width), num_x, num_y)
 
     def scattered_slowness(self, slowness: np.ndarray, phi_hat: np.ndarray,
                            fracture_spacing: float, frequency: float) -> np.ndarray:
