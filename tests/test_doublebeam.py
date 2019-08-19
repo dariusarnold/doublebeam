@@ -3,7 +3,9 @@ from math import radians
 
 import numpy as np
 
+from doublebeam.doublebeam import scattered_slowness
 from doublebeam.utils import angle, pairwise, angle_clockwise, generate_vector_arc
+from tests.utils_testing import TestCase
 
 
 class TestPhiHatGeneration(unittest.TestCase):
@@ -45,3 +47,32 @@ class TestPhiHatGeneration(unittest.TestCase):
                 self.assertAlmostEqual(angle_clockwise(direction, vectors[0]), radians(270), places=14)
             with self.subTest("Testing is last vector has angle 180° to axis"):
                 self.assertAlmostEqual(angle(direction, vectors[-1]), radians(90), places=14)
+
+
+class TestScatteredSlowness(TestCase):
+    """
+    Test if function works for a single and multiple vectors
+    """
+
+    def setUp(self) -> None:
+        self.slowness = np.array((1, 2, -3.))
+        self.direction = np.array((1, 1, 1.))
+        # manually calculated
+        self.expected_result = np.array([0.9975, 1.9975, -3])
+        self.spacing = 10
+        self.frequency = 40
+
+    def test_dont_modify_passed_slowness_vector(self):
+        slowness_before = self.slowness.copy()
+        scattered_slowness(self.slowness, self.direction, self.spacing, self.frequency)
+        self.assertEqual(slowness_before, self.slowness)
+
+    def test_single_vector_correct_result(self):
+        b = scattered_slowness(self.slowness, self.direction, self.spacing, self.frequency)
+        self.assertEqual(b, self.expected_result)
+
+    def test_multiple_direction_vectors(self):
+        """Test if passing multiple phi_hat vectors stacked vertically works."""
+        directions = np.vstack((self.direction,)*4)
+        result = scattered_slowness(self.slowness, directions, self.spacing, self.frequency)
+        self.assertEqual(result, np.vstack((self.expected_result,) * 4))

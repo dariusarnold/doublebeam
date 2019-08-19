@@ -10,16 +10,22 @@ def scattered_slowness(slowness: np.ndarray, phi_hat: np.ndarray,
                        fracture_spacing: float, frequency: float) -> np.ndarray:
     """
     Create new slowness vector for wave scattered from fractures.
-    :param slowness: Incoming slowness vector.
+    :param slowness: Incoming slowness vector. Can also compute scattered
+    direction for multiple given slowness vectors in the shape (N, 3), where N
+    is the number of slowness vectors given. This will then return the scattered
+    direction as (N, 3).
     :param phi_hat: unit vector orthogonal to fracture planes.
     :param fracture_spacing: Distance between fracture planes in m.
     :param frequency: Frequency of seismic wave in Hz.
     :return: Modified slowness vector.
     """
     slowness = np.array(slowness, dtype=np.float64)
-    ps = slowness[:Index.Z]
-    ps -= np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat[:Index.Z]
-    return slowness
+    slowness_z = slowness[Index.Z]
+    phi_hat = np.atleast_2d(phi_hat)
+    signs = np.expand_dims(np.copysign(1, slowness[:2] @ phi_hat[:, :2].T), -1)
+    slowness = slowness - signs / (fracture_spacing * frequency) * phi_hat
+    slowness[:, 2] = slowness_z
+    return np.squeeze(slowness)
 
 
 class FractureParameters:
