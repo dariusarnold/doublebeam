@@ -16,8 +16,10 @@ def scattered_slowness(slowness: np.ndarray, phi_hat: np.ndarray,
     :param frequency: Frequency of seismic wave in Hz.
     :return: Modified slowness vector.
     """
+    slowness = np.array(slowness, dtype=np.float64)
     ps = slowness[:Index.Z]
-    return ps - np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat
+    ps -= np.copysign(1, ps @ phi_hat[:Index.Z]) / (fracture_spacing * frequency) * phi_hat[:Index.Z]
+    return slowness
 
 
 class FractureParameters:
