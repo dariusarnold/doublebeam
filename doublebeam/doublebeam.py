@@ -7,7 +7,7 @@ from doublebeam import GaussBeam
 from doublebeam.models import VelocityModel3D
 from doublebeam.raytracing.initial_value import DynamicRayTracer3D
 from doublebeam.raytracing.twopoint import TwoPointRayTracing
-from doublebeam.utils import generate_grid_coordinates, Index, unit_vector, generate_vector_arc
+from doublebeam.utils import grid_coordinates, Index, unit_vector, generate_vector_arc
 
 
 def scattered_slowness(slowness: np.ndarray, phi_hat: np.ndarray,
@@ -99,12 +99,12 @@ class DoubleBeam:
 
         self.model = model
         self.params = params
-        self.target_locations = generate_grid_coordinates(self.params.fractures.depth, self.params.target.offset_x,
-                                                          self.params.target.offset_y, self.params.target.num_points_x,
-                                                          self.params.target.num_points_y)
-        self.source_beam_centers = generate_grid_coordinates(self.model.vertical_boundaries()[0], self.params.source.offset_x,
-                                                             self.params.source.offset_y, self.params.source.num_points_x,
-                                                             self.params.source.num_points_y)
+        self.target_locations = grid_coordinates(self.params.fractures.depth, self.params.target.offset_x,
+                                                 self.params.target.offset_y, self.params.target.num_points_x,
+                                                 self.params.target.num_points_y)
+        self.source_beam_centers = grid_coordinates(self.model.vertical_boundaries()[0], self.params.source.offset_x,
+                                                    self.params.source.offset_y, self.params.source.num_points_x,
+                                                    self.params.source.num_points_y)
         self.twopoint = TwoPointRayTracing(model)
         self.dynamic_rt = DynamicRayTracer3D(model)
 

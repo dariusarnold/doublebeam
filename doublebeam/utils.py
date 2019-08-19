@@ -107,9 +107,9 @@ def slowness_3D(theta: float, phi: float, velocity: float) -> np.ndarray:
     return np.array((px, py, pz))
 
 
-def generate_grid_coordinates(target_depth: float, x_extent: Tuple[float, float],
-                              y_extent: Tuple[float, float], num_x: int,
-                              num_y: int) -> np.ndarray:
+def grid_coordinates(target_depth: float, x_extent: Tuple[float, float],
+                     y_extent: Tuple[float, float], num_x: int,
+                     num_y: int) -> np.ndarray:
     """
     Generate coordinates of a evenly spaced grid.
     :param x_extent: x_start, x_end tuple.
