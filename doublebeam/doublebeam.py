@@ -1,5 +1,5 @@
 import itertools as it
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -11,24 +11,30 @@ from doublebeam.utils import grid_coordinates, Index, unit_vector, generate_vect
 
 
 def scattered_slowness(slowness: np.ndarray, phi_hat: np.ndarray,
-                       fracture_spacing: float, frequency: float) -> np.ndarray:
+                       fracture_spacing: Union[float, np.ndarray],
+                       frequency: float) -> np.ndarray:
     """
     Create new slowness vector for wave scattered from fractures.
-    :param fracture_spacing: Distance between fracture planes in m.
     :param slowness: Incoming slowness vector.
     :param phi_hat: unit vector orthogonal to fracture planes. Can also compute
     scattered direction for multiple given fracture normal vectors in the shape
     (N, 3), where N is the number of normal vectors given.
+    :param fracture_spacing: Distance between fracture planes in m. Can also
+    compute scattered direction for multiple fracture spacings in the shape (M,)
+    where M is the number of fracture spacings given.
     :param frequency: Frequency of seismic wave in Hz.
-    :return: Modified slowness vector.
+    :return: Array of modified slowness vectors with shape (N, M, 3) where N is
+    the number of fracture normal vectors and M is the number of fracture
+    spacings.
     """
     slowness = np.array(slowness, dtype=np.float64)
     slowness_z = slowness[Index.Z]
     phi_hat = np.atleast_2d(phi_hat)
     signs = np.expand_dims(np.copysign(1, slowness[:2] @ phi_hat[:, :2].T), -1)
-    slowness = slowness - signs / (fracture_spacing * frequency) * phi_hat
-    slowness[:, 2] = slowness_z
-    return np.squeeze(slowness)
+    slowness = (slowness - np.expand_dims(signs / (fracture_spacing * frequency), -1)
+                * np.expand_dims(phi_hat, 1))
+    slowness[..., 2] = slowness_z
+    return slowness
 
 
 class FractureParameters:
