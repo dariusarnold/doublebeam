@@ -58,7 +58,7 @@ class TestScatteredSlowness(TestCase):
         self.slowness = np.array((1, 2, -3.))
         self.direction = np.array((1, 1, 1.))
         # manually calculated
-        self.expected_result = np.array([0.9975, 1.9975, -3])
+        self.expected_result = np.array([0.9975, 1.9975, -3]).reshape(1, 1, 3)
         self.spacing = 10
         self.frequency = 40
 
@@ -75,4 +75,24 @@ class TestScatteredSlowness(TestCase):
         """Test if passing multiple phi_hat vectors stacked vertically works."""
         directions = np.vstack((self.direction,)*4)
         result = scattered_slowness(self.slowness, directions, self.spacing, self.frequency)
-        self.assertEqual(result, np.vstack((self.expected_result,) * 4))
+        with self.subTest("Testing correct dimensions"):
+            self.assertEqual(result.shape, (4, 1, 3))
+        with self.subTest("Testing correct values"):
+            self.assertEqual(result, np.vstack((self.expected_result,) * 4))
+
+    def test_multiple_spacings(self):
+        spacings = np.linspace(10, 10, 5)
+        result = scattered_slowness(self.slowness, self.direction, spacings, self.frequency)
+        with self.subTest("Testing correct dimensions"):
+            self.assertEqual(result.shape, (1, 5, 3))
+        with self.subTest("Testing correct values"):
+            self.assertEqual(result, np.hstack((self.expected_result,)*5))
+
+    def test_multiple_spacings_and_multiple_directions(self):
+        spacings = np.linspace(10, 10, 5)
+        directions = np.vstack((self.direction,)*4)
+        result = scattered_slowness(self.slowness, directions, spacings, self.frequency)
+        with self.subTest("Testing correct dimensions"):
+            self.assertEqual(result.shape, (4, 5, 3))
+        with self.subTest("Testing correct values"):
+            self.assertEqual(result, np.tile(self.expected_result, (4, 5, 1)))
