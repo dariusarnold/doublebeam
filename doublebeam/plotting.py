@@ -95,10 +95,10 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     :return:
     """
     fig, ax = plt.subplots(subplot_kw={"polar": True}, figsize=(6, 6), dpi=500)
-    anlges = np.radians(np.linspace(0, 180, data.shape[0]+1))
+    angles = np.radians(np.linspace(0, 180, data.shape[0]+1))
     # +1 otherwise last column of data will be ignored
     radii = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
-    im = ax.pcolor(anlges, radii, data.T)
+    im = ax.pcolormesh(angles, radii, data.T)
     # add grid
     major_ticks_radius = np.linspace(min_spacing, max_spacing, 5)
     ax.set_rticks(major_ticks_radius)
