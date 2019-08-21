@@ -111,8 +111,9 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     ax.set_rorigin(10)
     ax.set_ylim(min_spacing, max_spacing)
     # TODO add axis labels
-    cbar = fig.colorbar(im, ax=ax, shrink=.75)
+    cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15)
     cbar.set_label(r"$|\sigma|$")
-    ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
+    title = ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
+    title.set_position((.5, .85))
     plt.savefig("test.pdf", bbox_inches="tight")
     plt.savefig("test.png", bbox_inches="tight")
