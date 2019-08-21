@@ -95,10 +95,10 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     :return:
     """
     fig, ax = plt.subplots(subplot_kw={"polar": True})
-    t = np.radians(np.linspace(0, 180, data.shape[0]))
+    anlges = np.radians(np.linspace(0, 180, data.shape[0]))
     # +1 otherwise last column of data will be ignored
-    r = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
-    im = ax.pcolor(t, r, data.T)
+    radii = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
+    im = ax.pcolor(anlges, radii, data.T)
     # limit to half circle
     ax.set_thetamin(0)
     ax.set_thetamax(180)
