@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Run all unittests in the tests folder of this repo.
+
 # exit immediately if a command fails
 trap 'exit' ERR
 
