@@ -85,9 +85,9 @@ def plot_velocity_model_diagram(model: VelocityModel3D) -> None:
     plt.show()
 
 
-def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacing: float):
+def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacing: float,
+                                target_id: int, target_x: float, target_y: float):
     """
-
     :param data: (N, M) array that contains scattering coefficient sigma. First
     axis gives angle samples, second axis gives fracture spacing.
     :param min_spacing: min fracture spacing
@@ -107,4 +107,5 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     ax.set_ylim(min_spacing, max_spacing)
     # TODO add axis labels
     # TODO add colorbar
+    ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
     plt.show()
