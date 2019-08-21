@@ -99,6 +99,11 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     # +1 otherwise last column of data will be ignored
     radii = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
     im = ax.pcolor(anlges, radii, data.T)
+    major_ticks_radius = np.linspace(min_spacing, max_spacing, 5)
+    ax.set_rticks(major_ticks_radius)
+    major_ticks_angle = np.linspace(0, np.pi, 5)
+    ax.set_xticks(major_ticks_angle)
+    ax.grid(color="white")
     # limit to half circle
     ax.set_thetamin(0)
     ax.set_thetamax(180)
