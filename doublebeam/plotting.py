@@ -108,7 +108,7 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     # limit to half circle
     ax.set_thetamax(180)
     # create inner "cutout" by setting origin and min/max for radial axis
-    ax.set_rorigin(-min_spacing)
+    ax.set_rorigin(10)
     ax.set_ylim(min_spacing, max_spacing)
     # TODO add axis labels
     cbar = fig.colorbar(im, ax=ax, shrink=.75)
