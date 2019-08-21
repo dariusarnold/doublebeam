@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from utils_testing import TempFile
+from tests.utils_testing import TempFile
 from doublebeam.io.input import load_wfdata
 
 

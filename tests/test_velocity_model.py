@@ -3,7 +3,7 @@ from typing import Sequence
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from utils_testing import TempFile
+from tests.utils_testing import TempFile
 
 from doublebeam.models import LinearVelocityLayer, VelocityModel3D
 from doublebeam.utils import Index

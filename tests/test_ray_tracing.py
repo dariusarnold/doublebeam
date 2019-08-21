@@ -268,8 +268,8 @@ class TestDynamicRayTracingOneLayer(unittest.TestCase):
 class TestForRegressionDynamicRayTracing(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.P_desired = np.load(Path("data/P_analytic.npy"))
-        self.Q_desired = np.load(Path("data/Q_analytic.npy"))
+        self.P_desired = np.load(Path("tests/data/P_analytic.npy"))
+        self.Q_desired = np.load(Path("tests/data/Q_analytic.npy"))
         vm = VelocityModel3D([(0, 10, 2000, 1)])
         self.drt = DynamicRayTracer3D(vm)
         self.beam = GaussBeam.from_angle((0, 0, 0), radians(20), radians(0), vm.eval_at(0), 10, 40)
@@ -312,9 +312,8 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
             beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
             self.drt.trace_stack(beam, "TRT")
             return beam.P, beam.Q
-
-        P_expected = list(np.load(Path("data/P_multilayer.npy")))
-        Q_expected = list(np.load(Path("data/Q_multilayer.npy")))
+        P_expected = list(np.load(Path("tests/data/P_multilayer.npy")))
+        Q_expected = list(np.load(Path("tests/data/Q_multilayer.npy")))
         P_actual, Q_actual = generate_data()
 
         # do segment wise comparison of the matrices
