@@ -98,7 +98,7 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     t = np.radians(np.linspace(0, 180, data.shape[0]))
     # +1 otherwise last column of data will be ignored
     r = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
-    ax.pcolor(t, r, data.T)
+    im = ax.pcolor(t, r, data.T)
     # limit to half circle
     ax.set_thetamin(0)
     ax.set_thetamax(180)
@@ -106,6 +106,7 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     ax.set_rorigin(-min_spacing)
     ax.set_ylim(min_spacing, max_spacing)
     # TODO add axis labels
-    # TODO add colorbar
+    cbar = fig.colorbar(im, ax=ax, shrink=.75)
+    cbar.set_label(r"$|\sigma|$")
     ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
     plt.show()
