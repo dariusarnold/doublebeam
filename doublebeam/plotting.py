@@ -84,3 +84,27 @@ def plot_velocity_model_diagram(model: VelocityModel3D) -> None:
     plt.title("Velocity model")
     plt.show()
 
+
+def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacing: float):
+    """
+
+    :param data: (N, M) array that contains scattering coefficient sigma. First
+    axis gives angle samples, second axis gives fracture spacing.
+    :param min_spacing: min fracture spacing
+    :param max_spacing: max fracture spacing
+    :return:
+    """
+    fig, ax = plt.subplots(subplot_kw={"polar": True})
+    t = np.radians(np.linspace(0, 180, data.shape[0]))
+    # +1 otherwise last column of data will be ignored
+    r = np.linspace(min_spacing, max_spacing, data.shape[1]+1)
+    ax.pcolor(t, r, data.T)
+    # limit to half circle
+    ax.set_thetamin(0)
+    ax.set_thetamax(180)
+    # create inner "cutout" by setting origin and min/max for radial axis
+    ax.set_rorigin(-min_spacing)
+    ax.set_ylim(min_spacing, max_spacing)
+    # TODO add axis labels
+    # TODO add colorbar
+    plt.show()
