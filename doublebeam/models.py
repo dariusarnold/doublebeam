@@ -131,7 +131,7 @@ class VelocityModel3D:
         top, bottom = self.vertical_boundaries()
         if np.any(np.logical_or(depths < top, depths > bottom)):
             raise LookupError(f"Depth {depths} contains values out of model "
-                             f"range: {top}, {bottom}")
+                              f"range: {top}, {bottom}")
         # wrap in asarray since searchsorted returns scalar for single point
         # which then doesn't support assignment
         indices = np.asarray(np.searchsorted(self.interface_depths, depths,
