@@ -1,4 +1,4 @@
-#depth top, depth bottom, p velocity top, p velocity bottom, s velocity top, s velocity bottom, density top, density bottom
+#depth top, depth bottom, p velocity top, p velocity bottom
 # model from Fang2019 fig.3
 0, 100, 1800, 2200
 100, 200, 2400, 2400
