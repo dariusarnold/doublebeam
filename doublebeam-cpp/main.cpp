@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <type_traits>
+#include <chrono>
 #include "model.cpp"
 #include "src/timing/timing.h"
 
@@ -108,15 +109,21 @@ int main(){
     std::vector<double> t;
 
     auto trace = KinematicRayTracingEquation(vm);
-    auto a = std::chrono::system_clock::now();
-    size_t steps = boost::numeric::odeint::integrate(trace, initial_state, 0., 100., 0.1,
+
+    typedef boost::numeric::odeint::runge_kutta_cash_karp54< state_type > error_stepper_type;
+    typedef boost::numeric::odeint::controlled_runge_kutta<error_stepper_type> controlled_stepper_type;
+    controlled_stepper_type controlled_stepper;
+
+    size_t steps = boost::numeric::odeint::integrate_adaptive(controlled_stepper, trace, initial_state, 0., 100., 1.,
             store_solver_state(v, t));
-    auto b = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(b - a).count() << "\n";
     std::cout << v << "\n";
     std::cout << steps << "\n";
 
-    auto res = measure_runtime<std::chrono::nanoseconds>([&](){boost::numeric::odeint::integrate(trace, initial_state, 0., 100., 0.1, store_solver_state(v, t));});
+
+    auto res = measure_runtime<8000>([&](){
+        boost::numeric::odeint::integrate_adaptive(controlled_stepper, trace, initial_state, 0., 100., 1.,
+                                                   store_solver_state(v, t));});
     std::cout << res << "\n";
+
     return 0;
 }
