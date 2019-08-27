@@ -4,7 +4,7 @@
 #include <array>
 #include <type_traits>
 #include "model.cpp"
-#include "timing.cpp"
+#include "src/timing/timing.h"
 
 typedef std::array<double, 7> state_type;
 
@@ -90,11 +90,6 @@ template <typename T>
 typename std::enable_if<std::is_floating_point<T>::value, T>::type radians(T degrees){
     constexpr T factor = M_PI / 180.;
     return degrees * factor;
-}
-
-
-std::ostream& operator<<(std::ostream& os, const TimingResults& results){
-    return os << results.mean << " ns" << " +/- " << results.standard_deviation << "ns (" << results.number_of_runs << " runs)";
 }
 
 

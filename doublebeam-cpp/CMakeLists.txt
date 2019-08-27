@@ -3,4 +3,8 @@ project(doublebeam_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(doublebeam_cpp main.cpp)
+add_library(timing src/timing/timing.cpp)
+
+add_executable(doublebeam main.cpp)
+
+target_link_libraries(doublebeam PRIVATE timing)
