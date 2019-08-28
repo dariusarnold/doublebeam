@@ -86,10 +86,13 @@ double radians(typename std::enable_if<std::is_integral<T>::value, T>::type degr
     return degrees * factor;
 }*/
 
-// TODO create version that accepts ints but uses floating point multiplication
+
 template <typename T>
-typename std::enable_if<std::is_floating_point<T>::value, T>::type radians(T degrees){
-    constexpr T factor = M_PI / 180.;
+double radians(T degrees){
+    constexpr double factor = M_PI / 180.;
+    if constexpr (std::is_integral<T>::value){
+        degrees = static_cast<double>(degrees);
+    }
     return degrees * factor;
 }
 
