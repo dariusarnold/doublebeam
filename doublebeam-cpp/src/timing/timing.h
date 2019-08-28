@@ -2,6 +2,15 @@
 #define DOUBLEBEAM_CPP_TIMING_H
 
 
+#include <cstdint>
+#include <ostream>
+#include <cmath>
+#include <algorithm>
+#include <vector>
+#include <chrono>
+#include <numeric>
+
+
 struct TimingResults{
     // all time results are in nanoseconds
     double mean;

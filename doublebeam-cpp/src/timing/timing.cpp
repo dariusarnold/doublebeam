@@ -1,10 +1,4 @@
-#include <chrono>
-#include <vector>
-#include <numeric>
-#include <cmath>
 #include <iostream>
-#include <algorithm>
-
 #include "timing.h"
 
 
