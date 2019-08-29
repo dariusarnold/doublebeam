@@ -46,8 +46,8 @@ namespace math {
      * @tparam T Number type.
      * @return True if the sign of both numbers is the same, false otherwise.
      */
-    template <typename T>
-    bool same_sign(T a, T b){
+    template<typename T>
+    bool same_sign(T a, T b) {
         return a * b >= T{0};
     }
 

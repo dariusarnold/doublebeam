@@ -5,7 +5,7 @@
 #include <tuple>
 
 
-struct Layer{
+struct Layer {
     double top_depth;
     double bot_depth;
     double intercept;
@@ -13,7 +13,7 @@ struct Layer{
 };
 
 
-class VelocityModel{
+class VelocityModel {
     /**
      * Depth of all interfaces, including the top and the bottom one
      * where the layer ends.

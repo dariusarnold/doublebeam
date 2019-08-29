@@ -7,7 +7,7 @@ namespace odeint = boost::numeric::odeint;
 typedef std::array<double, 7> state_type;
 
 class KinematicRayTracingEquation {
-    const VelocityModel &vm;
+    const VelocityModel& vm;
 
     double dvdz(double z) {
         auto layer = vm[vm.layer_index(z)];
@@ -15,9 +15,9 @@ class KinematicRayTracingEquation {
     }
 
 public:
-    explicit KinematicRayTracingEquation(const VelocityModel &model) : vm(model) {}
+    explicit KinematicRayTracingEquation(const VelocityModel& model) : vm(model) {}
 
-    void operator()(const state_type &state, state_type &dxdt, const double /* s */) {
+    void operator()(const state_type& state, state_type& dxdt, const double /* s */) {
         auto[x, y, z, px, py, pz, T] = state;
         auto v = vm.eval_at(z);
         auto dxds = px * v;
@@ -61,27 +61,26 @@ struct InterfaceCrossed {
 
     explicit InterfaceCrossed(double interface_depth) : interface_depth(interface_depth) {};
 
-    double operator()(const state_type &state) const {
-        // TODO use enum index
+    double operator()(const state_type& state) const {
         return interface_depth - state[2];
     }
 };
 
 
 struct store_solver_state {
-    std::vector<state_type> &states;
-    std::vector<double> &times;
+    std::vector<state_type>& states;
+    std::vector<double>& times;
 
-    store_solver_state(std::vector<state_type> &states, std::vector<double> &times) : states(states), times(times) {}
+    store_solver_state(std::vector<state_type>& states, std::vector<double>& times) : states(states), times(times) {}
 
-    void operator()(const state_type &x, double t) {
+    void operator()(const state_type& x, double t) {
         states.push_back(x);
         times.push_back(t);
     }
 };
 
 
-state_type init_state(double x, double y, double z, const VelocityModel &model,
+state_type init_state(double x, double y, double z, const VelocityModel& model,
                       double theta, double phi, double T = 0) {
     const double velocity = model.eval_at(z);
     const auto[px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
@@ -105,7 +104,7 @@ state_type init_state(double x, double y, double z, const VelocityModel &model,
  */
 template<typename System, typename Condition>
 std::vector<std::pair<double, state_type>>
-find_crossing(state_type &x0, System sys, Condition cond, const double s_start,
+find_crossing(state_type& x0, System sys, Condition cond, const double s_start,
               const double ds, const double precision = 1.E-6, double max_ds = 1.1) {
     auto stepper = odeint::make_dense_output(1.E-6, 1.E-6, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
@@ -129,13 +128,11 @@ find_crossing(state_type &x0, System sys, Condition cond, const double s_start,
         if (cond(x_middle) == 0) {
             // midpoint found
             break;
-        }
-        else if (cond(x_middle) > 0) {
+        } else if (cond(x_middle) > 0) {
             // we are above the interface crossing, condition change
             // lies below the midpoint
             t0 = t_middle;
-        }
-        else {
+        } else {
             // below interface crossing, condition change lies above
             // the midpoint
             t1 = t_middle;

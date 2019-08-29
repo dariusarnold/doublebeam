@@ -2,9 +2,7 @@
 #include "src/printing.h"
 
 
-
-
-int main(){
+int main() {
     std::vector<Layer> layers{{0,   100, 1000, 1},
                               {100, 200, 1100, -1}};
     auto vm = VelocityModel(layers);
