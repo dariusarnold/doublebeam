@@ -1,5 +1,5 @@
-#include "src/integration.cpp"
-#include "src/printing.h"
+#include "integration.cpp"
+#include "printing.h"
 
 
 int main() {

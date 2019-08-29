@@ -5,7 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Boost REQUIRED)
 
-add_executable(doublebeam main.cpp src/model.cpp src/utils.cpp)
-target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra -Wpedantic)
+add_library(doublebeam_lib src/model.cpp src/utils.cpp src/integration.cpp)
+target_link_libraries(doublebeam_lib PRIVATE Boost::boost)
+target_include_directories(doublebeam_lib PUBLIC src)
+target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
+
+add_executable(doublebeam main.cpp)
+target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
+
 add_subdirectory(src/timing)
-target_link_libraries(doublebeam PRIVATE Boost::boost timing)
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost)
+
+add_subdirectory(tests)
