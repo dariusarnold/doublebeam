@@ -48,7 +48,7 @@ namespace math {
      */
     template<typename T>
     bool same_sign(T a, T b) {
-        return a * b >= T{0};
+        return std::signbit(a) == std::signbit(b);
     }
 
 }
