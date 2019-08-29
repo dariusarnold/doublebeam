@@ -9,6 +9,7 @@
 #include <vector>
 #include <chrono>
 #include <numeric>
+#include <fstream>
 
 
 struct TimingResults{
