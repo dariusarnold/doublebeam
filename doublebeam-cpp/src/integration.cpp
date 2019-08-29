@@ -35,20 +35,20 @@ public:
     }
 };
 
-enum class Index : size_t {
+struct Index {
     /*
      * Indices of variables in state_type.
      * X, Y, Z are cartesian coordinates.
      * PX, PY, PZ are components of slowness vector.
      * T is travel time.
      */
-            X = 0,
-    Y = 1,
-    Z = 2,
-    PX = 3,
-    PY = 4,
-    PZ = 5,
-    T = 6,
+    static constexpr size_t X = 0;
+    static constexpr size_t Y = 1;
+    static constexpr size_t Z = 2;
+    static constexpr size_t PX = 3;
+    static constexpr size_t PY = 4;
+    static constexpr size_t PZ = 5;
+    static constexpr size_t T = 6;
 };
 
 struct InterfaceCrossed {
@@ -62,7 +62,7 @@ struct InterfaceCrossed {
     explicit InterfaceCrossed(double interface_depth) : interface_depth(interface_depth) {};
 
     double operator()(const state_type& state) const {
-        return interface_depth - state[2];
+        return interface_depth - state[Index::Z];
     }
 };
 
