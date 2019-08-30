@@ -3,11 +3,31 @@
 #include "model.h"
 
 
+/**
+ * Helper function to calculate velocity in layer.
+ * @return Velocity (m/s) in layer at depth. No bounds checking is done.
+ */
+double layer_velocity(Layer layer, double depth) {
+    return layer.intercept + layer.gradient * depth;
+}
+
+
 VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) {
-    interface_depths.push_back(layers[0].top_depth);
-    for (auto& l: layers) {
-        interface_depths.push_back(l.bot_depth);
+    if (layers.empty()) {
+        throw std::invalid_argument("Velocity model has to contain layers");
     }
+    // First get interface depths
+    auto top_layer = layers.front();
+    interface_depths.push_back(top_layer.top_depth);
+    std::for_each(layers.begin(), layers.end(), [&](const auto& layer){interface_depths.push_back(layer.bot_depth);});
+    // Second get interface velocities with two special cases for first and last layer
+    double vel_above = 0., vel_below;
+    for (auto& l: layers) {
+        vel_below = layer_velocity(l, l.top_depth);
+        _interface_velocities.emplace_back(vel_above, vel_below);
+        vel_above = layer_velocity(l, l.bot_depth);
+    }
+    _interface_velocities.emplace_back(vel_above, 0);
 }
 
 Layer VelocityModel::operator[](size_t index) const {
@@ -22,4 +42,13 @@ size_t VelocityModel::layer_index(double z) const {
 double VelocityModel::eval_at(double z) const {
     auto layer = layers[layer_index(z)];
     return layer.gradient * z + layer.intercept;
+}
+
+std::pair<double, double> VelocityModel::interface_velocities(double z) {
+    auto index = layer_index(z);
+    auto half_depth = layers[index].top_depth + 0.5 * (layers[index].bot_depth - layers[index].top_depth);
+    if (z < half_depth) {
+        return _interface_velocities[index];
+    }
+    return _interface_velocities[index + 1];
 }

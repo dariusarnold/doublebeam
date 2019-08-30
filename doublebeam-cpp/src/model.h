@@ -20,6 +20,11 @@ class VelocityModel {
      */
     std::vector<double> interface_depths;
     /**
+     * Pair of above, below velocity of every interface (in m/s).
+     * Includes interfaces at top and bottom where the model ends.
+     */
+     std::vector<std::pair<double, double>> _interface_velocities;
+    /**
      * Velocity intercepts of all layers.
      */
     std::vector<double> intercepts;
@@ -32,7 +37,6 @@ class VelocityModel {
      */
     std::vector<Layer> layers;
 public:
-
     explicit VelocityModel(const std::vector<Layer>& layers);
 
     /**
@@ -58,6 +62,15 @@ public:
      * @return Velocity in m/s.
      */
     double eval_at(double z) const;
+
+    /**
+     * Return velocities above and below the closest interface.
+     * 0 is returned for the velocity outside of the model, e.g. when the
+     * interface between the top layer and the one above is requested.
+     * @param z Depth in meter.
+     * @return velocity at closest interface to depth z in m/s.
+     */
+    std::pair<double, double> interface_velocities(double z);
 };
 
 
