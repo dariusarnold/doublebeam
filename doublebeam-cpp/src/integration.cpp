@@ -1,8 +1,29 @@
-#include <boost/numeric/odeint.hpp>
-
 #include "integration.hpp"
 #include "model.h"
 #include "utils.h"
+
+
+
+std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_before,
+                                              double v_after, char wave_type) {
+    double minus_plus = 1.;
+    if (wave_type == 'R'){
+        return {px, py, -pz};
+    } else {
+        minus_plus = -1;
+    }
+    // handle only special case of horizontal interface where normal is vertical.
+    // n should be oriented to the side the transmitted wave propagates for the
+    // minus_plus relation to work,
+    double nz = std::copysign(1., pz);
+    // dot product can be simplified since bx and ny are 0, nz is -1
+    double p_dot_n = nz * pz;
+    double eps = std::copysign(1., p_dot_n);
+    // since in the original formula everything subtracted from p is multiplied by n
+    // only the pz component changes for horizontal interfaces.
+    pz -= p_dot_n + minus_plus * eps *  std::sqrt(1. / (v_after * v_after) - 1. / (v_before * v_before) + p_dot_n * p_dot_n) * nz;
+    return {px, py, pz};
+}
 
 
 class KinematicRayTracingEquation {
