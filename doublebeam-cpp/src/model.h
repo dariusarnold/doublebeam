@@ -53,6 +53,7 @@ public:
      * belongs to the layer.
      * @param z Depth in m.
      * @return Index of layer in velocity model, 0 indexed.
+     * @throw std::domain_error is thrown when depth is out of model range
      */
     size_t layer_index(double z) const;
 

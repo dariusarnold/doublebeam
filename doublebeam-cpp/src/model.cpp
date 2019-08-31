@@ -35,6 +35,9 @@ Layer VelocityModel::operator[](size_t index) const {
 }
 
 size_t VelocityModel::layer_index(double z) const {
+    if (z < interface_depths.front() or z > interface_depths.back()){
+        throw std::domain_error("Evaluating model outside of its depth range: " + std::to_string(z));
+    }
     auto greater = std::upper_bound(interface_depths.begin(), interface_depths.end(), z);
     return std::min(std::distance(interface_depths.begin(), greater) - 1, static_cast<long int>(layers.size()) - 1);
 }
