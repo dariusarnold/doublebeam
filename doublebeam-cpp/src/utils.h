@@ -20,6 +20,12 @@ namespace seismo {
      */
     std::tuple<double, double, double> slowness_3D(double theta, double phi, double velocity);
 
+
+    /**
+     * Return true if ray is going downwards, false otherwise.
+     * @param pz Vertical component of slowness vector.
+     */
+    bool ray_direction_down(double pz);
 }
 
 namespace math {

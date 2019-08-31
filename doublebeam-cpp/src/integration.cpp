@@ -1,16 +1,30 @@
 #include "integration.hpp"
+
 #include "model.h"
 #include "utils.h"
 
 
-
-std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_before,
-                                              double v_after, char wave_type) {
+/**
+ * Apply snells law to calculate new slowness for horizontal interfaces.
+ * @param px X component of slowness vector.
+ * @param py Y component of slowness vector.
+ * @param pz Z component of slowness vector.
+ * @param v_above Velocity on the upper side of the interface
+ * @param v_below Velocity on the lower side of the interface.
+ * @param wave_type Specify if transmitted ('T') or reflected ('R') wave.
+ * @return New slowness values px, py, pz.
+ */
+std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
+                                              double v_below, char wave_type) {
     double minus_plus = 1.;
-    if (wave_type == 'R'){
+    if (wave_type == 'R') {
         return {px, py, -pz};
     } else {
         minus_plus = -1;
+    }
+    if (not seismo::ray_direction_down(pz)) {
+        // for transmitted upgoing ray
+        std::swap(v_above, v_below);
     }
     // handle only special case of horizontal interface where normal is vertical.
     // n should be oriented to the side the transmitted wave propagates for the
