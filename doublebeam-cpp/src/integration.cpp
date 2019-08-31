@@ -70,7 +70,7 @@ public:
 };
 
 
-struct Index {
+namespace Index {
     /*
      * Indices of variables in state_type.
      * X, Y, Z are cartesian coordinates.
