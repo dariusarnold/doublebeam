@@ -6,8 +6,8 @@
 #include <array>
 
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-#include <boost/numeric/odeint/stepper/generation/make_dense_output.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
+#include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 
 #include "utils.h"
 
@@ -30,17 +30,19 @@ namespace odeint = boost::numeric::odeint;
  * @return
  */
 template<typename System, typename Condition>
-std::vector<std::pair<double, state_type>>
+std::pair<std::vector<double>, std::vector<state_type>>
 find_crossing(state_type& x0, System sys, Condition cond, const double s_start,
               const double ds, const double precision = 1.E-6, double max_ds = 1.1) {
     auto stepper = odeint::make_dense_output(1.E-6, 1.E-6, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
 
     // advance stepper until first sign change occurs
-    std::vector<std::pair<double, state_type>> states;
+    std::vector<double> arclengths;
+    std::vector<state_type> states;
     double current_cond = cond(stepper.current_state());
     do {
-        states.emplace_back(stepper.current_time(), stepper.current_state());
+        states.emplace_back(stepper.current_state());
+        arclengths.emplace_back(stepper.current_time());
         stepper.do_step(sys);
     } while (math::same_sign(cond(stepper.current_state()), current_cond));
 
@@ -68,8 +70,9 @@ find_crossing(state_type& x0, System sys, Condition cond, const double s_start,
     // interval of size precision; take its midpoint as a final guess
     t_middle = (t0 + t1) * 0.5;
     stepper.calc_state(t_middle, x_middle);
-    states.emplace_back(t_middle, x_middle);
-    return states;
+    arclengths.emplace_back(t_middle);
+    states.emplace_back(x_middle);
+    return {arclengths, states};
 }
 
 
