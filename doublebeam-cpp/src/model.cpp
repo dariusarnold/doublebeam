@@ -43,7 +43,13 @@ size_t VelocityModel::layer_index(double z) const {
 }
 
 double VelocityModel::eval_at(double z) const {
-    auto layer = layers[layer_index(z)];
+    Layer layer;
+    try {
+        layer = layers[layer_index(z)];
+    } catch (const std::domain_error&) {
+        return -1;
+    }
+
     return layer.gradient * z + layer.intercept;
 }
 
