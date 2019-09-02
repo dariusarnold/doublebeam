@@ -169,15 +169,11 @@ class KinematicRayTracer3D:
         dxds = px * v
         dyds = py * v
         dzds = pz * v
-        # TODO creating a lambda every iteration is probably not conducive to
-        #  performance. Also, this can be further simplified for the horizontal
-        #  layer velocity model I am currently using.
-        dpxds = derivative((lambda x_: 1 / self._velocity(self.layer, z)),
-                           x, dx=0.0001)
-        dpyds = derivative((lambda y_: 1 / self._velocity(self.layer, z)),
-                           y, dx=0.0001)
-        dpzds = derivative((lambda z_: 1 / self._velocity(self.layer, z_)),
-                           z, dx=0.0001)
+        # This is the analytical derivative df/dz where f(z) = 1/v(z) when v(z)
+        # is a linear gradient v(z) = a*z + b.
+        dpzds = -self.layer["gradient"] / (self.layer["gradient"] * z + self.layer["intercept"])**2
+        dpxds = 0
+        dpyds = 0
         dTds = 1. / v
         return _ODEStateKinematic3D(dxds, dyds, dzds, dpxds, dpyds, dpzds, dTds)
 
