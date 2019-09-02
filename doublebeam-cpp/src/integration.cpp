@@ -95,6 +95,9 @@ class Ray {
 public:
     Ray() : segments(std::vector<RaySegment>()) {}
 
+    explicit Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
+        segments{RaySegment{states, arclengths}} {}
+
     explicit Ray(const RaySegment& segment) : segments(std::vector{segment}) {}
 
     std::vector<RaySegment> segments;
@@ -114,7 +117,7 @@ public:
         if (ray_code.empty()) {
             return Ray{RaySegment{states, arclengths}};
         }
-        Ray r;
+        Ray r{states, arclengths};
         for (auto ray_type : ray_code) {
             auto [x, y, z, px, py, pz, t] = states.back();
             if (ray_type == 'T') {
