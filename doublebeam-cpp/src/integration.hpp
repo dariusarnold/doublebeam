@@ -112,6 +112,14 @@ find_crossing(state_type& x0, System sys, Condition cond, double s_start, double
     stepper.calc_state(t_middle, x_middle);
     arclengths.emplace_back(t_middle);
     states.emplace_back(x_middle);
+    // workaround for numerical issues where layer boundaries are overshot
+    // do this by clamping the value to the interface depth
+    auto& last_z = states.back()[Index::Z];
+    if (seismo::ray_direction_down(states.back()[Index::PZ])){
+        last_z =  std::min(cond.interface_depth, last_z);
+    } else {
+        last_z = std::max(cond.interface_depth, last_z);
+    }
     arclengths.shrink_to_fit();
     states.shrink_to_fit();
     return {arclengths, states};
