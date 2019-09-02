@@ -111,7 +111,7 @@ InterfaceCrossed KinematicRayTracer::get_interface_zero_crossing(double pz) {
 }
 
 double KinematicRayTracer::dvdz(double z) {
-    return -1. / ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
+    return -layer.gradient / ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
 }
 
 
