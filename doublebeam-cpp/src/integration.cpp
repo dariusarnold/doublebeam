@@ -126,7 +126,7 @@ public:
             auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
             state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
             border = get_interface_zero_crossing(pz_new);
-            std::tie(arclengths, states) = find_crossing(new_initial_state, *this, border, t, step_size, max_step);
+            std::tie(arclengths, states) = find_crossing(new_initial_state, *this, border, arclengths.back(), step_size, max_step);
             r.segments.emplace_back(states, arclengths);
         }
         return r;
