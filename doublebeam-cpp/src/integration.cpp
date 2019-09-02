@@ -25,8 +25,8 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
     double eps = std::copysign(1., p_dot_n);
     // since in the original formula everything subtracted from p is multiplied by n
     // only the pz component changes for horizontal interfaces.
-    pz -= p_dot_n +
-          minus_plus * eps * std::sqrt(1. / (v_below * v_below) - 1. / (v_above * v_above) + p_dot_n * p_dot_n) * nz;
+    pz -= (p_dot_n +
+          minus_plus * eps * std::sqrt(1. / (v_below * v_below) - 1. / (v_above * v_above) + p_dot_n * p_dot_n)) * nz;
     return {px, py, pz};
 }
 
@@ -73,7 +73,7 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         auto[x, y, z, px, py, pz, t] = states.back();
 
         if (ray_type == 'T') {
-            // reflected waves stay in the same layer and dont change the index
+            // reflected waves stay in the same layer and doesn't change the index
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
             layer = model[layer_index];
         }
