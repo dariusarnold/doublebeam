@@ -13,7 +13,25 @@
 #include "model.h"
 #include "utils.h"
 
+
 typedef std::array<double, 7> state_type;
+
+namespace Index {
+    /*
+     * Indices of variables in state_type.
+     * X, Y, Z are cartesian coordinates.
+     * PX, PY, PZ are components of slowness vector.
+     * T is travel time.
+     */
+    static constexpr size_t X = 0;
+    static constexpr size_t Y = 1;
+    static constexpr size_t Z = 2;
+    static constexpr size_t PX = 3;
+    static constexpr size_t PY = 4;
+    static constexpr size_t PZ = 5;
+    static constexpr size_t T = 6;
+};
+
 
 namespace odeint = boost::numeric::odeint;
 

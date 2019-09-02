@@ -31,23 +31,6 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
 }
 
 
-namespace Index {
-    /*
-     * Indices of variables in state_type.
-     * X, Y, Z are cartesian coordinates.
-     * PX, PY, PZ are components of slowness vector.
-     * T is travel time.
-     */
-    static constexpr size_t X = 0;
-    static constexpr size_t Y = 1;
-    static constexpr size_t Z = 2;
-    static constexpr size_t PX = 3;
-    static constexpr size_t PY = 4;
-    static constexpr size_t PZ = 5;
-    static constexpr size_t T = 6;
-};
-
-
 InterfaceCrossed::InterfaceCrossed(double interface_depth) : interface_depth(interface_depth) {};
 
 double InterfaceCrossed::operator()(const state_type& state) const {
