@@ -4,16 +4,6 @@
 #include "utils.h"
 
 
-/**
- * Apply snells law to calculate new slowness for horizontal interfaces.
- * @param px X component of slowness vector.
- * @param py Y component of slowness vector.
- * @param pz Z component of slowness vector.
- * @param v_above Velocity on the upper side of the interface
- * @param v_below Velocity on the lower side of the interface.
- * @param wave_type Specify if transmitted ('T') or reflected ('R') wave.
- * @return New slowness values px, py, pz.
- */
 std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
                                               double v_below, char wave_type) {
     double minus_plus = 1.;
@@ -58,113 +48,87 @@ namespace Index {
 };
 
 
-struct InterfaceCrossed {
-    /*
-     * Define interface crossing as zero crossing where the function returns
-     * values above zero if depth above the interface and below zero if depths
-     * below the interface.
-     */
-    double interface_depth;
+InterfaceCrossed::InterfaceCrossed(double interface_depth) : interface_depth(interface_depth) {};
 
-    explicit InterfaceCrossed(double interface_depth) : interface_depth(interface_depth) {};
-
-    double operator()(const state_type& state) const {
-        return interface_depth - state[Index::Z];
-    }
-};
+double InterfaceCrossed::operator()(const state_type& state) const {
+    return interface_depth - state[Index::Z];
+}
 
 
 state_type init_state(double x, double y, double z, const VelocityModel& model,
-                      double theta, double phi, double T = 0) {
+                      double theta, double phi, double T) {
     const double velocity = model.eval_at(z);
     const auto[px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
     return {x, y, z, px, py, pz, T};
 }
 
-class RaySegment {
-public:
-    RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
-            data(states), arclength(arclengths) {}
-
-    std::vector<state_type> data;
-    std::vector<double> arclength;
-};
+RaySegment::RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
+        data(states), arclength(arclengths) {}
 
 
-class Ray {
-public:
-    Ray() : segments(std::vector<RaySegment>()) {}
+Ray::Ray() : segments(std::vector<RaySegment>()) {}
 
-    explicit Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
+Ray::Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
         segments{RaySegment{states, arclengths}} {}
 
-    explicit Ray(const RaySegment& segment) : segments(std::vector{segment}) {}
-
-    std::vector<RaySegment> segments;
-};
+Ray::Ray(const RaySegment& segment) : segments(std::vector{segment}) {}
 
 
-class KinematicRayTracer {
-public:
-    explicit KinematicRayTracer(VelocityModel velocity_model) : model(std::move(velocity_model)) {}
+KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) : model(std::move(velocity_model)) {}
 
-    Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
-                  double max_step = 5.) {
-        auto layer_index = model.layer_index(initial_state[Index::Z]);
-        layer = model[layer_index];
-        auto border = get_interface_zero_crossing(initial_state[Index::PZ]);
-        auto[arclengths, states] = find_crossing(initial_state, *this, border, 0., step_size, max_step);
-        if (ray_code.empty()) {
-            return Ray{RaySegment{states, arclengths}};
+Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& ray_code, double step_size,
+                                  double max_step) {
+    auto layer_index = model.layer_index(initial_state[Index::Z]);
+    layer = model[layer_index];
+    auto border = get_interface_zero_crossing(initial_state[Index::PZ]);
+    auto[arclengths, states] = find_crossing(initial_state, *this, border, 0., step_size, max_step);
+    if (ray_code.empty()) {
+        return Ray{RaySegment{states, arclengths}};
+    }
+    Ray r{states, arclengths};
+    for (auto ray_type : ray_code) {
+        auto[x, y, z, px, py, pz, t] = states.back();
+
+        if (ray_type == 'T') {
+            // reflected waves stay in the same layer and dont change the index
+            layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
+            layer = model[layer_index];
         }
-        Ray r{states, arclengths};
-        for (auto ray_type : ray_code) {
-            auto [x, y, z, px, py, pz, t] = states.back();
-            if (ray_type == 'T') {
-                // reflected waves stay in the same layer and dont change the index
-                layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
-                layer = model[layer_index];
-            }
-            auto [v_above, v_below] = model.interface_velocities(z);
-            auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
-            state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
-            border = get_interface_zero_crossing(pz_new);
-            std::tie(arclengths, states) = find_crossing(new_initial_state, *this, border, arclengths.back(), step_size, max_step);
-            r.segments.emplace_back(states, arclengths);
-        }
-        return r;
-
+        auto[v_above, v_below] = model.interface_velocities(z);
+        auto[px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
+        state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
+        border = get_interface_zero_crossing(pz_new);
+        std::tie(arclengths, states) = find_crossing(new_initial_state, *this, border, arclengths.back(), step_size,
+                                                     max_step);
+        r.segments.emplace_back(states, arclengths);
     }
+    return r;
+}
 
-    void operator()(const state_type& state, state_type& dxdt, const double /* s */) {
-        auto[x, y, z, px, py, pz, T] = state;
-        auto v = model.eval_at(z);
-        auto dxds = px * v;
-        auto dyds = py * v;
-        auto dzds = pz * v;
-        auto dpzds = dvdz(z);
-        auto dTds = 1. / v;
-        dxdt[0] = dxds;
-        dxdt[1] = dyds;
-        dxdt[2] = dzds;
-        dxdt[3] = 0.;
-        dxdt[4] = 0.;
-        dxdt[5] = dpzds;
-        dxdt[6] = dTds;
-    }
+void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt, const double /* s */) {
+    auto[x, y, z, px, py, pz, T] = state;
+    auto v = model.eval_at(z);
+    auto dxds = px * v;
+    auto dyds = py * v;
+    auto dzds = pz * v;
+    auto dpzds = dvdz(z);
+    auto dTds = 1. / v;
+    dxdt[0] = dxds;
+    dxdt[1] = dyds;
+    dxdt[2] = dzds;
+    dxdt[3] = 0.;
+    dxdt[4] = 0.;
+    dxdt[5] = dpzds;
+    dxdt[6] = dTds;
+}
 
-private:
-    InterfaceCrossed get_interface_zero_crossing(double pz) {
-        auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
-        return InterfaceCrossed{interface_depth};
-    }
+InterfaceCrossed KinematicRayTracer::get_interface_zero_crossing(double pz) {
+    auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
+    return InterfaceCrossed{interface_depth};
+}
 
-    VelocityModel model;
+double KinematicRayTracer::dvdz(double z) {
+    return -1. / ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
+}
 
-    double dvdz(double z) {
-        return -1. / ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
-    }
-
-    Layer layer;
-};
 
