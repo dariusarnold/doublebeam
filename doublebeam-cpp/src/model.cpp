@@ -61,3 +61,7 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) {
     }
     return _interface_velocities[index + 1];
 }
+
+std::pair<double, double> VelocityModel::get_top_bottom() {
+    return {interface_depths.front(), interface_depths.back()};
+}

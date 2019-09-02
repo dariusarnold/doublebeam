@@ -72,6 +72,12 @@ public:
      * @return velocity at closest interface to depth z in m/s.
      */
     std::pair<double, double> interface_velocities(double z);
+
+    /**
+     * Return top and bottom depth of model in m.
+     * @return Pair of (top, bottom).
+     */
+    std::pair<double, double> get_top_bottom();
 };
 
 
