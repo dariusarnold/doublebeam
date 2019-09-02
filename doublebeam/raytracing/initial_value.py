@@ -158,7 +158,7 @@ class KinematicRayTracer3D:
 
     def _trace(self, s: float, y: _ODEStateKinematic3D) -> _ODEStateKinematic3D:
         """
-        Implement ray tracing system (3.1.10) from Cerveny - Seismic ray theory
+        Implement ray tracing system (3.1.20) from Cerveny - Seismic ray theory
         (2001).
         :param s: Arclength along ray
         :param y: Previous state
