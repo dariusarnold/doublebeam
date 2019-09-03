@@ -81,7 +81,7 @@ class TestRayTracingScipy(unittest.TestCase):
         source = np.array((0, 0, 0))
         expected_endpoints = (469, 868, 2159, 2411)
         expected_endpoints = [np.array((x, 0, 0)) for x in expected_endpoints]
-        vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        vm = VelocityModel3D.from_file("/home/darius/git/doublebeam/fang2019model.txt")
         ray_tracer = KinematicRayTracer3D(vm)
         for slowness, target in zip(slownesses, expected_endpoints):
             with self.subTest(target=target):
@@ -236,7 +236,7 @@ class TestDynamicRayTracingSameResultAsKinematic(unittest.TestCase):
         source = np.array((0, 0, 0))
         expected_endpoints = (469, 868, 2159, 2411)
         expected_endpoints = [np.array((x, 0, 0)) for x in expected_endpoints]
-        vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        vm = VelocityModel3D.from_file("/home/darius/git/doublebeam/fang2019model.txt")
         ray_tracer = DynamicRayTracer3D(vm)
         for slowness, target in zip(slownesses, expected_endpoints):
             with self.subTest(target=target):
@@ -312,8 +312,8 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
             beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
             self.drt.trace_stack(beam, "TRT")
             return beam.P, beam.Q
-        P_expected = list(np.load(Path("tests/data/P_multilayer.npy")))
-        Q_expected = list(np.load(Path("tests/data/Q_multilayer.npy")))
+        P_expected = list(np.load(Path("tests/data/P_multilayer.npy"), allow_pickle=True))
+        Q_expected = list(np.load(Path("tests/data/Q_multilayer.npy"), allow_pickle=True))
         P_actual, Q_actual = generate_data()
 
         # do segment wise comparison of the matrices
