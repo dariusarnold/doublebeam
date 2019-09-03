@@ -46,7 +46,8 @@ VelocityModel read_velocity_file(const std::filesystem::path& filepath) {
     double depth_top, depth_bot, velocity_top, velocity_bottom, intercept, gradient;
     std::vector<Layer> ls;
     while (std::getline(file, line)) {
-        if (line.find('#') != std::string::npos) {
+        // skip empty line and comments
+        if (line.empty() or line.find('#') != std::string::npos) {
             continue;
         }
         iss = std::istringstream(line);
