@@ -96,7 +96,7 @@ double VelocityModel::eval_at(double z) const {
     return layer.gradient * z + layer.intercept;
 }
 
-std::pair<double, double> VelocityModel::interface_velocities(double z) {
+std::pair<double, double> VelocityModel::interface_velocities(double z) const {
     auto index = layer_index(z);
     auto half_depth =
         layers[index].top_depth + 0.5 * (layers[index].bot_depth - layers[index].top_depth);
@@ -106,7 +106,7 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) {
     return _interface_velocities[index + 1];
 }
 
-std::pair<double, double> VelocityModel::get_top_bottom() {
+std::pair<double, double> VelocityModel::get_top_bottom() const {
     return {interface_depths.front(), interface_depths.back()};
 }
 

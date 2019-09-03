@@ -74,13 +74,13 @@ public:
      * @param z Depth in meter.
      * @return velocity at closest interface to depth z in m/s.
      */
-    std::pair<double, double> interface_velocities(double z);
+    std::pair<double, double> interface_velocities(double z) const;
 
     /**
      * Return top and bottom depth of model in m.
      * @return Pair of (top, bottom).
      */
-    std::pair<double, double> get_top_bottom();
+    std::pair<double, double> get_top_bottom() const;
 
     /**
      * Compare two velocity models. Return true if they are the same.
