@@ -12,6 +12,9 @@
 #include <fstream>
 
 
+namespace chrono = std::chrono;
+
+
 struct TimingResults {
     // all time results are in nanoseconds
     double mean;
@@ -35,15 +38,16 @@ calculate_mean_and_standard_deviation(InputIterator first, InputIterator last) {
 
 template<uint64_t RunTimeMilliSeconds = 4000, typename F, typename... Args>
 TimingResults measure_runtime(F func, Args&& ... args) {
+    auto maxRunTime = std::chrono::milliseconds(RunTimeMilliSeconds);
     std::vector<double> runtimes;
-    std::chrono::system_clock::time_point b;
-    auto start_time = std::chrono::high_resolution_clock::now();
+    chrono::system_clock::time_point b;
+    auto start_time = chrono::high_resolution_clock::now();
     do {
-        auto a = std::chrono::high_resolution_clock::now();
+        auto a = chrono::high_resolution_clock::now();
         func(std::forward<Args>(args)...);
-        b = std::chrono::high_resolution_clock::now();
-        runtimes.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count());
-    } while (std::chrono::duration_cast<std::chrono::milliseconds>(b - start_time).count() <= RunTimeMilliSeconds);
+        b = chrono::high_resolution_clock::now();
+        runtimes.push_back(chrono::duration_cast<chrono::nanoseconds>(b - a).count());
+    } while (chrono::duration_cast<chrono::milliseconds>(b - start_time) <= maxRunTime);
     auto[mean, std_deviation] = calculate_mean_and_standard_deviation(runtimes.begin(), runtimes.end());
     return {mean, std_deviation, runtimes.size()};
 }
