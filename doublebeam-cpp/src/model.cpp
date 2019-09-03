@@ -113,3 +113,7 @@ std::pair<double, double> VelocityModel::get_top_bottom() const {
 bool VelocityModel::operator==(const VelocityModel& other) const {
     return layers == other.layers;
 }
+
+bool VelocityModel::in_model(double z) const {
+    return z >= interface_depths.front() and z <= interface_depths.back();
+}

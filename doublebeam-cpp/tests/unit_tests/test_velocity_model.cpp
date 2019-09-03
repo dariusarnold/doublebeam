@@ -48,6 +48,25 @@ TEST_F(TestInterfaceVelocity, TestVelocityBottom) {
 }
 
 
+class TestInModel : public TestInterfaceVelocity {
+protected:
+};
+
+TEST_F(TestInModel, TestAboveModel) {
+    EXPECT_FALSE(vm.in_model(-0.1));
+}
+
+TEST_F(TestInModel, TestBelowModel) {
+    EXPECT_FALSE(vm.in_model(300.1));
+}
+
+TEST_F(TestInModel, TestInterfacesShouldBeInModel) {
+    for (double interface_depth: {0, 100, 200, 300}){
+        EXPECT_TRUE(vm.in_model(interface_depth)) << "depth " << interface_depth;
+    }
+}
+
+
 // param is pair of depth, index. Index is the expected return value at depth.
 class TestLayerIndex : public ::testing::TestWithParam<std::pair<double, size_t>> {
 protected:

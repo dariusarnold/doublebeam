@@ -68,6 +68,14 @@ public:
     double eval_at(double z) const;
 
     /**
+     * Return true if point given by depth, z coordinates is within the velocity model.
+     * @param z Depth of point in m.
+     * @return
+     */
+     // TODO extend velocity model by horizontal extent and add checks for this here
+    bool in_model(double z) const;
+
+    /**
      * Return velocities above and below the closest interface.
      * 0 is returned for the velocity outside of the model, e.g. when the
      * interface between the top layer and the one above is requested.
