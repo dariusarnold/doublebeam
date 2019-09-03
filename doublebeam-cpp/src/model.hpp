@@ -1,6 +1,7 @@
 #ifndef DOUBLEBEAM_CPP_MODEL_HPP
 #define DOUBLEBEAM_CPP_MODEL_HPP
 
+#include <filesystem>
 #include <tuple>
 #include <vector>
 
@@ -10,6 +11,9 @@ struct Layer {
     double intercept;
     double gradient;
 };
+
+bool operator==(const Layer& l1, const Layer& l2);
+
 
 class VelocityModel {
     /**
@@ -35,7 +39,7 @@ class VelocityModel {
      */
     std::vector<Layer> layers;
 
-  public:
+public:
     explicit VelocityModel(const std::vector<Layer>& layers);
 
     /**
@@ -77,6 +81,15 @@ class VelocityModel {
      * @return Pair of (top, bottom).
      */
     std::pair<double, double> get_top_bottom();
+
+    /**
+     * Compare two velocity models. Return true if they are the same.
+     * @param other Other VelocityModel to compare this instance to.
+     */
+    bool operator==(const VelocityModel& other) const;
 };
+
+
+VelocityModel read_velocity_file(const std::filesystem::path& filepath);
 
 #endif // DOUBLEBEAM_CPP_MODEL_HPP

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 
 #include "model.hpp"
 
@@ -30,6 +31,44 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) 
     }
     _interface_velocities.emplace_back(vel_above, 0);
 }
+
+VelocityModel read_velocity_file(const std::filesystem::path& filepath) {
+    if (filepath.empty()) {
+        throw std::invalid_argument("Can't read velocity model from empty path " +
+                                    filepath.string());
+    }
+    if (not std::filesystem::exists(filepath)) {
+        throw std::invalid_argument("Can't find file " + std::filesystem::absolute(filepath).string());
+    }
+    std::ifstream file(filepath);
+    std::string line;
+    std::istringstream iss;
+    double depth_top, depth_bot, velocity_top, velocity_bottom, intercept, gradient;
+    std::vector<Layer> ls;
+    while (std::getline(file, line)) {
+        if (line.find('#') != std::string::npos) {
+            continue;
+        }
+        iss = std::istringstream(line);
+        iss >> depth_top;
+        iss.ignore(1, ',');
+        iss >> depth_bot;
+        iss.ignore(1, ',');
+        iss >> velocity_top;
+        iss.ignore(1, ',');
+        iss >> velocity_bottom;
+        gradient = (velocity_bottom - velocity_top) / (depth_bot - depth_top);
+        intercept = velocity_top - gradient * depth_top;
+        ls.push_back({depth_top, depth_bot, intercept, gradient});
+    }
+    return VelocityModel{ls};
+}
+
+bool operator==(const Layer& l1, const Layer& l2) {
+    return l1.gradient == l2.gradient and l1.top_depth == l2.top_depth and
+           l1.bot_depth == l2.bot_depth and l1.intercept == l2.intercept;
+}
+
 
 Layer VelocityModel::operator[](size_t index) const {
     return layers[index];
@@ -68,4 +107,8 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) {
 
 std::pair<double, double> VelocityModel::get_top_bottom() {
     return {interface_depths.front(), interface_depths.back()};
+}
+
+bool VelocityModel::operator==(const VelocityModel& other) const {
+    return layers == other.layers;
 }

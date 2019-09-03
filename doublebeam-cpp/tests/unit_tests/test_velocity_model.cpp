@@ -105,3 +105,13 @@ TEST_F(TestLayerIndexThrows, TestDepthAboveModel) {
 TEST_F(TestLayerIndexThrows, TestDepthBelowModel) {
     ASSERT_THROW(vm.layer_index(1001), std::domain_error);
 }
+
+
+TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
+    // TODO better way to specify path, maybe mock file object
+    std::filesystem::path filepath("/home/darius/git/doublebeam/doublebeam-cpp/tests/unit_tests/data/model.txt");
+    auto vm = read_velocity_file(filepath);
+    VelocityModel expected({{0, 100, 1000, 1},
+                                  {100, 200, 1200, -1}});
+    EXPECT_EQ(vm, expected);
+}

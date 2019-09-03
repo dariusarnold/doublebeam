@@ -1,0 +1,4 @@
+# this is a test file containing a velocity model
+#depth top, depth bottom, p velocity top, p velocity bottom
+0, 100, 1000, 1100
+100, 200, 1100, 1000
