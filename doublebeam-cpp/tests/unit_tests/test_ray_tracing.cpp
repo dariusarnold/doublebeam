@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "testing_utils.hpp"
 #include "integration.hpp"
 #include "model.h"
 #include "printing.h"
@@ -16,7 +17,6 @@ protected:
 
     VelocityModel vm;
     KinematicRayTracer krt;
-
 };
 
 TEST_P(TestRayTracing, TestCorrectEndpoint) {
@@ -25,7 +25,7 @@ TEST_P(TestRayTracing, TestCorrectEndpoint) {
     state_type initial_state{0, 0, 0, px, py, pz, 0};
     auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", 1, 1);
     auto last_traced_point = ray.segments.back().data.back();
-    EXPECT_DOUBLE_EQ(last_traced_point[Index::X], endpoint);
+    EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint));
 }
 
 using test_data_t = std::vector<std::pair<std::array<double, 3>, double>>;

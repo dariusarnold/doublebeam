@@ -5,4 +5,5 @@ add_executable(Unit_Tests_run
         test_integration.cpp test_velocity_model.cpp test_ray_tracing.cpp)
 
 target_link_libraries(Unit_Tests_run gtest gtest_main)
+target_link_libraries(Unit_Tests_run UtilitiesForTesting)
 target_link_libraries(Unit_Tests_run doublebeam_lib Boost::boost)
