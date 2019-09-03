@@ -1,18 +1,16 @@
 #ifndef DOUBLEBEAM_CPP_INTEGRATION_HPP
 #define DOUBLEBEAM_CPP_INTEGRATION_HPP
 
-
-#include <vector>
 #include <array>
+#include <vector>
 
-#include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-#include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
-#include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
+#include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
+#include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
+#include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
 
 #include "model.h"
 #include "utils.h"
-
 
 typedef std::array<double, 7> state_type;
 
@@ -30,8 +28,7 @@ namespace Index {
     static constexpr size_t PY = 4;
     static constexpr size_t PZ = 5;
     static constexpr size_t T = 6;
-};
-
+}; // namespace Index
 
 namespace odeint = boost::numeric::odeint;
 
@@ -48,7 +45,6 @@ namespace odeint = boost::numeric::odeint;
 std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
                                               double v_below, char wave_type);
 
-
 class RaySegment {
 public:
     RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths);
@@ -56,7 +52,6 @@ public:
     std::vector<state_type> data;
     std::vector<double> arclength;
 };
-
 
 class Ray {
 public:
@@ -68,7 +63,6 @@ public:
 
     std::vector<RaySegment> segments;
 };
-
 
 /**
  * Integrate a system of ODEs until the Condition has a zero crossing.
@@ -82,10 +76,12 @@ public:
  * @param max_ds Maximum time step size.
  * @return
  */
-template<typename System, typename Condition>
+template <typename System, typename Condition>
 std::pair<std::vector<double>, std::vector<state_type>>
-find_crossing(state_type& x0, System sys, Condition cond, double s_start, double ds, double max_ds = 1.1) {
-    auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
+find_crossing(state_type& x0, System sys, Condition cond, double s_start, double ds,
+              double max_ds = 1.1) {
+    auto stepper =
+        odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
@@ -102,11 +98,12 @@ find_crossing(state_type& x0, System sys, Condition cond, double s_start, double
     double t1 = stepper.current_time();
     state_type x_middle;
     boost::uintmax_t max_calls = 1000;
-    auto [t_left, t_right] = boost::math::tools::toms748_solve([&](double t) {
-                                                                  stepper.calc_state(t, x_middle);
-                                                                  return (cond(x_middle));
-                                                              }, t0, t1,
-                                                              boost::math::tools::eps_tolerance<double>(), max_calls);
+    auto [t_left, t_right] = boost::math::tools::toms748_solve(
+        [&](double t) {
+            stepper.calc_state(t, x_middle);
+            return (cond(x_middle));
+        },
+        t0, t1, boost::math::tools::eps_tolerance<double>(), max_calls);
     // calculate final position of crossing and save state at crossing
     auto t_middle = (t_left + t_right) * 0.5;
     stepper.calc_state(t_middle, x_middle);
@@ -115,8 +112,8 @@ find_crossing(state_type& x0, System sys, Condition cond, double s_start, double
     // workaround for numerical issues where layer boundaries are overshot
     // do this by clamping the value to the interface depth
     auto& last_z = states.back()[Index::Z];
-    if (seismo::ray_direction_down(states.back()[Index::PZ])){
-        last_z =  std::min(cond.interface_depth, last_z);
+    if (seismo::ray_direction_down(states.back()[Index::PZ])) {
+        last_z = std::min(cond.interface_depth, last_z);
     } else {
         last_z = std::max(cond.interface_depth, last_z);
     }
@@ -124,7 +121,6 @@ find_crossing(state_type& x0, System sys, Condition cond, double s_start, double
     states.shrink_to_fit();
     return {arclengths, states};
 }
-
 
 struct InterfaceCrossed {
     /*
@@ -139,10 +135,8 @@ struct InterfaceCrossed {
     double operator()(const state_type& state) const;
 };
 
-
-state_type init_state(double x, double y, double z, const VelocityModel& model,
-                      double theta, double phi, double T = 0);
-
+state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
+                      double phi, double T = 0);
 
 class KinematicRayTracer {
 public:
@@ -163,5 +157,4 @@ private:
     Layer layer;
 };
 
-
-#endif //DOUBLEBEAM_CPP_INTEGRATION_HPP
+#endif // DOUBLEBEAM_CPP_INTEGRATION_HPP

@@ -1,9 +1,8 @@
 #ifndef DOUBLEBEAM_CPP_MODEL_H
 #define DOUBLEBEAM_CPP_MODEL_H
 
-#include <vector>
 #include <tuple>
-
+#include <vector>
 
 struct Layer {
     double top_depth;
@@ -11,7 +10,6 @@ struct Layer {
     double intercept;
     double gradient;
 };
-
 
 class VelocityModel {
     /**
@@ -23,7 +21,7 @@ class VelocityModel {
      * Pair of above, below velocity of every interface (in m/s).
      * Includes interfaces at top and bottom where the model ends.
      */
-     std::vector<std::pair<double, double>> _interface_velocities;
+    std::vector<std::pair<double, double>> _interface_velocities;
     /**
      * Velocity intercepts of all layers.
      */
@@ -36,7 +34,8 @@ class VelocityModel {
      * Array of layers.
      */
     std::vector<Layer> layers;
-public:
+
+  public:
     explicit VelocityModel(const std::vector<Layer>& layers);
 
     /**
@@ -80,5 +79,4 @@ public:
     std::pair<double, double> get_top_bottom();
 };
 
-
-#endif //DOUBLEBEAM_CPP_MODEL_H
+#endif // DOUBLEBEAM_CPP_MODEL_H

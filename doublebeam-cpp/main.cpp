@@ -1,20 +1,20 @@
-#include <iomanip>
+#include "integration.hpp"
 #include "model.h"
 #include "printing.h"
-#include "integration.hpp"
 #include "timing/timing.h"
+#include <iomanip>
 
 
 std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {
-    os << "Raysegment: " << segment.data.front() << " to " << segment.data.back() << " ( " << segment.data.size()
-       << ") steps";
+    os << "Raysegment: " << segment.data.front() << " to " << segment.data.back() << " ( "
+       << segment.data.size() << ") steps";
     return os;
 }
 
 
 std::ostream& operator<<(std::ostream& os, const Ray& ray) {
     auto i = 0;
-    for (auto& segment: ray.segments){
+    for (auto& segment : ray.segments) {
         std::cout << i << " " << segment << "\n";
         ++i;
     }
@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 
 
 int main() {
-    std::vector<Layer> layers{{0,   100, 1000, 1},
+    std::vector<Layer> layers{{0, 100, 1000, 1},
                               {100, 200, 1100, -1},
                               {200, 300, 1000, 0.5},
                               {300, 400, 1100, 0},
@@ -34,7 +34,7 @@ int main() {
     std::vector<double> times;
     std::cout << std::setprecision(16);
     auto krt = KinematicRayTracer(vm);
-    auto res = measure_runtime([&](){krt.trace_ray(initial_state, "TRT", 1., 1.1);});
+    auto res = measure_runtime([&]() { krt.trace_ray(initial_state, "TRT", 1., 1.1); });
     std::cout << res << "\n";
     auto ray = krt.trace_ray(initial_state, "TTTT", 1., 1.1);
     std::cout << ray << "\n";

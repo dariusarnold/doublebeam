@@ -1,8 +1,8 @@
 #ifndef DOUBLEBEAM_CPP_UTILS_H
 #define DOUBLEBEAM_CPP_UTILS_H
 
-#include <tuple>
 #include <cmath>
+#include <tuple>
 #include <type_traits>
 
 
@@ -26,7 +26,7 @@ namespace seismo {
      * @param pz Vertical component of slowness vector.
      */
     bool ray_direction_down(double pz);
-}
+} // namespace seismo
 
 namespace math {
 
@@ -36,7 +36,7 @@ namespace math {
      * @param degrees Angle in degrees.
      * @return Angle in radians.
      */
-    template<typename T>
+    template <typename T>
     double radians(T degrees) {
         constexpr double factor = M_PI / 180.;
         if constexpr (std::is_integral<T>::value) {
@@ -52,10 +52,10 @@ namespace math {
      * @tparam T Number type.
      * @return True if the sign of both numbers is the same, false otherwise.
      */
-    template<typename T>
+    template <typename T>
     bool same_sign(T a, T b) {
         return std::signbit(a) == std::signbit(b);
     }
 
-}
-#endif //DOUBLEBEAM_CPP_UTILS_H
+} // namespace math
+#endif // DOUBLEBEAM_CPP_UTILS_H
