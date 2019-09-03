@@ -61,7 +61,7 @@ TEST_F(TestInModel, TestBelowModel) {
 }
 
 TEST_F(TestInModel, TestInterfacesShouldBeInModel) {
-    for (double interface_depth: {0, 100, 200, 300}){
+    for (double interface_depth : {0, 100, 200, 300}) {
         EXPECT_TRUE(vm.in_model(interface_depth)) << "depth " << interface_depth;
     }
 }
@@ -121,9 +121,9 @@ TEST_F(TestLayerIndexThrows, TestDepthBelowModel) {
 
 TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     // TODO better way to specify path, maybe mock file object
-    std::filesystem::path filepath("/home/darius/git/doublebeam/doublebeam-cpp/tests/unit_tests/data/model.txt");
+    std::filesystem::path filepath(
+        "/home/darius/git/doublebeam/doublebeam-cpp/tests/unit_tests/data/model.txt");
     auto vm = read_velocity_file(filepath);
-    VelocityModel expected({{0, 100, 1000, 1},
-                                  {100, 200, 1200, -1}});
+    VelocityModel expected({{0, 100, 1000, 1}, {100, 200, 1200, -1}});
     EXPECT_EQ(vm, expected);
 }
