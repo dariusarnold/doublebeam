@@ -4,6 +4,9 @@
 #include "model.hpp"
 
 
+namespace fs = std::filesystem;
+
+
 /**
  * Helper function to calculate velocity in layer.
  * @return Velocity (m/s) in layer at depth. No bounds checking is done.
@@ -32,13 +35,13 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) 
     _interface_velocities.emplace_back(vel_above, 0);
 }
 
-VelocityModel read_velocity_file(const std::filesystem::path& filepath) {
+VelocityModel read_velocity_file(const fs::path& filepath) {
     if (filepath.empty()) {
         throw std::invalid_argument("Can't read velocity model from empty path " +
                                     filepath.string());
     }
-    if (not std::filesystem::exists(filepath)) {
-        throw std::invalid_argument("Can't find file " + std::filesystem::absolute(filepath).string());
+    if (not fs::exists(filepath)) {
+        throw std::invalid_argument("Can't find file " + fs::absolute(filepath).string());
     }
     std::ifstream file(filepath);
     std::string line;
