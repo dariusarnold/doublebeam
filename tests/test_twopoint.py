@@ -14,7 +14,7 @@ from doublebeam.raytracing.ray import Ray3D
 class TestTwoPointRayTracing(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        self.vm = VelocityModel3D.from_file("/home/darius/git/doublebeam/fang2019model.txt")
         self.rt = TwoPointRayTracing(self.vm)
         self.sources = [np.array((469/2, 0, 500)),
                         np.array((868/2, 0, 500)),
@@ -130,7 +130,7 @@ class TestMethod_v_M(unittest.TestCase):
 class TestStraightDown(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.vm = VelocityModel3D.from_file("/home/darius/git/double-beam/fang2019model.txt")
+        self.vm = VelocityModel3D.from_file("/home/darius/git/doublebeam/fang2019model.txt")
         self.tp = TwoPointRayTracing(self.vm)
         self.iv = KinematicRayTracer3D(self.vm)
 
