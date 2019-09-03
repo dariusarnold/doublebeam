@@ -312,8 +312,8 @@ class TestDynamicRayTracingMultipleLayers(unittest.TestCase):
             beam = GaussBeam.from_angle(source, radians(20), radians(0), self.vm.eval_at(source), 10, 40)
             self.drt.trace_stack(beam, "TRT")
             return beam.P, beam.Q
-        P_expected = list(np.load(Path("tests/data/P_multilayer.npy")))
-        Q_expected = list(np.load(Path("tests/data/Q_multilayer.npy")))
+        P_expected = list(np.load(Path("tests/data/P_multilayer.npy"), allow_pickle=True))
+        Q_expected = list(np.load(Path("tests/data/Q_multilayer.npy"), allow_pickle=True))
         P_actual, Q_actual = generate_data()
 
         # do segment wise comparison of the matrices
