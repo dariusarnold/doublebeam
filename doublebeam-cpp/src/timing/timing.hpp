@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_TIMING_H
-#define DOUBLEBEAM_CPP_TIMING_H
+#ifndef DOUBLEBEAM_CPP_TIMING_HPP
+#define DOUBLEBEAM_CPP_TIMING_HPP
 
 #include <algorithm>
 #include <chrono>
@@ -46,4 +46,4 @@ TimingResults measure_runtime(F func, Args&&... args) {
     return {mean, std_deviation, runtimes.size()};
 }
 
-#endif // DOUBLEBEAM_CPP_TIMING_H
+#endif // DOUBLEBEAM_CPP_TIMING_HPP

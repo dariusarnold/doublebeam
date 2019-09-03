@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "model.h"
+#include "model.hpp"
 
 
 class TestInterfaceVelocity : public ::testing::Test {

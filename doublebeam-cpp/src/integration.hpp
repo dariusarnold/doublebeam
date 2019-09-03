@@ -9,8 +9,8 @@
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
 
-#include "model.h"
-#include "utils.h"
+#include "model.hpp"
+#include "utils.hpp"
 
 typedef std::array<double, 7> state_type;
 

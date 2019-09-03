@@ -1,6 +1,6 @@
+#include "utils.hpp"
 #include "gtest/gtest.h"
 #include <cmath>
-#include "utils.h"
 
 TEST(Radians, Equals) {
     EXPECT_DOUBLE_EQ(math::radians(0), 0.);

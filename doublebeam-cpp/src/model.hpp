@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_MODEL_H
-#define DOUBLEBEAM_CPP_MODEL_H
+#ifndef DOUBLEBEAM_CPP_MODEL_HPP
+#define DOUBLEBEAM_CPP_MODEL_HPP
 
 #include <tuple>
 #include <vector>
@@ -79,4 +79,4 @@ class VelocityModel {
     std::pair<double, double> get_top_bottom();
 };
 
-#endif // DOUBLEBEAM_CPP_MODEL_H
+#endif // DOUBLEBEAM_CPP_MODEL_HPP

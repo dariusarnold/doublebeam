@@ -1,7 +1,7 @@
 #include "integration.hpp"
 
-#include "model.h"
-#include "utils.h"
+#include "model.hpp"
+#include "utils.hpp"
 
 
 std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,

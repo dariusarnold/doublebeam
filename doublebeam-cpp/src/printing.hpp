@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_PRINTING_H
-#define DOUBLEBEAM_CPP_PRINTING_H
+#ifndef DOUBLEBEAM_CPP_PRINTING_HPP
+#define DOUBLEBEAM_CPP_PRINTING_HPP
 
 template <typename T, size_t N>
 std::ostream& operator<<(std::ostream& os, std::array<T, N> a) {
@@ -28,4 +28,4 @@ std::ostream& operator<<(std::ostream& os, const std::pair<T, U>& p) {
 }
 
 
-#endif // DOUBLEBEAM_CPP_PRINTING_H
+#endif // DOUBLEBEAM_CPP_PRINTING_HPP

@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_UTILS_H
-#define DOUBLEBEAM_CPP_UTILS_H
+#ifndef DOUBLEBEAM_CPP_UTILS_HPP
+#define DOUBLEBEAM_CPP_UTILS_HPP
 
 #include <cmath>
 #include <tuple>
@@ -58,4 +58,4 @@ namespace math {
     }
 
 } // namespace math
-#endif // DOUBLEBEAM_CPP_UTILS_H
+#endif // DOUBLEBEAM_CPP_UTILS_HPP

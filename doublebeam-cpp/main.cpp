@@ -1,7 +1,7 @@
 #include "integration.hpp"
-#include "model.h"
-#include "printing.h"
-#include "timing/timing.h"
+#include "model.hpp"
+#include "printing.hpp"
+#include "timing/timing.hpp"
 #include <iomanip>
 
 

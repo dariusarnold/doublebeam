@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
-#include "testing_utils.hpp"
 #include "integration.hpp"
-#include "model.h"
-#include "printing.h"
+#include "model.hpp"
+#include "printing.hpp"
+#include "testing_utils.hpp"
+#include "gtest/gtest.h"
 
 
 class TestRayTracing : public ::testing::TestWithParam<std::pair<std::array<double, 3>, double>> {
