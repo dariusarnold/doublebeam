@@ -85,7 +85,7 @@ public:
 template<typename System, typename Condition>
 std::pair<std::vector<double>, std::vector<state_type>>
 find_crossing(state_type& x0, System sys, Condition cond, double s_start, double ds, double max_ds = 1.1) {
-    auto stepper = odeint::make_dense_output(1.E-6, 1.E-6, max_ds, odeint::runge_kutta_dopri5<state_type>());
+    auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
