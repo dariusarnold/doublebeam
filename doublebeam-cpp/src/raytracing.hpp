@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_INTEGRATION_HPP
-#define DOUBLEBEAM_CPP_INTEGRATION_HPP
+#ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
+#define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
 #include <array>
 #include <vector>
@@ -108,4 +108,4 @@ private:
     Layer layer;
 };
 
-#endif // DOUBLEBEAM_CPP_INTEGRATION_HPP
+#endif // DOUBLEBEAM_CPP_RAYTRACING_HPP

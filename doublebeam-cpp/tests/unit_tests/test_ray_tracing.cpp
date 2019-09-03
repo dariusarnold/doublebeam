@@ -1,6 +1,6 @@
-#include "integration.hpp"
 #include "model.hpp"
 #include "printing.hpp"
+#include "raytracing.hpp"
 #include "testing_utils.hpp"
 #include "gtest/gtest.h"
 
@@ -36,3 +36,13 @@ test_data_t test_data = {{{0.000166674323178,  0., 0.0005299638150872}, 469},
                          {{0.000333271179152,  0., 0.0004444910532905}, 2411}};
 
 INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn(test_data));
+
+
+TEST(DISABLED_TestRayTracing, TestTurningRay) {
+    VelocityModel vm({{0, 1000, 3000, 1},
+                                {1000, 101000, 4500, 1.5}});
+    KinematicRayTracer rt(vm);
+    auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0);
+    auto ray = rt.trace_ray(initial_state, "TT");
+    EXPECT_TRUE(Close(ray.segments.back().data.back()[Index::X], 9403.354242));
+}

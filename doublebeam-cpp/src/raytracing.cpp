@@ -1,4 +1,4 @@
-#include "integration.hpp"
+#include "raytracing.hpp"
 
 #include "model.hpp"
 #include "utils.hpp"

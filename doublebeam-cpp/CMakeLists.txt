@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Boost REQUIRED)
 
-add_library(doublebeam_lib src/model.cpp src/utils.cpp src/integration.cpp)
+add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp)
 target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
@@ -18,3 +18,4 @@ add_subdirectory(src/timing)
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost)
 
 add_subdirectory(tests)
+add_executable(scratch_1 /home/darius/.CLion2019.2/config/scratches/scratch_1.cpp)
