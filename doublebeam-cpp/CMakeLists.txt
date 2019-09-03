@@ -12,6 +12,7 @@ target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 
 add_executable(doublebeam main.cpp)
 target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
+target_link_libraries(doublebeam PRIVATE timing)
 
 add_subdirectory(src/timing)
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost)
