@@ -84,6 +84,15 @@ class KinematicRayTracer {
 public:
     explicit KinematicRayTracer(VelocityModel velocity_model);
 
+    /**
+     * Trace ray specified by ray code through velocity model.
+     * @param initial_state Initial state of the ray.
+     * @param ray_code Sequence of characters that decide the ray type to take at an interface.
+     * Use 'R' for reflected and 'T' for transmitted.
+     * @param step_size Initial step size along the ray.
+     * @param max_step Maximum step size along the ray.
+     * @return Traced ray.
+     */
     Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
                   double max_step = 5.);
 
