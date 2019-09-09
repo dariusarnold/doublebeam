@@ -22,10 +22,11 @@ class VelocityModel {
      */
     std::vector<double> interface_depths;
     /**
-     * Pair of above, below velocity of every interface (in m/s).
+     * Sequence of above, below velocity of every interface (in m/s).
      * Includes interfaces at top and bottom where the model ends.
+     * Outside velocities are set to zero
      */
-    std::vector<std::pair<double, double>> _interface_velocities;
+    std::vector<double> _interface_velocities;
     /**
      * Velocity intercepts of all layers.
      */

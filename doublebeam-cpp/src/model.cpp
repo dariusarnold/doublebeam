@@ -26,13 +26,15 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) 
     std::for_each(layers.begin(), layers.end(),
                   [&](const auto& layer) { interface_depths.push_back(layer.bot_depth); });
     // Second get interface velocities with two special cases for first and last layer
-    double vel_above = 0., vel_below;
+    double velocity = 0.;
+    _interface_velocities.push_back(velocity);
     for (auto& l : layers) {
-        vel_below = layer_velocity(l, l.top_depth);
-        _interface_velocities.emplace_back(vel_above, vel_below);
-        vel_above = layer_velocity(l, l.bot_depth);
+        velocity = layer_velocity(l, l.top_depth);
+        _interface_velocities.push_back(velocity);
+        velocity = layer_velocity(l, l.bot_depth);
+        _interface_velocities.push_back(velocity);
     }
-    _interface_velocities.emplace_back(vel_above, 0);
+    _interface_velocities.emplace_back(0);
 }
 
 VelocityModel read_velocity_file(const fs::path& filepath) {
@@ -103,10 +105,13 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) const {
     auto index = layer_index(z);
     auto half_depth =
         layers[index].top_depth + 0.5 * (layers[index].bot_depth - layers[index].top_depth);
+    // index is layer index, which goes from 0 to n-1. Indices for interface velocities go from
+    // 0 to 2*(n+1)+1 since the first layer has 2 interface velocity pairs and every layer after
+    // that adds one interface velocity pair.
     if (z < half_depth) {
-        return _interface_velocities[index];
+        return {_interface_velocities[2 * index], _interface_velocities[2 * index + 1]};
     }
-    return _interface_velocities[index + 1];
+    return {_interface_velocities[2 * (index + 1)], _interface_velocities[2 * (index + 1) + 1]};
 }
 
 std::pair<double, double> VelocityModel::get_top_bottom() const {
