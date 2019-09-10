@@ -73,7 +73,7 @@ public:
      * @param z Depth of point in m.
      * @return
      */
-     // TODO extend velocity model by horizontal extent and add checks for this here
+    // TODO extend velocity model by horizontal extent and add checks for this here
     bool in_model(double z) const;
 
     /**

@@ -15,9 +15,10 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     if (not model.in_model(source_z)) {
         throw std::domain_error("Source outside of model " + stringify(source));
     }
-    if (not model.in_model(receiver_z)){
-        throw std::domain_error("Receiver outside of model " +stringify(receiver));
+    if (not model.in_model(receiver_z)) {
+        throw std::domain_error("Receiver outside of model " + stringify(receiver));
     }
+
 
     return slowness_t();
 }
