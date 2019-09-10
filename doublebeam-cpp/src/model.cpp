@@ -91,14 +91,12 @@ size_t VelocityModel::layer_index(double z) const {
 }
 
 double VelocityModel::eval_at(double z) const {
-    Layer layer;
     try {
-        layer = layers[layer_index(z)];
+        Layer layer = layers[layer_index(z)];
+        return layer.gradient * z + layer.intercept;
     } catch (const std::domain_error&) {
         return -1;
     }
-
-    return layer.gradient * z + layer.intercept;
 }
 
 std::pair<double, double> VelocityModel::interface_velocities(double z) const {
