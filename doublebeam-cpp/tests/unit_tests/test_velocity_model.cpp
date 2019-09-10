@@ -119,6 +119,33 @@ TEST_F(TestLayerIndexThrows, TestDepthBelowModel) {
 }
 
 
+// inherit to get the same velocity model but different test names
+class TestInterfaceVelocities : public TestLayerIndex {};
+
+TEST_F(TestInterfaceVelocities, NoInterfaceBetweenDepths) {
+    // interval should be empty
+    auto [begin, end] = vm.interface_velocities(50, 50);
+    EXPECT_EQ(begin, end);
+}
+
+TEST_F(TestInterfaceVelocities, OneInterfaceBetweenDepths) {
+    // interval should contain the two values above/below the enclosed interface
+    auto [begin, end] = vm.interface_velocities(50, 150);
+    EXPECT_EQ(std::distance(begin, end), 2);
+    EXPECT_EQ(*begin, 2200);
+    EXPECT_EQ(*(begin + 1), 2400);
+}
+
+TEST_F(TestInterfaceVelocities, TwoInterfacesBetweenDepths) {
+    // interval should contain four values from two above/below combinations of the two interfaces
+    auto [begin, end] = vm.interface_velocities(150, 350);
+    EXPECT_EQ(std::distance(begin, end), 4);
+    for (auto velocity : {2400, 2600, 2700, 2700}) {
+        EXPECT_EQ(*begin++, velocity);
+    }
+}
+
+
 TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     // TODO better way to specify path, maybe mock file object
     std::filesystem::path filepath(

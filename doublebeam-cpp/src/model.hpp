@@ -85,6 +85,19 @@ public:
      */
     std::pair<double, double> interface_velocities(double z) const;
 
+    using iterator = std::vector<double>::const_iterator;
+    /**
+     * Return interface velocities between depths z1 and z2.
+     * Interfaces have two velocities associated with them, one above and one below the interface.
+     * The depths do not have to be sorted.
+     * If a depth lies on an interface, that interface is not included in the returned range.
+     * @param z1 First depth, has to be inside model.
+     * @param z2 Second depth, has to be inside model.
+     * @return Pair of iterators pointing to the first interface velocity and one past the last
+     * interface velocity.
+     */
+    std::pair<iterator, iterator> interface_velocities(double z1, double z2) const;
+
     /**
      * Return top and bottom depth of model in m.
      * @return Pair of (top, bottom).

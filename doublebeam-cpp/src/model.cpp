@@ -123,3 +123,12 @@ bool VelocityModel::operator==(const VelocityModel& other) const {
 bool VelocityModel::in_model(double z) const {
     return z >= interface_depths.front() and z <= interface_depths.back();
 }
+
+std::pair<VelocityModel::iterator, VelocityModel::iterator>
+VelocityModel::interface_velocities(double z1, double z2) const {
+    auto [z_low, z_high] = std::minmax(z1, z2);
+    auto index_low = layer_index(z_low);
+    auto index_high = layer_index(z_high);
+    return {_interface_velocities.begin() + 2 * (index_low + 1),
+            _interface_velocities.begin() + 2 * (index_high + 1)};
+}
