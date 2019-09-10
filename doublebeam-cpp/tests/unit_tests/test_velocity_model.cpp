@@ -154,3 +154,43 @@ TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     VelocityModel expected({{0, 100, 1000, 1}, {100, 200, 1200, -1}});
     EXPECT_EQ(vm, expected);
 }
+
+
+struct DepthVelocityData {
+    double depth1;
+    double depth2;
+    double velocity;
+};
+
+std::ostream& operator<<(std::ostream& os, DepthVelocityData d) {
+    os << "Depth1: " << d.depth1 << " m Depth2: " << d.depth2 << " m Velocity: " << d.velocity
+       << "m/s";
+    return os;
+}
+
+class TestTwoPointRayTracing_v_M : public ::testing::TestWithParam<DepthVelocityData> {
+protected:
+    // same model as Fang2019 fig. 3 but negative gradient in first layer
+    TestTwoPointRayTracing_v_M()
+    : model({{0, 100, 2600, -4},
+             {100, 200, 2400, 0},
+             {200, 300, 2400, 1},
+             {300, 400, 2700, 0},
+             {400, 500, 2250, 1.5}}) {}
+
+    VelocityModel model;
+};
+
+TEST_P(TestTwoPointRayTracing_v_M, Test_v_M) {
+    auto [depth1, depth2, velocity] = TestTwoPointRayTracing_v_M::GetParam();
+    auto result = highest_velocity_between(depth1, depth2, model);
+    EXPECT_EQ(result, velocity);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    InsertTestPrefix, TestTwoPointRayTracing_v_M,
+    testing::Values(DepthVelocityData{0, 500, 3000}, DepthVelocityData{50, 500, 3000},
+                    DepthVelocityData{50, 450, 2925}, DepthVelocityData{300, 400, 2850},
+                    DepthVelocityData{50, 150, 2400}, DepthVelocityData{25, 150, 2500},
+                    DepthVelocityData{301, 302, 2700}, DepthVelocityData{0, 1, 2600},
+                    DepthVelocityData{50, 250, 2650}));

@@ -132,3 +132,15 @@ VelocityModel::interface_velocities(double z1, double z2) const {
     return {_interface_velocities.begin() + 2 * (index_low + 1),
             _interface_velocities.begin() + 2 * (index_high + 1)};
 }
+
+double highest_velocity_between(double source_depth, double receiver_depth, const VelocityModel& model) {
+    auto receiver_index = model.layer_index(receiver_depth);
+    auto source_index = model.layer_index(source_depth);
+    // if points in same layer, maximum has to be at either point for linear velocity gradient
+    if (source_index == receiver_index) {
+        return std::max(model.eval_at(receiver_depth), model.eval_at(source_depth));
+    }
+    auto [iterator_begin, iterator_end] = model.interface_velocities(receiver_depth, source_depth);
+    auto max_vel = std::max_element(iterator_begin, iterator_end);
+    return std::max({*max_vel, model.eval_at(source_depth), model.eval_at(receiver_depth)});
+}

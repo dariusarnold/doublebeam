@@ -114,4 +114,15 @@ public:
 
 VelocityModel read_velocity_file(const std::filesystem::path& filepath);
 
+/**
+ * Find highest velocity between two points in the model.
+ * Depths do not have to be sorted.
+ * @param depth1 z coordinate of point 1.
+ * @param depth2 z coordinate of point 2.
+ * @param model Velocity model.
+ * @return Highest velocity (m/s) between depth 1 and depth 2 for a direct ray.
+ */
+double highest_velocity_between(double depth1, double depth2,
+                                const VelocityModel& model);
+
 #endif // DOUBLEBEAM_CPP_MODEL_HPP
