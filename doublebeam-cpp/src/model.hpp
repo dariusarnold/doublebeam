@@ -17,24 +17,18 @@ bool operator==(const Layer& l1, const Layer& l2);
 
 class VelocityModel {
     /**
-     * Depth of all interfaces, including the top and the bottom one
-     * where the layer ends.
-     */
-    std::vector<double> interface_depths;
-    /**
      * Sequence of above, below velocity of every interface (in m/s).
      * Includes interfaces at top and bottom where the model ends.
      * Outside velocities are set to zero
      */
     std::vector<double> _interface_velocities;
+
     /**
-     * Velocity intercepts of all layers.
+     * Depth of all interfaces, including the top and the bottom one
+     * where the layer ends.
      */
-    std::vector<double> intercepts;
-    /**
-     * Velocity gradient of all layers.
-     */
-    std::vector<double> gradients;
+    std::vector<double> m_interface_depths;
+
     /**
      * Array of layers.
      */
@@ -122,9 +116,14 @@ public:
      * @return
      */
     size_t size() const;
+
+    const std::vector<double>& interface_depths() const;
 };
 
 
+/**
+ * Create a velocity model from a file. For file format, see README.
+ */
 VelocityModel read_velocity_file(const std::filesystem::path& filepath);
 
 /**
@@ -135,7 +134,6 @@ VelocityModel read_velocity_file(const std::filesystem::path& filepath);
  * @param model Velocity model.
  * @return Highest velocity (m/s) between depth 1 and depth 2 for a direct ray.
  */
-double highest_velocity_between(double depth1, double depth2,
-                                const VelocityModel& model);
+double highest_velocity_between(double depth1, double depth2, const VelocityModel& model);
 
 #endif // DOUBLEBEAM_CPP_MODEL_HPP

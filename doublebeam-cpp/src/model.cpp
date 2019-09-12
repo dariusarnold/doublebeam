@@ -22,9 +22,9 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) 
     }
     // First get interface depths
     auto top_layer = layers.front();
-    interface_depths.push_back(top_layer.top_depth);
+    m_interface_depths.push_back(top_layer.top_depth);
     std::for_each(layers.begin(), layers.end(),
-                  [&](const auto& layer) { interface_depths.push_back(layer.bot_depth); });
+                  [&](const auto& layer) { m_interface_depths.push_back(layer.bot_depth); });
     // Second get interface velocities with two special cases for first and last layer
     double velocity = 0.;
     _interface_velocities.push_back(velocity);
@@ -81,12 +81,12 @@ Layer VelocityModel::operator[](size_t index) const {
 }
 
 size_t VelocityModel::layer_index(double z) const {
-    if (z < interface_depths.front() or z > interface_depths.back()) {
+    if (z < m_interface_depths.front() or z > m_interface_depths.back()) {
         throw std::domain_error("Evaluating model outside of its depth range: " +
                                 std::to_string(z));
     }
-    auto greater = std::upper_bound(interface_depths.begin(), interface_depths.end(), z);
-    return std::min(std::distance(interface_depths.begin(), greater) - 1,
+    auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
+    return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
                     static_cast<long int>(layers.size()) - 1);
 }
 
@@ -113,7 +113,7 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) const {
 }
 
 std::pair<double, double> VelocityModel::get_top_bottom() const {
-    return {interface_depths.front(), interface_depths.back()};
+    return {m_interface_depths.front(), m_interface_depths.back()};
 }
 
 bool VelocityModel::operator==(const VelocityModel& other) const {
@@ -121,7 +121,7 @@ bool VelocityModel::operator==(const VelocityModel& other) const {
 }
 
 bool VelocityModel::in_model(double z) const {
-    return z >= interface_depths.front() and z <= interface_depths.back();
+    return z >= m_interface_depths.front() and z <= m_interface_depths.back();
 }
 
 std::pair<VelocityModel::iterator, VelocityModel::iterator>
@@ -140,6 +140,9 @@ std::vector<Layer>::const_iterator VelocityModel::end() const {
 }
 size_t VelocityModel::size() const {
     return layers.size();
+}
+const std::vector<double>& VelocityModel::interface_depths() const {
+    return m_interface_depths;
 }
 
 double highest_velocity_between(double source_depth, double receiver_depth, const VelocityModel& model) {
