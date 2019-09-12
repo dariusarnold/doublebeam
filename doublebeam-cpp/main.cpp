@@ -2,6 +2,7 @@
 #include "printing.hpp"
 #include "raytracing.hpp"
 #include "timing/timing.hpp"
+#include "twopoint.hpp"
 #include <iomanip>
 
 
@@ -23,6 +24,22 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 
 
 int main() {
+    //auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
+    std::vector<Layer> layers{{0, 100, 1000, 1},
+                              {100, 200, 1100, -1},
+                              {200, 300, 1000, 0.5},
+                              {300, 400, 1100, 0},
+                              {400, 500, 1200, -1}};
+    auto vm = VelocityModel(layers);
+    auto twopoint = TwoPointRayTracing(vm);
+    position_t source{0, 0, 0};
+    position_t receiver{100, 0, 500};
+    twopoint.trace(source, receiver);
+    
+}
+
+
+int nmain() {
     std::vector<Layer> layers{{0, 100, 1000, 1},
                               {100, 200, 1100, -1},
                               {200, 300, 1000, 0.5},

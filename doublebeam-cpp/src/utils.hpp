@@ -57,5 +57,25 @@ namespace math {
         return std::signbit(a) == std::signbit(b);
     }
 
+    template <typename T>
+    /**
+     * Calculate clockwise angle in radians from the first vector to the second vector in the x_y
+     * horizontal plane.
+     * @tparam T floating point type
+     * @param x1 x component of first vector.
+     * @param y1 y component of first vector.
+     * @param x2 x component of second vector.
+     * @param y2 y component of second vector.
+     * @return
+     */
+    double angle_clockwise(T x1, T y1, T x2, T y2) {
+        auto angle1 = std::atan2(x1, y1);
+        auto angle2 = std::atan2(x2, y2);
+        auto difference = angle2 - angle1;
+        if (difference < 0)
+            return 2 * M_PI + difference;
+        return difference;
+    }
+
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP
