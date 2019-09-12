@@ -109,6 +109,13 @@ public:
      * @param other Other VelocityModel to compare this instance to.
      */
     bool operator==(const VelocityModel& other) const;
+
+    /**
+     * Define begin and end to allow range-for iteration over layers.
+     * @return
+     */
+    std::vector<Layer>::const_iterator begin() const;
+    std::vector<Layer>::const_iterator end() const;
 };
 
 

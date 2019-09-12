@@ -132,6 +132,12 @@ VelocityModel::interface_velocities(double z1, double z2) const {
     return {_interface_velocities.begin() + 2 * (index_low + 1),
             _interface_velocities.begin() + 2 * (index_high + 1)};
 }
+std::vector<Layer>::const_iterator VelocityModel::begin() const {
+    return layers.begin();
+}
+std::vector<Layer>::const_iterator VelocityModel::end() const {
+    return layers.end();
+}
 
 double highest_velocity_between(double source_depth, double receiver_depth, const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth);
