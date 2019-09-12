@@ -116,6 +116,12 @@ public:
      */
     std::vector<Layer>::const_iterator begin() const;
     std::vector<Layer>::const_iterator end() const;
+
+    /**
+     * Return number of layers in model.
+     * @return
+     */
+    size_t size() const;
 };
 
 

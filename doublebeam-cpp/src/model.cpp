@@ -138,6 +138,9 @@ std::vector<Layer>::const_iterator VelocityModel::begin() const {
 std::vector<Layer>::const_iterator VelocityModel::end() const {
     return layers.end();
 }
+size_t VelocityModel::size() const {
+    return layers.size();
+}
 
 double highest_velocity_between(double source_depth, double receiver_depth, const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth);
