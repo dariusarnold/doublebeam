@@ -7,8 +7,10 @@ AllowShortIfStatementsOnASingleLine: Always
 AllowShortLoopsOnASingleLine: 'false'
 AlwaysBreakTemplateDeclarations: 'Yes'
 BreakBeforeBraces: Attach
+BreakConstructorInitializers: AfterColon
 ColumnLimit: '100'
-ConstructorInitializerIndentWidth: '0'
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+ConstructorInitializerIndentWidth: '8'
 IndentWidth: '4'
 Language: Cpp
 MaxEmptyLinesToKeep: '2'
