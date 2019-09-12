@@ -18,4 +18,3 @@ add_subdirectory(src/timing)
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost)
 
 add_subdirectory(tests)
-add_executable(scratch_1 /home/darius/.CLion2019.2/config/scratches/scratch_1.cpp)
