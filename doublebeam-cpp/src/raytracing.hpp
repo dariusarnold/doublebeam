@@ -28,7 +28,6 @@ namespace Index {
 class RaySegment {
 public:
     RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths);
-
     std::vector<state_type> data;
     std::vector<double> arclength;
 };
@@ -36,14 +35,24 @@ public:
 class Ray {
 public:
     Ray();
-
     explicit Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths);
-
     explicit Ray(const RaySegment& segment);
-
     std::vector<RaySegment> segments;
 };
 
+/**
+ * Factory function to create a state type for a position and a starting angle.
+ * @param x X coordinate of start point of ray.
+ * @param y Y  coordinate of start point of ray.
+ * @param z Z  coordinate of start point of ray.
+ * @param model Model will be evaluated at start point to calculate starting slowness.
+ * @param theta Angle against downgoing vertical axis (z) at start point in rad, increasing upwards.
+ * Valid range 0 <= theta <= pi.
+ * @param phi Angle against x axis at start point in rad, with increasing angle towards the y axis.
+ * Valid range 0 <= phi <= 2*pi.
+ * @param T Travel time at the start point of the ray.
+ * @return state_type with coordinate and slowness calculated from the given parameters.
+ */
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T = 0);
 
@@ -63,6 +72,11 @@ public:
     Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
                   double max_step = 5.);
 
+    /**
+     * This call operator implements the system of ODEs required to compute the ray.
+     * @param state
+     * @param dxdt
+     */
     void operator()(const state_type& state, state_type& dxdt, const double /* s */);
 
 private:
