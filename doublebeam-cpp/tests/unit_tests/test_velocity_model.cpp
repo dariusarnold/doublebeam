@@ -7,9 +7,10 @@
 
 class TestInterfaceVelocity : public ::testing::Test {
 protected:
-    TestInterfaceVelocity()
-    : vm(VelocityModel(
-          std::vector<Layer>{{0, 100, 1000, 0}, {100, 200, 1500, 1}, {200, 300, 3000, -1}})) {}
+    TestInterfaceVelocity() :
+            vm(VelocityModel(
+                std::vector<Layer>{{0, 100, 1000, 0}, {100, 200, 1500, 1}, {200, 300, 3000, -1}})) {
+    }
 
     VelocityModel vm;
 };
@@ -70,12 +71,12 @@ TEST_F(TestInModel, TestInterfacesShouldBeInModel) {
 // param is pair of depth, index. Index is the expected return value at depth.
 class TestLayerIndex : public ::testing::TestWithParam<std::pair<double, size_t>> {
 protected:
-    TestLayerIndex()
-    : vm(VelocityModel(std::vector<Layer>{{0, 100, 1800, 4},
-                                          {100, 200, 2400, 0},
-                                          {200, 300, 2400, 1},
-                                          {300, 400, 2700, 0},
-                                          {400, 500, 2250, 1.5}})) {}
+    TestLayerIndex() :
+            vm(VelocityModel(std::vector<Layer>{{0, 100, 1800, 4},
+                                                {100, 200, 2400, 0},
+                                                {200, 300, 2400, 1},
+                                                {300, 400, 2700, 0},
+                                                {400, 500, 2250, 1.5}})) {}
 
     VelocityModel vm;
 };
@@ -171,12 +172,12 @@ std::ostream& operator<<(std::ostream& os, DepthVelocityData d) {
 class TestTwoPointRayTracing_v_M : public ::testing::TestWithParam<DepthVelocityData> {
 protected:
     // same model as Fang2019 fig. 3 but negative gradient in first layer
-    TestTwoPointRayTracing_v_M()
-    : model({{0, 100, 2600, -4},
-             {100, 200, 2400, 0},
-             {200, 300, 2400, 1},
-             {300, 400, 2700, 0},
-             {400, 500, 2250, 1.5}}) {}
+    TestTwoPointRayTracing_v_M() :
+            model({{0, 100, 2600, -4},
+                   {100, 200, 2400, 0},
+                   {200, 300, 2400, 1},
+                   {300, 400, 2700, 0},
+                   {400, 500, 2250, 1.5}}) {}
 
     VelocityModel model;
 };
