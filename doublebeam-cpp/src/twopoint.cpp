@@ -78,18 +78,12 @@ auto TwoPointRayTracing::X_tilde_double_prime(double q) {
 
 // eq. 16
 double TwoPointRayTracing::f_tilde(double q, double X) {
-    std::cout << "X_tilde: " << X_tilde(q) << std::endl;
-    double val = xt::sum(X_tilde(q))[0] - X;
-    std::cout << "val: " << val << std::endl;
-    return val;
+    return xt::sum(X_tilde(q))[0] - X;
 }
 
 // eq. B3
 double TwoPointRayTracing::f_tilde_prime(double q) {
-    std::cout << "X_tilde_prime: " << X_tilde_prime(q) << std::endl;
-    auto val = xt::sum(X_tilde_prime(q))[0];
-    std::cout << "sum: " << val << std::endl;
-    return val;
+    return xt::sum(X_tilde_prime(q))[0];
 }
 
 // eq. B4
@@ -101,14 +95,11 @@ double TwoPointRayTracing::next_q(double q, double X) {
     auto A = 0.5 * f_tilde_double_prime(q);
     auto B = f_tilde_prime(q);
     auto C = f_tilde(q, X);
-    std::cout << "C: " << C << std::endl;
-    std::cout << "A: " << A << " B: " << B << " C: " << C << std::endl;
     double delta_q_plus = (-B + std::sqrt(B * B - 4 * A * C)) / (2 * A);
     double delta_q_minus = (-B - std::sqrt(B * B - 4 * A * C)) / (2 * A);
     // both q plus and q minus are 0D tensors, get their value out to pass to function
     double q_plus = (q + delta_q_plus);
     double q_minus = (q + delta_q_minus);
-    std::cout << "q_plus: " << q_plus << " q_minus: " << q_minus << std::endl;
     // use all to convert 0D array of bool to bool explicitly
     if (std::abs(f_tilde(q_plus, X)) < std::abs(f_tilde(q_minus, X))) {
         return q_plus;
@@ -177,7 +168,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
     if (source_index > num_layers) {
         source_index = num_layers;
     }
-    std::cout << "s: " << source_index << std::endl;
     // insert source layer properties in first place
     gradients[0] = gradients[source_index];
     intercepts[0] = intercepts[source_index];
@@ -185,7 +175,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
     auto a = xt::adapt(gradients);
     auto b = xt::adapt(intercepts);
     auto z = xt::adapt(interface_depths);
-    std::cout << "a: " << a << " b: " << b << " z: " << z << std::endl;
 
     // eq. A5
     // TODO move instantiation to constructor so they can be reused.
@@ -194,7 +183,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
         epsilon(k) = std::pow(a(k) * z(k - 1) + b(k), 2);
     }
     epsilon(0) = std::pow(a(source_index) * z(source_index - 1) + b(source_index), 2);
-    std::cout << "epsilon: " << epsilon << std::endl;
 
     // eq. A6
     // TODO decide if kept as loop or as xtensor view initialization as for epsilon
@@ -203,7 +191,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
         omega(k) = std::pow(a(k) * z(k) + b(k), 2);
     }
     omega(0) = std::pow(a(source_index) * source_z + b(source_index), 2);
-    std::cout << "omega: " << omega << std::endl;
 
     // eq. A7
     auto h = xt::empty<double>({num_layers + 1});
@@ -212,48 +199,39 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
     }
     h(0) = (a(source_index) * z(source_index - 1) + b(source_index)) *
            (source_z - z(source_index - 1));
-    std::cout << "h: " << h << std::endl;
 
     bool source_below_receiver = source_z > receiver_z;
     auto mu = xt::empty<double>({num_layers + 1});
     for (size_t k = 0; k <= num_layers; k++) {
         mu(k) = mu_k(k, source_index, num_layers, source_below_receiver);
     }
-    std::cout << "mu: " << mu << std::endl;
 
     auto vM = highest_velocity_between(source_z, receiver_z, model);
-    std::cout << "vM: " << vM << std::endl;
 
     // eq. A10
     mu_tilde = mu * vM / a;
     xt::filtration(mu_tilde, xt::equal(a, 0)) = 0;
 
-    std::cout << "mu_tilde: " << mu_tilde << std::endl;
 
     // eq. A11
     h_tilde = mu * h / vM;
 
-    std::cout << "h_tilde: " << h_tilde << std::endl;
 
     // eq. A12
     epsilon_tilde = 1 - epsilon / (vM * vM);
 
-    std::cout << "epsilon_tilde: " << epsilon_tilde << std::endl;
 
     // eq. A13
     omega_tilde = 1 - omega / (vM * vM);
 
-    std::cout << "omega_tilde: " << omega_tilde << std::endl;
 
     // eq. A9
     delta_a = xt::abs(xt::sign(a));
 
-    std::cout << "delta_a: " << delta_a << std::endl;
 
     // eq. C13
     auto d1 = xt::nansum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) +
                          (1 - delta_a) * h_tilde);
-    std::cout << "d1: " << d1 << std::endl;
 
     // eq. C18
     delta_epsilon = xt::abs(xt::sign(epsilon_tilde));
@@ -267,12 +245,10 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
             (delta_epsilon * xt::sqrt(epsilon_tilde) - delta_omega * xt::sqrt(omega_tilde)) +
         (1 - delta_a) * delta_epsilon * h_tilde / xt::sqrt(epsilon_tilde));
 
-    std::cout << "c0: " << c0 << std::endl;
 
     // eq. C16
     auto cminus1 = xt::nansum(delta_a * (delta_omega - delta_epsilon) * mu_tilde);
 
-    std::cout << "cminus1: " << cminus1 << std::endl;
 
     // eq. C17
     auto cminus2 =
@@ -281,11 +257,9 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
                         guard(delta_omega / xt::sqrt(omega_tilde), delta_omega)) -
                    (1 - delta_a) * delta_epsilon * h_tilde * 0.5 / xt::pow(epsilon_tilde, 1.5));
 
-    std::cout << "cminus2: " << cminus2 << std::endl;
 
     // horizontal distance between source and receiver
     auto X = std::sqrt(std::pow(source_x - receiver_x, 2) + std::pow(source_y - receiver_y, 2));
-    std::cout << "X: " << X << std::endl;
 
     auto alpha1 = d1;
     auto alpha2 = c0 * (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
@@ -298,34 +272,24 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
     double q = (numerator / denominator)[0];
 
     double q_next;
-    //auto old_precision = std::cout.precision();
-    std::cout << std::setprecision(17);
     while (std::isfinite(q) and q!= 0) {
-        std::cout << "begin loop, q = " << q << std::endl;
         q_next = next_q(q, X);
-        std::cout << "q_next: " << q_next << std::endl;
         if (std::abs(q - q_next) < accuracy) {
             q = q_next;
             break;
         }
         q = q_next;
     }
-    //std::cout << std::setprecision(old_precision);
-    std::cout << "Done looping\n";
     double horizontal_slowness = q_to_p(q, vM);
-    std::cout << "horizontal_slowness: " << horizontal_slowness << std::endl;
     double c = model.eval_at(source_z);
-    std::cout << "c: " << c << std::endl;
     double vertical_slowness =
         std::sqrt(std::pow(c, -2) - horizontal_slowness * horizontal_slowness);
     if (source_below_receiver) {
         // ray should travel upward from source in this case
         vertical_slowness *= -1;
     }
-    std::cout << "vertical_slowness: " << vertical_slowness << std::endl;
     // calculate angle to x axis
     double phi = math::angle_clockwise(receiver_x - source_x, receiver_y - source_y, 1., 0.);
-    std::cout << "phi: " << phi << std::endl;
     double px = std::cos(phi) * horizontal_slowness;
     double py = std::sin(phi) * horizontal_slowness;
     return {px, py, vertical_slowness};
