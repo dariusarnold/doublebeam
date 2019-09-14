@@ -64,13 +64,20 @@ struct InterfaceCrossed {
     }
 };
 
+/**
+ * Helper function that returns an InterfaceCrossed functor for the upper layer if the
+ * ray is going up or for the lower layer if the ray is going down.
+ * @param pz Vertical slowness.
+ * @param layer
+ * @return
+ */
 InterfaceCrossed get_interface_zero_crossing(double pz, const Layer& layer) {
     auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
     return InterfaceCrossed{interface_depth};
 }
 
 /**
- * Integrate a system of ODEs until the Condition has a zero crossing.
+ * Solve ray tracing equation until layer border is hit.
  * @tparam System Type of odeint System, callable with signature  sys(x, dxdt, t)-
  * @tparam Condition Type of callable taking a state_type and returning a double.
  * @param x0 Initial state of the system.
@@ -150,8 +157,8 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         // TODO this line and the trace_layer call below violates the law of Demeter, try to
         //  refactor it by improving Ray class
         auto [x, y, z, px, py, pz, t] = ray.segments.back().data.back();
+        // reflected waves stay in the same layer, so the index doesn't change
         if (ray_type == 'T') {
-            // reflected waves stay in the same layer and doesn't change the index
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
             layer = model[layer_index];
         }
@@ -167,10 +174,10 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
 }
 
 /**
- * Calculate first derivative of inverse of velocity after depth z analytically. 
+ * Calculate first derivative of inverse of velocity after depth z analytically.
  * Valid for linear velocity gradient v = v(z) = a * z + b).
- * @param z 
- * @param layer 
+ * @param z
+ * @param layer
  * @return Derivative d/dz of 1/v(z) = -(az+b)^{-2}*a
  */
 double dvdz(double z, const Layer& layer) {
