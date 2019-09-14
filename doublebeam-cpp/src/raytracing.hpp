@@ -74,9 +74,6 @@ public:
 
 private:
     VelocityModel model;
-
-    double dvdz(double z);
-
     Layer layer;
 };
 

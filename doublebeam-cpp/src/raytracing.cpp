@@ -173,6 +173,18 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
     return r;
 }
 
+/**
+ * Calculate first derivative of inverse of velocity after depth z analytically. 
+ * Valid for linear velocity gradient v = v(z) = a * z + b).
+ * @param z 
+ * @param layer 
+ * @return Derivative d/dz of 1/v(z) = -(az+b)^{-2}*a
+ */
+double dvdz(double z, const Layer& layer) {
+    return -layer.gradient /
+           ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
+}
+
 void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
                                     const double /* s */) {
     auto [x, y, z, px, py, pz, T] = state;
@@ -180,7 +192,7 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
     auto dxds = px * v;
     auto dyds = py * v;
     auto dzds = pz * v;
-    auto dpzds = dvdz(z);
+    auto dpzds = dvdz(z, layer);
     auto dTds = 1. / v;
     dxdt[0] = dxds;
     dxdt[1] = dyds;
@@ -189,9 +201,4 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
     dxdt[4] = 0.;
     dxdt[5] = dpzds;
     dxdt[6] = dTds;
-}
-
-double KinematicRayTracer::dvdz(double z) {
-    return -layer.gradient /
-           ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
 }
