@@ -41,6 +41,25 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
     return {px, py, pz};
 }
 
+struct InterfaceCrossed {
+    /*
+     * Define interface crossing as zero crossing where the function returns
+     * values above zero if depth above the interface and below zero if depths
+     * below the interface.
+     */
+    double interface_depth;
+
+    explicit InterfaceCrossed(double interface_depth) : interface_depth(interface_depth){};
+
+    double operator()(const state_type& state) const {
+        return interface_depth - state[Index::Z];
+    }
+};
+
+InterfaceCrossed get_interface_zero_crossing(double pz, const Layer& layer) {
+    auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
+    return InterfaceCrossed{interface_depth};
+}
 
 /**
  * Integrate a system of ODEs until the Condition has a zero crossing.
@@ -101,13 +120,6 @@ trace_layer(state_type& x0, System sys, Condition cond, double s_start, double d
 }
 
 
-InterfaceCrossed::InterfaceCrossed(double interface_depth) : interface_depth(interface_depth){};
-
-double InterfaceCrossed::operator()(const state_type& state) const {
-    return interface_depth - state[Index::Z];
-}
-
-
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T) {
     double velocity = model.eval_at(z);
@@ -134,7 +146,7 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
                                   double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
     layer = model[layer_index];
-    auto border = get_interface_zero_crossing(initial_state[Index::PZ]);
+    auto border = get_interface_zero_crossing(initial_state[Index::PZ], layer);
     auto [arclengths, states] = trace_layer(initial_state, *this, border, 0., step_size, max_step);
     if (ray_code.empty()) {
         return Ray{RaySegment{states, arclengths}};
@@ -151,7 +163,7 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         auto [v_above, v_below] = model.interface_velocities(z);
         auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
-        border = get_interface_zero_crossing(pz_new);
+        border = get_interface_zero_crossing(pz_new, layer);
         std::tie(arclengths, states) =
             trace_layer(new_initial_state, *this, border, arclengths.back(), step_size, max_step);
         r.segments.emplace_back(states, arclengths);
@@ -175,11 +187,6 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
     dxdt[4] = 0.;
     dxdt[5] = dpzds;
     dxdt[6] = dTds;
-}
-
-InterfaceCrossed KinematicRayTracer::get_interface_zero_crossing(double pz) {
-    auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
-    return InterfaceCrossed{interface_depth};
 }
 
 double KinematicRayTracer::dvdz(double z) {

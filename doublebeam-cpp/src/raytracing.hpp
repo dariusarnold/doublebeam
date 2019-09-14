@@ -51,19 +51,6 @@ public:
     std::vector<RaySegment> segments;
 };
 
-struct InterfaceCrossed {
-    /*
-     * Define interface crossing as zero crossing where the function returns
-     * values above zero if depth above the interface and below zero if depths
-     * below the interface.
-     */
-    double interface_depth;
-
-    explicit InterfaceCrossed(double interface_depth);
-
-    double operator()(const state_type& state) const;
-};
-
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T = 0);
 
@@ -86,8 +73,6 @@ public:
     void operator()(const state_type& state, state_type& dxdt, const double /* s */);
 
 private:
-    InterfaceCrossed get_interface_zero_crossing(double pz);
-
     VelocityModel model;
 
     double dvdz(double z);
