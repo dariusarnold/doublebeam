@@ -82,9 +82,8 @@ InterfaceCrossed get_interface_zero_crossing(double pz, const Layer& layer) {
  * @return
  */
 template <typename System, typename Condition>
-std::pair<std::vector<double>, std::vector<state_type>>
-trace_layer(state_type& x0, System sys, Condition cond, double s_start, double ds,
-            double max_ds = 1.1) {
+RaySegment trace_layer(state_type& x0, System sys, Condition cond, double s_start, double ds,
+                       double max_ds = 1.1) {
     auto stepper =
         odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
@@ -124,7 +123,7 @@ trace_layer(state_type& x0, System sys, Condition cond, double s_start, double d
     }
     arclengths.shrink_to_fit();
     states.shrink_to_fit();
-    return {arclengths, states};
+    return {states, arclengths};
 }
 
 
@@ -135,20 +134,6 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
     return {x, y, z, px, py, pz, T};
 }
 
-RaySegment::RaySegment(const std::vector<state_type>& states,
-                       const std::vector<double>& arclengths) :
-        data(states),
-        arclength(arclengths) {}
-
-
-Ray::Ray() : segments(std::vector<RaySegment>()) {}
-
-Ray::Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
-        segments{RaySegment{states, arclengths}} {}
-
-Ray::Ray(const RaySegment& segment) : segments(std::vector{segment}) {}
-
-
 KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) :
         model(std::move(velocity_model)) {}
 
@@ -157,14 +142,14 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
     auto layer_index = model.layer_index(initial_state[Index::Z]);
     layer = model[layer_index];
     auto border = get_interface_zero_crossing(initial_state[Index::PZ], layer);
-    auto [arclengths, states] = trace_layer(initial_state, *this, border, 0., step_size, max_step);
+    Ray ray{{trace_layer(initial_state, *this, border, 0., step_size, max_step)}};
     if (ray_code.empty()) {
-        return Ray{RaySegment{states, arclengths}};
+        return ray;
     }
-    Ray r{states, arclengths};
     for (auto ray_type : ray_code) {
-        auto [x, y, z, px, py, pz, t] = states.back();
-
+        // TODO this line and the trace_layer call below violates the law of Demeter, try to
+        //  refactor it by improving Ray class
+        auto [x, y, z, px, py, pz, t] = ray.segments.back().data.back();
         if (ray_type == 'T') {
             // reflected waves stay in the same layer and doesn't change the index
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
@@ -174,11 +159,11 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
         border = get_interface_zero_crossing(pz_new, layer);
-        std::tie(arclengths, states) =
-            trace_layer(new_initial_state, *this, border, arclengths.back(), step_size, max_step);
-        r.segments.emplace_back(states, arclengths);
+        auto segment = trace_layer(new_initial_state, *this, border,
+                                   ray.segments.back().arclength.back(), step_size, max_step);
+        ray.segments.push_back(segment);
     }
-    return r;
+    return ray;
 }
 
 /**

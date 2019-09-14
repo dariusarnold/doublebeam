@@ -27,16 +27,12 @@ namespace Index {
 
 class RaySegment {
 public:
-    RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths);
     std::vector<state_type> data;
     std::vector<double> arclength;
 };
 
 class Ray {
 public:
-    Ray();
-    explicit Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths);
-    explicit Ray(const RaySegment& segment);
     std::vector<RaySegment> segments;
 };
 
