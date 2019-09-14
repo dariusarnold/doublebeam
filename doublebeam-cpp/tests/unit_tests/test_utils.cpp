@@ -69,3 +69,26 @@ INSTANTIATE_TEST_SUITE_P(
                       AngleData{math::radians(270), 0, 1}, AngleData{math::radians(225), -1, 1},
                       AngleData{math::radians(180), -1, 0}, AngleData{math::radians(135), -1, -1},
                       AngleData{math::radians(90), 0, -1}, AngleData{math::radians(45), 1, -1}));
+
+
+class TestRounding : public ::testing::Test {
+protected:
+    double value = 123.123456789123456789;
+};
+
+TEST_F(TestRounding, TestNormalCase) {
+    EXPECT_EQ(123.12, math::round(value, 2));
+    EXPECT_EQ(123.123, math::round(value, 3));
+}
+
+TEST_F(TestRounding, TestRoundingUp) {
+    EXPECT_EQ(123.1235, math::round(value, 4));
+}
+
+TEST_F(TestRounding, TestCompleteLengthIsUnchanged) {
+    EXPECT_EQ(value, math::round(value, 16));
+}
+
+TEST_F(TestRounding, TestZeroDigits) {
+    EXPECT_EQ(static_cast<int>(value), math::round(value, 0));
+}

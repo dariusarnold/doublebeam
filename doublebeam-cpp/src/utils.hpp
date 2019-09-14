@@ -77,5 +77,17 @@ namespace math {
         return difference;
     }
 
+    /**
+     * Round value to given number of digits after the decimal dot.
+     * @tparam D Floating point type.
+     * @tparam I Integral type.
+     * @param value Value to round.
+     * @param places To how many digits the value is rounded.
+     */
+    template <typename D, typename I>
+    D round(D value, I places) {
+        return std::floor(value * std::pow(10, places) + 0.5) / std::pow(10, places);
+    }
+
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP
