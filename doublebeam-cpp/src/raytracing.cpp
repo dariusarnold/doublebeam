@@ -76,7 +76,7 @@ InterfaceCrossed get_interface_zero_crossing(double pz, const Layer& layer) {
 template <typename System, typename Condition>
 std::pair<std::vector<double>, std::vector<state_type>>
 trace_layer(state_type& x0, System sys, Condition cond, double s_start, double ds,
-              double max_ds = 1.1) {
+            double max_ds = 1.1) {
     auto stepper =
         odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
     stepper.initialize(x0, s_start, ds);
@@ -97,8 +97,8 @@ trace_layer(state_type& x0, System sys, Condition cond, double s_start, double d
     boost::uintmax_t max_calls = 1000;
     auto [t_left, t_right] = boost::math::tools::toms748_solve(
         [&](double t) {
-          stepper.calc_state(t, x_middle);
-          return (cond(x_middle));
+            stepper.calc_state(t, x_middle);
+            return (cond(x_middle));
         },
         t0, t1, boost::math::tools::eps_tolerance<double>(), max_calls);
     // calculate final position of crossing and save state at crossing
@@ -127,20 +127,22 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
     return {x, y, z, px, py, pz, T};
 }
 
-RaySegment::RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths)
-: data(states), arclength(arclengths) {}
+RaySegment::RaySegment(const std::vector<state_type>& states,
+                       const std::vector<double>& arclengths) :
+        data(states),
+        arclength(arclengths) {}
 
 
 Ray::Ray() : segments(std::vector<RaySegment>()) {}
 
-Ray::Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths)
-: segments{RaySegment{states, arclengths}} {}
+Ray::Ray(const std::vector<state_type>& states, const std::vector<double>& arclengths) :
+        segments{RaySegment{states, arclengths}} {}
 
 Ray::Ray(const RaySegment& segment) : segments(std::vector{segment}) {}
 
 
-KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model)
-: model(std::move(velocity_model)) {}
+KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) :
+        model(std::move(velocity_model)) {}
 
 Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
                                   double step_size, double max_step) {
