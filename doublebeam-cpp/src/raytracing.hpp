@@ -4,13 +4,7 @@
 #include <array>
 #include <vector>
 
-#include <boost/math/tools/toms748_solve.hpp>
-#include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
-#include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
-#include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-
 #include "model.hpp"
-#include "utils.hpp"
 
 typedef std::array<double, 7> state_type;
 
@@ -30,7 +24,6 @@ namespace Index {
     static constexpr size_t T = 6;
 }; // namespace Index
 
-namespace odeint = boost::numeric::odeint;
 
 class RaySegment {
 public:

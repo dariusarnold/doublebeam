@@ -1,7 +1,15 @@
 #include "raytracing.hpp"
 
+#include <boost/math/tools/toms748_solve.hpp>
+#include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
+#include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
+#include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
+
 #include "model.hpp"
 #include "utils.hpp"
+
+namespace odeint = boost::numeric::odeint;
+
 
 /**
  * Apply snells law to calculate new slowness for horizontal interfaces.
