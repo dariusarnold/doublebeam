@@ -32,19 +32,6 @@ namespace Index {
 
 namespace odeint = boost::numeric::odeint;
 
-/**
- * Apply snells law to calculate new slowness for horizontal interfaces.
- * @param px X component of slowness vector.
- * @param py Y component of slowness vector.
- * @param pz Z component of slowness vector.
- * @param v_above Velocity on the upper side of the interface
- * @param v_below Velocity on the lower side of the interface.
- * @param wave_type Specify if transmitted ('T') or reflected ('R') wave.
- * @return New slowness values px, py, pz.
- */
-std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
-                                              double v_below, char wave_type);
-
 class RaySegment {
 public:
     RaySegment(const std::vector<state_type>& states, const std::vector<double>& arclengths);
