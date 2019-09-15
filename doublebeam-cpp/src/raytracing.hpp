@@ -70,10 +70,13 @@ public:
 
     /**
      * This call operator implements the system of ODEs required to compute the ray.
-     * @param state
-     * @param dxdt
+     * The method is not called directly from my code, only by the solver.
+     * @param state Current state is input from this.
+     * @param dfds Next step is stored here.
+     * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
+     * on this parameter.
      */
-    void operator()(const state_type& state, state_type& dxdt, const double /* s */);
+    void operator()(const state_type& state, state_type& dfds, const double /* s */);
 
 private:
     VelocityModel model;

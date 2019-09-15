@@ -49,90 +49,124 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
     return {px, py, pz};
 }
 
-struct InterfaceCrossed {
-    /*
-     * Define interface crossing as zero crossing where the function returns
-     * values above zero if depth above the interface and below zero if depths
-     * below the interface.
+class InterfaceCrossed {
+public:
+    /**
+     * Helper class that acts as an event which is triggered once the layer boundary is crossed
+     * during ray tracing. If the event is triggered, integration is stopped and the exact location
+     * of the layer boundary is found.
+     * @param layer Layer in which the ray is traced.
      */
-    double interface_depth;
+    explicit InterfaceCrossed(const Layer& layer) :
+            top_depth(layer.top_depth),
+            bottom_depth(layer.bot_depth){};
 
-    explicit InterfaceCrossed(double interface_depth) : interface_depth(interface_depth){};
-
-    double operator()(const state_type& state) const {
-        return interface_depth - state[Index::Z];
+    /**
+     * Check if depth of current state is outside of the layer.
+     * @param state Current state.
+     * @return True if interface was crossed with the given state.
+     */
+    bool operator()(const state_type& state) {
+        return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;
     }
+
+    /**
+     * Return function that has a zero crossing where the layer is crossed. This function is used to
+     * locate to exact depth of the interface.
+     * @return
+     */
+    std::function<double(state_type)> get_zero_crossing_event_function(const state_type& state) {
+        if (state[Index::Z] < top_depth) {
+            // top interface was crossed
+            return [&](const state_type& state) { return top_depth - state[Index::Z]; };
+        } else {
+            // bottom interface was crossed
+            return [&](const state_type& state) { return bottom_depth - state[Index::Z]; };
+        }
+    }
+
+    /**
+     * Get closest interface depth (either top or bottom) to a given depth.
+     * @param state Current state of integration.
+     * @return Return top depth of layer if the given state is closer to the top, else return bottom
+     * depth.
+     */
+    double get_closest_layer_depth(const state_type& state) {
+        return std::abs(state[Index::Z] - top_depth) < std::abs(state[Index::Z] - bottom_depth)
+                   ? top_depth
+                   : bottom_depth;
+    }
+
+private:
+    double top_depth, bottom_depth;
 };
 
 /**
- * Helper function that returns an InterfaceCrossed functor for the upper layer if the
- * ray is going up or for the lower layer if the ray is going down.
- * @param pz Vertical slowness.
- * @param layer
- * @return
+ * Calculate exact state at interface crossing.
+ * @tparam Stepper Boost dense output stepper type.
+ * @param crossing_function Continuous function of state that has a zero crossing at the interface
+ * depth.
+ * @param stepper Stepper used for solving the system of ODEs.
+ * @return Pair of: state at interface and arclength at interface.
  */
-InterfaceCrossed get_interface_zero_crossing(double pz, const Layer& layer) {
-    auto interface_depth = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
-    return InterfaceCrossed{interface_depth};
+template <typename Stepper>
+std::pair<state_type, double>
+get_state_at_interface(std::function<double(state_type)> crossing_function, Stepper stepper) {
+    // our integration variable is not time t but arclengths s
+    double s0 = stepper.previous_time();
+    double s1 = stepper.current_time();
+    state_type x_middle;
+    boost::uintmax_t max_calls = 1000;
+    auto [s_left, s_right] = boost::math::tools::toms748_solve(
+        [&](double t) {
+            stepper.calc_state(t, x_middle);
+            return (crossing_function(x_middle));
+        },
+        s0, s1, boost::math::tools::eps_tolerance<double>(), max_calls);
+    // calculate final position of crossing and save state at crossing
+    auto s_middle = (s_left + s_right) * 0.5;
+    stepper.calc_state(s_middle, x_middle);
+    return {x_middle, s_middle};
 }
 
 /**
  * Solve ray tracing equation until layer border is hit.
- * @tparam System Type of odeint System, callable with signature  sys(x, dxdt, t)-
- * @tparam Condition Type of callable taking a state_type and returning a double.
- * @param x0 Initial state of the system.
+ * @tparam System Type of odeint System, callable with signature  sys(x, dxdt, t).
+ * @param initial_state Initial state of the system.
  * @param sys System to be integrated.
- * @param cond Return continuous function with a zero crossing for increasing time.
+ * @param crossings Callable taking a state_type and returning a bool. Should return true if between
+ * the current and the previous call an interface was crossed.
  * @param s_start Start arclength of integration.
  * @param ds Step size of integration.
  * @param max_ds Maximum time step size.
  * @return
  */
-template <typename System, typename Condition>
-RaySegment trace_layer(state_type& x0, System sys, Condition cond, double s_start, double ds,
-                       double max_ds = 1.1) {
-    auto stepper =
-        odeint::make_dense_output(1.E-10, 1.E-10, max_ds, odeint::runge_kutta_dopri5<state_type>());
-    stepper.initialize(x0, s_start, ds);
+template <typename System>
+RaySegment trace_layer(state_type& initial_state, System sys, InterfaceCrossed crossing,
+                       double s_start, double ds, double max_ds = 1.1) {
+    using stepper_t = odeint::runge_kutta_dopri5<state_type>;
+    auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
+    stepper.initialize(initial_state, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
-    // advance stepper until first sign change occurs
-    double current_cond = cond(stepper.current_state());
+    // advance stepper until first event occurs
     do {
         states.emplace_back(stepper.current_state());
         arclengths.emplace_back(stepper.current_time());
         stepper.do_step(sys);
-    } while (math::same_sign(cond(stepper.current_state()), current_cond));
-
+    } while (not crossing(stepper.current_state()));
     // find exact point of zero crossing
-    double t0 = stepper.previous_time();
-    double t1 = stepper.current_time();
-    state_type x_middle;
-    boost::uintmax_t max_calls = 1000;
-    auto [t_left, t_right] = boost::math::tools::toms748_solve(
-        [&](double t) {
-            stepper.calc_state(t, x_middle);
-            return (cond(x_middle));
-        },
-        t0, t1, boost::math::tools::eps_tolerance<double>(), max_calls);
-    // calculate final position of crossing and save state at crossing
-    auto t_middle = (t_left + t_right) * 0.5;
-    stepper.calc_state(t_middle, x_middle);
-    arclengths.emplace_back(t_middle);
-    states.emplace_back(x_middle);
+    auto crossing_function = crossing.get_zero_crossing_event_function(stepper.current_state());
+    auto [state_at_crossing, s_at_crossing] = get_state_at_interface(crossing_function, stepper);
+    arclengths.emplace_back(s_at_crossing);
+    states.emplace_back(state_at_crossing);
     // workaround for numerical issues where layer boundaries are overshot
     // do this by clamping the value to the interface depth
-    auto& last_z = states.back()[Index::Z];
-    if (seismo::ray_direction_down(states.back()[Index::PZ])) {
-        last_z = std::min(cond.interface_depth, last_z);
-    } else {
-        last_z = std::max(cond.interface_depth, last_z);
-    }
+    states.back()[Index::Z] = crossing.get_closest_layer_depth(states.back());
     arclengths.shrink_to_fit();
     states.shrink_to_fit();
     return {states, arclengths};
 }
-
 
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T) {
@@ -148,8 +182,8 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
                                   double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
     layer = model[layer_index];
-    auto border = get_interface_zero_crossing(initial_state[Index::PZ], layer);
-    Ray ray{{trace_layer(initial_state, *this, border, 0., step_size, max_step)}};
+    InterfaceCrossed crossing_events(layer);
+    Ray ray{{trace_layer(initial_state, *this, crossing_events, 0., step_size, max_step)}};
     if (ray_code.empty()) {
         return ray;
     }
@@ -165,8 +199,8 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         auto [v_above, v_below] = model.interface_velocities(z);
         auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
-        border = get_interface_zero_crossing(pz_new, layer);
-        auto segment = trace_layer(new_initial_state, *this, border,
+        crossing_events = InterfaceCrossed(layer);
+        auto segment = trace_layer(new_initial_state, *this, crossing_events,
                                    ray.segments.back().arclength.back(), step_size, max_step);
         ray.segments.push_back(segment);
     }
@@ -185,7 +219,7 @@ double dvdz(double z, const Layer& layer) {
            ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
 }
 
-void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
+void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
                                     const double /* s */) {
     auto [x, y, z, px, py, pz, T] = state;
     auto v = model.eval_at(z);
@@ -194,11 +228,11 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dxdt,
     auto dzds = pz * v;
     auto dpzds = dvdz(z, layer);
     auto dTds = 1. / v;
-    dxdt[0] = dxds;
-    dxdt[1] = dyds;
-    dxdt[2] = dzds;
-    dxdt[3] = 0.;
-    dxdt[4] = 0.;
-    dxdt[5] = dpzds;
-    dxdt[6] = dTds;
+    dfds[0] = dxds;
+    dfds[1] = dyds;
+    dfds[2] = dzds;
+    dfds[3] = 0.;
+    dfds[4] = 0.;
+    dfds[5] = dpzds;
+    dfds[6] = dTds;
 }

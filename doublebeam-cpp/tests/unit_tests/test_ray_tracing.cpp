@@ -37,8 +37,9 @@ test_data_t test_data = {{{0.000166674323178, 0., 0.0005299638150872}, 469},
 
 INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn(test_data));
 
-
-TEST(DISABLED_TestRayTracing, TestTurningRay) {
+// turning ray currently not working because only the interface in the initial direction of the ray
+// is checked for a crossing
+TEST(TestRayTracing, TestTurningRay) {
     VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}});
     KinematicRayTracer rt(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0);
