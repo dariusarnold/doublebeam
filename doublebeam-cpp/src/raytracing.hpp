@@ -76,7 +76,7 @@ public:
      * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
      * on this parameter.
      */
-    void operator()(const state_type& state, state_type& dfds, const double /* s */);
+    void operator()(const state_type& state, state_type& dfds, const double /* s */) const;
 
 private:
     VelocityModel model;

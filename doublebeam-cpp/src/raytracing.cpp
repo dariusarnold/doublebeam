@@ -66,7 +66,7 @@ public:
      * @param state Current state.
      * @return True if interface was crossed with the given state.
      */
-    bool operator()(const state_type& state) {
+    bool operator()(const state_type& state) const {
         return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;
     }
 
@@ -75,7 +75,8 @@ public:
      * locate to exact depth of the interface.
      * @return
      */
-    std::function<double(state_type)> get_zero_crossing_event_function(const state_type& state) {
+    std::function<double(state_type)>
+    get_zero_crossing_event_function(const state_type& state) const {
         if (state[Index::Z] < top_depth) {
             // top interface was crossed
             return [&](const state_type& state) { return top_depth - state[Index::Z]; };
@@ -91,7 +92,7 @@ public:
      * @return Return top depth of layer if the given state is closer to the top, else return bottom
      * depth.
      */
-    double get_closest_layer_depth(const state_type& state) {
+    double get_closest_layer_depth(const state_type& state) const {
         return std::abs(state[Index::Z] - top_depth) < std::abs(state[Index::Z] - bottom_depth)
                    ? top_depth
                    : bottom_depth;
@@ -142,7 +143,7 @@ get_state_at_interface(std::function<double(state_type)> crossing_function, Step
  * @return
  */
 template <typename System>
-RaySegment trace_layer(state_type& initial_state, System sys, InterfaceCrossed crossing,
+RaySegment trace_layer(const state_type& initial_state, System sys, InterfaceCrossed crossing,
                        double s_start, double ds, double max_ds = 1.1) {
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
@@ -220,7 +221,7 @@ double dvdz(double z, const Layer& layer) {
 }
 
 void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
-                                    const double /* s */) {
+                                    const double /* s */) const {
     auto [x, y, z, px, py, pz, T] = state;
     auto v = model.eval_at(z);
     auto dxds = px * v;
