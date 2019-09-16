@@ -28,6 +28,22 @@ TEST_P(TestRayTracing, TestCorrectEndpoint) {
     EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint));
 }
 
+TEST_P(TestRayTracing, TestArcLengthIncreasesContinuously) {
+    // Test if arclength stays the same between an interface crossing and if it increases along the
+    // ray.
+    auto [slowness, _] = GetParam();
+    auto [px, py, pz] = slowness;
+    state_type initial_state{0, 0, 0, px, py, pz, 0};
+    auto ray = krt.trace_ray(initial_state, "TTTT");
+    auto arclength = ray.segments.front().arclength.front();
+    EXPECT_EQ(arclength, 0) << "Initial arc length not zero.";
+    for (const auto& segment: ray.segments) {
+        EXPECT_EQ(segment.arclength.front(), arclength) << "Arclength changed when crossing interface.";
+        EXPECT_GE(segment.arclength.back(), arclength) << "Arclength did not increase in layer.";
+        arclength = segment.arclength.back();
+    }
+}
+
 using test_data_t = std::vector<std::pair<std::array<double, 3>, double>>;
 
 test_data_t test_data = {{{0.000166674323178, 0., 0.0005299638150872}, 469},
