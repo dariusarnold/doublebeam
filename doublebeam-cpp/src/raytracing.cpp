@@ -130,21 +130,9 @@ get_state_at_interface(std::function<double(state_type)> crossing_function, Step
     return {x_middle, s_middle};
 }
 
-/**
- * Solve ray tracing equation until layer border is hit.
- * @tparam System Type of odeint System, callable with signature  sys(x, dxdt, t).
- * @param initial_state Initial state of the system.
- * @param sys System to be integrated.
- * @param crossings Callable taking a state_type and returning a bool. Should return true if between
- * the current and the previous call an interface was crossed.
- * @param s_start Start arclength of integration.
- * @param ds Step size of integration.
- * @param max_ds Maximum time step size.
- * @return
- */
-template <typename System>
-RaySegment trace_layer(const state_type& initial_state, System sys, InterfaceCrossed crossing,
-                       double s_start, double ds, double max_ds = 1.1) {
+RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_state, const Layer& layer,
+                                           double s_start, double ds, double max_ds) {
+    InterfaceCrossed crossing(layer);
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
     stepper.initialize(initial_state, s_start, ds);
@@ -154,7 +142,7 @@ RaySegment trace_layer(const state_type& initial_state, System sys, InterfaceCro
     do {
         states.emplace_back(stepper.current_state());
         arclengths.emplace_back(stepper.current_time());
-        stepper.do_step(sys);
+        stepper.do_step(*this);
     } while (not crossing(stepper.current_state()));
     // find exact point of zero crossing
     auto crossing_function = crossing.get_zero_crossing_event_function(stepper.current_state());
@@ -169,25 +157,16 @@ RaySegment trace_layer(const state_type& initial_state, System sys, InterfaceCro
     return {states, arclengths};
 }
 
-/**
- * Use analytic ray tracing equation for a constant velocity layer.
- * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system: Introducing art,
- * a C-library designed for seismic applications" (Miqueles et al., 2013).
- * @param initial_state State of ray tracing when the ray enters the layer.
- * @param layer Layer which is traced.
- * @param s_start Initial value of arc length of ray up to the current point.
- * @param ds Step size of arc length.
- * @return RaySegment for this layer.
- */
-RaySegment trace_layer(const state_type& initial_state, Layer layer, double s_start, double ds) {
+RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state, const Layer& layer,
+                                           double s_start, double ds) {
     auto [x, y, z, px, py, pz, t] = initial_state;
     auto c = layer.intercept;
     auto z_interface = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
     auto s_end = (z_interface - z) / (c * pz);
     size_t num_steps = std::floor(s_end / ds);
     auto s_step = s_end / num_steps;
-    // s has to start at 0 because this calculation is done starting from the current point of the
-    // ray.
+    // s has to start at 0 because this calculation is done starting from the current point of
+    // the ray.
     auto index = 0;
     // one element more since first step (for s = 0) should also be stored.
     std::vector<state_type> states_vector(num_steps + 1);
@@ -220,9 +199,8 @@ KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) :
 Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
                                   double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
-    layer = model[layer_index];
-    InterfaceCrossed crossing_events(layer);
-    Ray ray{{trace_layer(initial_state, *this, crossing_events, 0., step_size, max_step)}};
+    current_layer = model[layer_index];
+    Ray ray{{trace_layer(initial_state, current_layer, 0., step_size, max_step)}};
     if (ray_code.empty()) {
         return ray;
     }
@@ -233,20 +211,13 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         // reflected waves stay in the same layer, so the index doesn't change
         if (ray_type == 'T') {
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
-            layer = model[layer_index];
+            current_layer = model[layer_index];
         }
         auto [v_above, v_below] = model.interface_velocities(z);
         auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
-        crossing_events = InterfaceCrossed(layer);
-        RaySegment segment;
-        if (layer.gradient == 0) {
-            segment = trace_layer(new_initial_state, layer, ray.segments.back().arclength.back(),
-                                  step_size);
-        } else {
-            segment = trace_layer(new_initial_state, *this, crossing_events,
-                                  ray.segments.back().arclength.back(), step_size, max_step);
-        }
+        auto segment = trace_layer(new_initial_state, current_layer,
+                                   ray.segments.back().arclength.back(), step_size, max_step);
         ray.segments.push_back(segment);
     }
     return ray;
@@ -271,7 +242,7 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
     auto dxds = px * v;
     auto dyds = py * v;
     auto dzds = pz * v;
-    auto dpzds = dvdz(z, layer);
+    auto dpzds = dvdz(z, current_layer);
     auto dTds = 1. / v;
     dfds[0] = dxds;
     dfds[1] = dyds;
@@ -280,4 +251,12 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
     dfds[4] = 0.;
     dfds[5] = dpzds;
     dfds[6] = dTds;
+}
+RaySegment KinematicRayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
+                                           double s_start, double ds, double max_ds) {
+    if (layer.gradient == 0) {
+        return trace_layer_const(initial_state, layer, s_start, ds);
+    } else{
+        return trace_layer_gradient(initial_state, layer, s_start, ds, max_ds);
+    }
 }
