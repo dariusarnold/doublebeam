@@ -4,11 +4,6 @@
 #include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xshape.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 #include "model.hpp"
 #include "utils.hpp"
@@ -180,34 +175,35 @@ RaySegment trace_layer(const state_type& initial_state, System sys, InterfaceCro
  * a C-library designed for seismic applications" (Miqueles et al., 2013).
  * @param initial_state State of ray tracing when the ray enters the layer.
  * @param layer Layer which is traced.
+ * @param s_start Initial value of arc length of ray up to the current point.
  * @param ds Step size of arc length.
  * @return RaySegment for this layer.
  */
-RaySegment trace_layer_const(const state_type& initial_state, Layer layer, double ds) {
+RaySegment trace_layer(const state_type& initial_state, Layer layer, double s_start, double ds) {
     auto [x, y, z, px, py, pz, t] = initial_state;
     auto c = layer.intercept;
     auto z_interface = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
     auto s_end = (z_interface - z) / (c * pz);
     size_t num_steps = std::floor(s_end / ds);
+    auto s_step = s_end / num_steps;
     // s has to start at 0 because this calculation is done starting from the current point of the
     // ray.
-    auto s = xt::linspace(0., s_end, num_steps);
-    xt::xtensor<double, 1> x0{x, y, z};
-    xt::xtensor<double, 1> p0{px, py, pz};
-    auto path = x0 + c * s.reshape({num_steps, 1}) * p0;
-    auto times = (t + s.reshape({num_steps, 1}) / c);
-    xt::xtensor<double, 2> states({num_steps, 7});
-    xt::view(states, xt::all(), xt::keep(0, 1, 2)) = path;
-    xt::view(states, xt::all(), xt::keep(3, 4, 5)) = p0;
-    xt::view(states, xt::all(), xt::keep(6)) = times;
-    std::vector<state_type> states_vector(num_steps);
     auto index = 0;
-    std::vector<size_t> shape{7};
-    for (auto& element : states_vector) {
-        xt::adapt(element, shape) = xt::view(states, xt::keep(index), xt::all());
+    // one element more since first step (for s = 0) should also be stored.
+    std::vector<state_type> states_vector(num_steps + 1);
+    std::vector<double> arclengths(num_steps + 1);
+    for (auto& el : states_vector) {
+        auto arclength_in_layer = index * s_step;
+        arclengths[index] = s_start + arclength_in_layer;
+        el[Index::X] = x + arclength_in_layer * c * px;
+        el[Index::Y] = y + arclength_in_layer * c * py;
+        el[Index::Z] = z + arclength_in_layer * c * pz;
+        el[Index::PX] = px;
+        el[Index::PY] = py;
+        el[Index::PZ] = pz;
+        el[Index::T] = t + arclength_in_layer / c;
         ++index;
     }
-    std::vector<double> arclengths(s.begin(), s.end());
     return {states_vector, arclengths};
 }
 
@@ -245,7 +241,8 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
         crossing_events = InterfaceCrossed(layer);
         RaySegment segment;
         if (layer.gradient == 0) {
-            segment = trace_layer_const(new_initial_state, layer, step_size);
+            segment = trace_layer(new_initial_state, layer, ray.segments.back().arclength.back(),
+                                  step_size);
         } else {
             segment = trace_layer(new_initial_state, *this, crossing_events,
                                   ray.segments.back().arclength.back(), step_size, max_step);
