@@ -1,4 +1,4 @@
-#include "raytracing.hpp"
+#include "kinematic_raytracing.hpp"
 
 #include <boost/math/tools/toms748_solve.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
