@@ -6,101 +6,12 @@
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
 
 #include "model.hpp"
+#include "ray.hpp"
+#include "raytracing_helpers.hpp"
 #include "utils.hpp"
 
 namespace odeint = boost::numeric::odeint;
 
-
-/**
- * Apply snells law to calculate new slowness for horizontal interfaces.
- * @param px X component of slowness vector.
- * @param py Y component of slowness vector.
- * @param pz Z component of slowness vector.
- * @param v_above Velocity on the upper side of the interface
- * @param v_below Velocity on the lower side of the interface.
- * @param wave_type Specify if transmitted ('T') or reflected ('R') wave.
- * @return New slowness values px, py, pz.
- */
-std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
-                                              double v_below, char wave_type) {
-    double minus_plus = 1.;
-    if (wave_type == 'R') {
-        return {px, py, -pz};
-    } else {
-        minus_plus = -1;
-    }
-    if (not seismo::ray_direction_down(pz)) {
-        // for transmitted upgoing ray
-        std::swap(v_above, v_below);
-    }
-    // handle only special case of horizontal interface where normal is vertical.
-    // n should be oriented to the side the transmitted wave propagates for the
-    // minus_plus relation to work,
-    double nz = std::copysign(1., pz);
-    // dot product can be simplified since bx and ny are 0, nz is -1
-    double p_dot_n = nz * pz;
-    double eps = std::copysign(1., p_dot_n);
-    // since in the original formula everything subtracted from p is multiplied by n
-    // only the pz component changes for horizontal interfaces.
-    pz -= (p_dot_n +
-           minus_plus * eps *
-               std::sqrt(1. / (v_below * v_below) - 1. / (v_above * v_above) + p_dot_n * p_dot_n)) *
-          nz;
-    return {px, py, pz};
-}
-
-class InterfaceCrossed {
-public:
-    /**
-     * Helper class that acts as an event which is triggered once the layer boundary is crossed
-     * during ray tracing. If the event is triggered, integration is stopped and the exact location
-     * of the layer boundary is found.
-     * @param layer Layer in which the ray is traced.
-     */
-    explicit InterfaceCrossed(const Layer& layer) :
-            top_depth(layer.top_depth),
-            bottom_depth(layer.bot_depth){};
-
-    /**
-     * Check if depth of current state is outside of the layer.
-     * @param state Current state.
-     * @return True if interface was crossed with the given state.
-     */
-    bool operator()(const state_type& state) const {
-        return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;
-    }
-
-    /**
-     * Return function that has a zero crossing where the layer is crossed. This function is used to
-     * locate to exact depth of the interface.
-     * @return
-     */
-    std::function<double(state_type)>
-    get_zero_crossing_event_function(const state_type& state) const {
-        if (state[Index::Z] < top_depth) {
-            // top interface was crossed
-            return [&](const state_type& state) { return top_depth - state[Index::Z]; };
-        } else {
-            // bottom interface was crossed
-            return [&](const state_type& state) { return bottom_depth - state[Index::Z]; };
-        }
-    }
-
-    /**
-     * Get closest interface depth (either top or bottom) to a given depth.
-     * @param state Current state of integration.
-     * @return Return top depth of layer if the given state is closer to the top, else return bottom
-     * depth.
-     */
-    double get_closest_layer_depth(const state_type& state) const {
-        return std::abs(state[Index::Z] - top_depth) < std::abs(state[Index::Z] - bottom_depth)
-                   ? top_depth
-                   : bottom_depth;
-    }
-
-private:
-    double top_depth, bottom_depth;
-};
 
 /**
  * Calculate exact state at interface crossing.
@@ -130,8 +41,9 @@ get_state_at_interface(std::function<double(state_type)> crossing_function, Step
     return {x_middle, s_middle};
 }
 
-RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_state, const Layer& layer,
-                                           double s_start, double ds, double max_ds) {
+RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_state,
+                                                    const Layer& layer, double s_start, double ds,
+                                                    double max_ds) {
     InterfaceCrossed crossing(layer);
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
@@ -157,8 +69,9 @@ RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_st
     return {states, arclengths};
 }
 
-RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state, const Layer& layer,
-                                           double s_start, double ds) {
+
+RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state,
+                                                 const Layer& layer, double s_start, double ds) {
     auto [x, y, z, px, py, pz, t] = initial_state;
     auto c = layer.intercept;
     auto z_interface = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
@@ -186,12 +99,6 @@ RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state
     return {states_vector, arclengths};
 }
 
-state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
-                      double phi, double T) {
-    double velocity = model.eval_at(z);
-    auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
-    return {x, y, z, px, py, pz, T};
-}
 
 KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) :
         model(std::move(velocity_model)) {}
@@ -223,6 +130,7 @@ Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& r
     return ray;
 }
 
+
 /**
  * Calculate first derivative of inverse of velocity after depth z analytically.
  * Valid for linear velocity gradient v = v(z) = a * z + b).
@@ -234,6 +142,7 @@ double dvdz(double z, const Layer& layer) {
     return -layer.gradient /
            ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
 }
+
 
 void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
                                     const double /* s */) const {
@@ -252,11 +161,13 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
     dfds[5] = dpzds;
     dfds[6] = dTds;
 }
+
+
 RaySegment KinematicRayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
                                            double s_start, double ds, double max_ds) {
     if (layer.gradient == 0) {
         return trace_layer_const(initial_state, layer, s_start, ds);
-    } else{
+    } else {
         return trace_layer_gradient(initial_state, layer, s_start, ds, max_ds);
     }
 }
