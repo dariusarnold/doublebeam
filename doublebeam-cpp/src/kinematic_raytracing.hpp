@@ -10,6 +10,7 @@
 
 class KinematicRayTracer {
 public:
+    // TODO change to const ref
     explicit KinematicRayTracer(VelocityModel velocity_model);
 
     /**
