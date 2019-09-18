@@ -12,7 +12,12 @@ public:
 
 class Ray {
 public:
+    // TODO make this private
     std::vector<RaySegment> segments;
+
+    std::vector<RaySegment>::iterator begin();
+
+    std::vector<RaySegment>::iterator end();
 };
 
 #endif // DOUBLEBEAM_CPP_RAY_HPP
