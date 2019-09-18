@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 
+
 TEST(Radians, Equals) {
     EXPECT_DOUBLE_EQ(math::radians(0), 0.);
     EXPECT_DOUBLE_EQ(math::radians(360), 2 * M_PI);
@@ -92,3 +93,78 @@ TEST_F(TestRounding, TestCompleteLengthIsUnchanged) {
 TEST_F(TestRounding, TestZeroDigits) {
     EXPECT_EQ(static_cast<int>(value), math::round(value, 0));
 }
+
+class TestcumtrapzByComparingToScipy : public testing::Test {
+protected:
+    TestcumtrapzByComparingToScipy() {
+        constexpr double start = -2, end = 2;
+        constexpr static int steps = 20;
+        constexpr double stepsize = std::abs(end - start) / (steps - 1);
+        for (int i = 0; i < steps; ++i) {
+            y.push_back(start + i * stepsize);
+        }
+    }
+    // vector containing values of y = np.linspace(-2, 2, 20)
+    std::vector<double> y;
+};
+
+TEST_F(TestcumtrapzByComparingToScipy, TestWithoutInitialParameterSet) {
+    // compare results of my implementation with manually computed results from
+    // scipy.integrate.cumtrapz(y)
+
+    auto res = math::cumtrapz(y.begin(), y.end(), 0.2);
+    std::vector<double> scipy_result{
+        -3.7894736842105270e-01, -7.1578947368421053e-01, -1.0105263157894737e+00,
+        -1.2631578947368420e+00, -1.4736842105263157e+00, -1.6421052631578947e+00,
+        -1.7684210526315789e+00, -1.8526315789473684e+00, -1.8947368421052633e+00,
+        -1.8947368421052633e+00, -1.8526315789473686e+00, -1.7684210526315791e+00,
+        -1.6421052631578950e+00, -1.4736842105263159e+00, -1.2631578947368423e+00,
+        -1.0105263157894737e+00, -7.1578947368421053e-01, -3.7894736842105270e-01,
+        -5.5511151231257827e-17};
+    ASSERT_EQ(res.size(), scipy_result.size()) << "Different size for actual and expected result.";
+    for (auto i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res[i], scipy_result[i])
+            << "Results differ at index " << i << ". expected " << res[i] << " got "
+            << scipy_result[i];
+    }
+}
+
+TEST_F(TestcumtrapzByComparingToScipy, TestInitialParameterSet) {
+    // compare the results of my implementation with manually computed results for
+    // cumtrapz(y, dx=0.2) from scipy.integrate.cumtrapz
+    auto res = math::cumtrapz(y.begin(), y.end(), 0.2, 0.);
+    std::vector<double> scipy_result{
+        0.0000000000000000e+00,  -3.7894736842105270e-01, -7.1578947368421053e-01,
+        -1.0105263157894737e+00, -1.2631578947368420e+00, -1.4736842105263157e+00,
+        -1.6421052631578947e+00, -1.7684210526315789e+00, -1.8526315789473684e+00,
+        -1.8947368421052633e+00, -1.8947368421052633e+00, -1.8526315789473686e+00,
+        -1.7684210526315791e+00, -1.6421052631578950e+00, -1.4736842105263159e+00,
+        -1.2631578947368423e+00, -1.0105263157894737e+00, -7.1578947368421053e-01,
+        -3.7894736842105270e-01, -5.5511151231257827e-17};
+    ASSERT_EQ(res.size(), scipy_result.size()) << "Different size for actual and expected result.";
+    for (auto i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res[i], scipy_result[i])
+            << "Results differ at index " << i << ". expected " << res[i] << " got "
+            << scipy_result[i];
+    }
+}
+
+TEST_F(TestcumtrapzByComparingToScipy, TestMultipleDistances) {
+    // compare results from my implementation with manually computed results for x = y,
+    // cumtrapz(y, x, initial=0)
+    auto x = y;
+    auto res = math::cumtrapz(y.begin(), y.end(), x.begin(), x.end(), 0.);
+    std::vector<double> scipy_result{
+        0.0000000000000000e+00,  -3.9889196675900279e-01, -7.5346260387811625e-01,
+        -1.0637119113573408e+00, -1.3296398891966759e+00, -1.5512465373961219e+00,
+        -1.7285318559556788e+00, -1.8614958448753465e+00, -1.9501385041551249e+00,
+        -1.9944598337950141e+00, -1.9944598337950141e+00, -1.9501385041551249e+00,
+        -1.8614958448753467e+00, -1.7285318559556793e+00, -1.5512465373961224e+00,
+        -1.3296398891966761e+00, -1.0637119113573412e+00, -7.5346260387811725e-01,
+        -3.9889196675900340e-01, -2.7755575615628914e-16};
+    ASSERT_EQ(res.size(), scipy_result.size()) << "Different size for actual and expected result.";
+    for (auto i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res[i], scipy_result[i])
+                    << "Results differ at index " << i << ". expected " << res[i] << " got "
+                    << scipy_result[i];
+    }}
