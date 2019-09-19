@@ -165,6 +165,24 @@ TEST_F(TestcumtrapzByComparingToScipy, TestMultipleDistances) {
     ASSERT_EQ(res.size(), scipy_result.size()) << "Different size for actual and expected result.";
     for (auto i = 0; i < res.size(); ++i) {
         EXPECT_DOUBLE_EQ(res[i], scipy_result[i])
-                    << "Results differ at index " << i << ". expected " << res[i] << " got "
-                    << scipy_result[i];
-    }}
+            << "Results differ at index " << i << ". expected " << res[i] << " got "
+            << scipy_result[i];
+    }
+}
+
+TEST(Testcumtrapz, TestDynamicRayTracingUseCaseByComparingWithPythonResult) {
+    std::vector<double> v_squared{3240000.0, 3240005.1194904763, 3240056.3145882203,
+                                  3240568.284863763, 3245689.91708478};
+    std::vector<double> travel_times{0.0, 2.101868808572426e-07, 2.312046556352558e-06,
+                                     2.3329730060522415e-05, 0.00023341529691266796};
+    std::vector<double> python_result{0.0, 0.6810060320023335, 7.491095943513512, 75.59495431382318,
+                                      756.9295698666922};
+    auto res = math::cumtrapz(v_squared.begin(), v_squared.end(), travel_times.begin(),
+                              travel_times.end(), 0);
+    ASSERT_EQ(res.size(), python_result.size()) << "Different size for actual and expected result.";
+    for (auto i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res[i], python_result[i])
+            << "Results differ at index " << i << ". expected " << res[i] << " got "
+            << python_result[i];
+    }
+}
