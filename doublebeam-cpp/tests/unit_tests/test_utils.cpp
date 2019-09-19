@@ -186,3 +186,27 @@ TEST(Testcumtrapz, TestDynamicRayTracingUseCaseByComparingWithPythonResult) {
             << python_result[i];
     }
 }
+
+TEST(TestAngle, Test90Degrees) {
+    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0), math::radians(90));
+    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0, false), math::radians(90));
+}
+
+TEST(TestAngle, TestParallel) {
+    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4), 0);
+    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4, false), math::radians(180));
+}
+
+TEST(TestAngle, TestFloatClippingForAcosLargerOne) {
+    EXPECT_DOUBLE_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
+                                 0.874469283050132, 0.262553720250597, 0.477968688795641),
+                     0);
+    EXPECT_DOUBLE_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
+                                 0.874469283050132, 0.262553720250597, 0.477968688795641, false),
+                     math::radians(180));
+}
+
+TEST(TestAngle, OrderOfInputVectorsShouldntMatter) {
+    EXPECT_EQ(math::angle(2, 1, 0, 1, 0, 0), math::angle(1, 0, 0, 2, 1, 0));
+    EXPECT_EQ(math::angle(2, 1, 0, 1, 0, 0, false), math::angle(1, 0, 0, 2, 1, 0, false));
+}

@@ -79,6 +79,32 @@ namespace math {
     }
 
     /**
+     * Calculate angle between two 3D vectors in rad.
+     * @param x1
+     * @param y1
+     * @param z1
+     * @param x2
+     * @param y2
+     * @param z2
+     * @return
+     */
+    double angle(double x1, double y1, double z1, double x2, double y2, double z2, bool acute = true);
+
+    /**
+     * Calculate length of 3D vector.
+     * @param x
+     * @param y
+     * @param z
+     * @return
+     */
+    double length(double x, double y, double z);
+
+    /**
+     * Dot product of two 3D vectors.
+     */
+    double dot(double x1, double y1, double z1, double x2, double y2, double z2);
+
+    /**
      * Round value to given number of digits after the decimal dot.
      * @tparam D Floating point type.
      * @tparam I Integral type.
