@@ -132,15 +132,19 @@ VelocityModel::interface_velocities(double z1, double z2) const {
     return {_interface_velocities.begin() + 2 * (index_low + 1),
             _interface_velocities.begin() + 2 * (index_high + 1)};
 }
+
 std::vector<Layer>::const_iterator VelocityModel::begin() const {
     return layers.begin();
 }
+
 std::vector<Layer>::const_iterator VelocityModel::end() const {
     return layers.end();
 }
+
 size_t VelocityModel::size() const {
     return layers.size();
 }
+
 const std::vector<double>& VelocityModel::interface_depths() const {
     return m_interface_depths;
 }
@@ -150,7 +154,8 @@ Layer VelocityModel::get_layer(double z) {
     return layers[index];
 }
 
-double highest_velocity_between(double source_depth, double receiver_depth, const VelocityModel& model) {
+double highest_velocity_between(double source_depth, double receiver_depth,
+                                const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth);
     auto source_index = model.layer_index(source_depth);
     // if points in same layer, maximum has to be at either point for linear velocity gradient
