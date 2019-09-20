@@ -118,6 +118,11 @@ public:
     size_t size() const;
 
     const std::vector<double>& interface_depths() const;
+
+    /**
+     * Get Layer at depth z.
+     */
+    Layer get_layer(double z);
 };
 
 
