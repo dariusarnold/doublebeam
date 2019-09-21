@@ -48,8 +48,8 @@ private:
      * @param max_ds Maximum time step size.
      * @return
      */
-    RaySegment trace_layer_gradient(const state_type& initial_state, const Layer& layer, double s_start,
-                           double ds, double max_ds);
+    RaySegment trace_layer_gradient(const state_type& initial_state, const Layer& layer,
+                                    double s_start, double ds, double max_ds);
     /**
      * Use analytic ray tracing equation for a constant velocity layer.
      * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system: Introducing
@@ -60,10 +60,10 @@ private:
      * @param ds Step size of arc length.
      * @return RaySegment for this layer.
      */
-    RaySegment trace_layer_const(const state_type& initial_state, const Layer& layer, double s_start,
-                           double ds);
+    RaySegment trace_layer_const(const state_type& initial_state, const Layer& layer,
+                                 double s_start, double ds);
     RaySegment trace_layer(const state_type& initial_state, const Layer& layer, double s_start,
-                                    double ds, double max_ds);
+                           double ds, double max_ds);
     VelocityModel model;
     Layer current_layer;
 };
