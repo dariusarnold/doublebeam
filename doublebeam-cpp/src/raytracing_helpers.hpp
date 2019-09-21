@@ -39,6 +39,15 @@ namespace Index {
 std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
                                               double v_below, char wave_type);
 
+/**
+ * Wrapper around snells law.
+ * @param old_state State at interface before transformation.
+ * @param model Velocity model.
+ * @param wave_type Which wave type to take ('T' for transmitted, 'R' for reflected).
+ * @return New state at interface with changed slowness.
+ */
+state_type snells_law(const state_type& old_state, const VelocityModel& model, char wave_type);
+
 
 class InterfaceCrossed {
 public:
