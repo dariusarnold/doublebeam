@@ -16,6 +16,21 @@ namespace seismo {
         auto pz = 1. / velocity * cos(theta);
         return {px, py, pz};
     }
+
+    std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
+                                               int start_index) {
+        std::vector<int> indices{start_index};
+        bool ray_down = seismo::ray_direction_down(pz_initial);
+        for (auto c : ray_code) {
+            if (c == 'T') {
+                start_index += ray_down ? 1 : -1;
+            } else {
+                ray_down = !ray_down;
+            }
+            indices.push_back(start_index);
+        }
+        return indices;
+    }
 } // namespace seismo
 
 namespace math {

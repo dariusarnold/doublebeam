@@ -28,6 +28,18 @@ namespace seismo {
      * @param pz Vertical component of slowness vector.
      */
     bool ray_direction_down(double pz);
+
+    /**
+     * Transform a ray code to a sequence of layer indices.
+     * @param ray_code Specifies which ray type (reflected, transmitted) to take at an interface.
+     * Valid values are 'R' for reflected and 'T' for transmitted.
+     * @param pz_initial Initial slowness of the ray, used to get initial direction. A negative
+     * value represents a upgoing ray, a positive value represents a downgoing ray.
+     * @param start_index At which layer index the sequence should start.
+     * @return
+     */
+    std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
+                                               int start_index = 0);
 } // namespace seismo
 
 namespace math {
