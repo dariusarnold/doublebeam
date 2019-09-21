@@ -210,3 +210,12 @@ TEST(TestAngle, OrderOfInputVectorsShouldntMatter) {
     EXPECT_EQ(math::angle(2, 1, 0, 1, 0, 0), math::angle(1, 0, 0, 2, 1, 0));
     EXPECT_EQ(math::angle(2, 1, 0, 1, 0, 0, false), math::angle(1, 0, 0, 2, 1, 0, false));
 }
+
+TEST(TestIndicesFromRayCode, TestCase) {
+    std::vector<int> expected_indices{0, 1, 2, 3, 4, 4, 3, 3, 3, 2, 1, 0};
+    auto indices = seismo::ray_code_to_layer_indices("TTTTRTRRTTT", 1);
+    ASSERT_EQ(indices.size(), expected_indices.size());
+    for (int i = 0; i < indices.size(); ++i) {
+        EXPECT_EQ(indices[i], expected_indices[i]) << "Difference at index " << i;
+    }
+}
