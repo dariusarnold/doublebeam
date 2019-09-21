@@ -23,6 +23,7 @@ public:
 
 class Beam {
 public:
+    Beam(double beam_width, double beam_frequency, BeamSegment segment);
     Beam(double beam_width, double beam_frequency);
 
     std::vector<BeamSegment>::iterator begin();
