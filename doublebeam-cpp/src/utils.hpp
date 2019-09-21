@@ -100,7 +100,8 @@ namespace math {
      * @param z2
      * @return
      */
-    double angle(double x1, double y1, double z1, double x2, double y2, double z2, bool acute = true);
+    double angle(double x1, double y1, double z1, double x2, double y2, double z2,
+                 bool acute = true);
 
     /**
      * Calculate length of 3D vector.
@@ -203,7 +204,7 @@ namespace math {
         content_t running_sum = 0.;
         for (auto ya = ybegin, yb = ybegin + 1, xa = xbegin, xb = xbegin + 1; yb != yend;
              ++ya, ++yb, ++xa, ++xb) {
-            running_sum += (*xb - * xa) * 0.5 * (*ya + *yb);
+            running_sum += (*xb - *xa) * 0.5 * (*ya + *yb);
             result[i] = running_sum;
             ++i;
         }
