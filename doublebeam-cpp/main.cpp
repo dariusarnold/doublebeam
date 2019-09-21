@@ -1,10 +1,8 @@
 #include "kinematic_raytracing.hpp"
 #include "model.hpp"
 #include "printing.hpp"
-#include "timing/timing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
-#include <dynamic_raytracing.hpp>
 #include <iomanip>
 #include <xtensor/xio.hpp>
 
@@ -28,29 +26,8 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 
 int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
-    auto drt = DynamicRayTracer(vm);
+    auto drt = KinematicRayTracer(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
     auto beam = drt.trace_beam(initial_state, 10, 40, "TTTT");
-    std::cout << beam.segments.front().P << std::endl;
-    return 0;
-}
-
-
-int nmain() {
-    std::vector<Layer> layers{{0, 100, 1000, 0},
-                              {100, 200, 1100, 0},
-                              {200, 300, 1000, 0},
-                              {300, 400, 1100, 0},
-                              {400, 500, 1200, 0}};
-    auto vm = VelocityModel(layers);
-    auto initial_state = init_state(0., 0., 0., vm, math::radians(20.), math::radians(0.), 0);
-    std::vector<state_type> values;
-    std::vector<double> times;
-    std::cout << std::setprecision(16);
-    auto krt = KinematicRayTracer(vm);
-    auto ray = krt.trace_ray(initial_state, "TTTT");
-    std::cout << ray << std::endl;
-    auto res = measure_runtime([&]() { krt.trace_ray(initial_state, "TTTT", 1., 1.1); });
-    std::cout << res << "\n";
     return 0;
 }

@@ -25,6 +25,10 @@ public:
                     const std::string& ray_code = "", double step_size = 1., double max_step = 1.1);
 
 private:
+    std::pair<xt::xtensor<std::complex<double>, 3>, xt::xtensor<std::complex<double>, 2>>
+    transform_PQ_interface(xt::xtensor<std::complex<double>, 2> P,
+                           xt::xtensor<std::complex<double>, 2> Q);
+
     KinematicRayTracer kinematic;
     VelocityModel model;
 };

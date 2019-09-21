@@ -4,8 +4,9 @@
 #include <array>
 #include <vector>
 
-#include "ray.hpp"
+#include "beam.hpp"
 #include "model.hpp"
+#include "ray.hpp"
 
 
 class KinematicRayTracer {
@@ -22,8 +23,13 @@ public:
      * @param max_step Maximum step size along the ray.
      * @return Traced ray.
      */
+    // TODO take initial state by const ref for ray and beam
+    // TODO replace ray code string by classes
     Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
                   double max_step = 1.1);
+
+    Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
+                    const std::string& ray_code = "", double step_size = 1., double max_step = 1.1);
 
     /**
      * This call operator implements the system of ODEs required to compute the ray.
