@@ -337,8 +337,7 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
     std::vector<double> v;
     std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
                    [&](const state_type& state) { return model.eval_at(state[Index::Z]); });
-    auto sigma_ =
-        math::cumtrapz(v.begin(), v.end(), segment.arclength.begin(), segment.arclength.end(), 0.);
+    auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
     auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
     xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
     xt::xtensor<complex, 3> Q = Q0 + sigma * P0;
@@ -363,11 +362,11 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
         // do kinematic ray tracing for new segment
         segment = trace_layer(new_initial_state, current_layer, segment.arclength.back(), step_size,
                               max_step);
+        // do dynamic ray tracing for new segment
         std::vector<double> v;
         std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
                        [&](const state_type& state) { return model.eval_at(state[Index::Z]); });
-        auto sigma_ = math::cumtrapz(v.begin(), v.end(), segment.arclength.begin(),
-                                     segment.arclength.end(), 0.);
+        auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
         auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
         P = xt::broadcast(P0_new, {sigma_.size(), 1UL, 1UL});
         Q = Q0_new + sigma * P0_new;

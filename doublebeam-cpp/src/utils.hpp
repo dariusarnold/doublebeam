@@ -130,6 +130,22 @@ namespace math {
     }
 
     /**
+     * Overload for cumtrapz that works with the container directly instead of iterators.
+     * @tparam Sequence
+     * @param y
+     * @param distance
+     * @param initial
+     * @return
+     */
+    template <typename Sequence>
+    std::vector<typename Sequence::value_type>
+    cumtrapz(const Sequence& y, typename Sequence::value_type distance = 1.,
+             typename Sequence::value_type initial =
+                 std::numeric_limits<typename Sequence::value_type>::quiet_NaN()) {
+        return cumtrapz(y.begin(), y.end(), distance, initial);
+    }
+
+    /**
      * Cumulatively integrate y using the composite trapezoidal rule, where distance is the equal
      * spacing between values of y.
      * @tparam Iterator
@@ -166,6 +182,23 @@ namespace math {
             ++i;
         }
         return result;
+    }
+
+    /**
+     * Overlod for cumtrapz that works directly with the containers instead of iterators.
+     * @tparam Sequence1
+     * @tparam Sequence2
+     * @param y
+     * @param x
+     * @param initial
+     * @return
+     */
+    template <typename Sequence1, typename Sequence2>
+    std::vector<double>
+    cumtrapz(const Sequence1& y, const Sequence2& x,
+             typename Sequence1::value_type initial =
+                 std::numeric_limits<typename Sequence1::value_type>::quiet_NaN()) {
+        return cumtrapz(y.begin(), y.end(), x.begin(), x.end(), initial);
     }
 
     /**
