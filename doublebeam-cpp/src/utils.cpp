@@ -31,6 +31,16 @@ namespace seismo {
         }
         return indices;
     }
+
+    int next_layer_index(int current_index, double pz, char wave_type) {
+        if (wave_type == 'R') {
+            return current_index;
+        } else if (wave_type == 'T') {
+            return current_index + (seismo::ray_direction_down(pz) ? 1 : -1);
+        } else {
+            throw std::invalid_argument("Wave type not recognized: " + std::string(1, wave_type));
+        }
+    }
 } // namespace seismo
 
 namespace math {

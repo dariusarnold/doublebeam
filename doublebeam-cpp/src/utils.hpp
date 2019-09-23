@@ -40,7 +40,18 @@ namespace seismo {
      */
     std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
                                                int start_index = 0);
+
+    /**
+     * Calculate next layer index for a given layer index and state at an interface (state before
+     * crossing the interface).
+     * @param current_index Index of current layer.
+     * @param pz Vertical slowness at the interface, before crossing or reflection.
+     * @param wave_type
+     * @return
+     */
+    int next_layer_index(int current_index, double pz, char wave_type);
 } // namespace seismo
+
 
 namespace math {
 
