@@ -368,7 +368,7 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
                        [&](const state_type& state) { return model.eval_at(state[Index::Z]); });
         auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
         auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
-        P = xt::broadcast(P0_new, {sigma_.size(), 1UL, 1UL});
+        P = xt::broadcast(P0_new, {sigma_.size(), 2UL, 2UL});
         Q = Q0_new + sigma * P0_new;
         beam.segments.emplace_back(segment, P, Q);
     }
