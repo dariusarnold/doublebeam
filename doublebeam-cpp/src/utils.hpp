@@ -140,21 +140,22 @@ namespace math {
         return std::floor(value * std::pow(10, places) + 0.5) / std::pow(10, places);
     }
 
-    /**
-     * Overload for cumtrapz that works with the container directly instead of iterators.
-     * @tparam Sequence
-     * @param y
-     * @param distance
-     * @param initial
-     * @return
-     */
-    template <typename Sequence>
-    std::vector<typename Sequence::value_type>
-    cumtrapz(const Sequence& y, typename Sequence::value_type distance = 1.,
-             typename Sequence::value_type initial =
-                 std::numeric_limits<typename Sequence::value_type>::quiet_NaN()) {
-        return cumtrapz(y.begin(), y.end(), distance, initial);
-    }
+
+    template <typename T, typename = void>
+    struct is_container : std::false_type {};
+
+    template <typename T>
+    struct is_container<T, std::conditional_t<false,
+                                              std::void_t<decltype(std::declval<T>().begin()),
+                                                          decltype(std::declval<T>().end())>,
+                                              void>> : public std::true_type {};
+
+    template <typename T, typename = void>
+    struct is_iterator : std::false_type {};
+
+    template <typename T>
+    struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
+            : std::true_type {};
 
     /**
      * Cumulatively integrate y using the composite trapezoidal rule, where distance is the equal
@@ -167,7 +168,7 @@ namespace math {
      * given, result will have one less element than y.
      * @return Vector of cumulative integration results of y.
      */
-    template <typename Iterator>
+    template <typename Iterator, std::enable_if_t<is_iterator<Iterator>::value, int> = 0>
     std::vector<double>
     cumtrapz(Iterator ybegin, Iterator yend, typename Iterator::value_type distance = 1.,
              typename Iterator::value_type initial =
@@ -196,21 +197,21 @@ namespace math {
     }
 
     /**
-     * Overlod for cumtrapz that works directly with the containers instead of iterators.
-     * @tparam Sequence1
-     * @tparam Sequence2
+     * Overload for cumtrapz that works with the container directly instead of iterators.
+     * @tparam Sequence
      * @param y
-     * @param x
+     * @param distance
      * @param initial
      * @return
      */
-    template <typename Sequence1, typename Sequence2>
-    std::vector<double>
-    cumtrapz(const Sequence1& y, const Sequence2& x,
-             typename Sequence1::value_type initial =
-                 std::numeric_limits<typename Sequence1::value_type>::quiet_NaN()) {
-        return cumtrapz(y.begin(), y.end(), x.begin(), x.end(), initial);
+    template <typename Sequence, std::enable_if_t<is_container<Sequence>::value, int> = 0>
+    std::vector<typename Sequence::value_type>
+    cumtrapz(const Sequence& y, typename Sequence::value_type distance = 1.,
+             typename Sequence::value_type initial =
+                 std::numeric_limits<typename Sequence::value_type>::quiet_NaN()) {
+        return cumtrapz(y.begin(), y.end(), distance, initial);
     }
+
 
     /**
      * Cumulatively integrate y(x) using the composite trapezoidal rule.
@@ -223,7 +224,7 @@ namespace math {
      * given, result will have one less element than y.
      * @return Vector of cumulative integration results of y(x).
      */
-    template <typename Iterator>
+    template <typename Iterator, std::enable_if_t<is_iterator<Iterator>::value, int> = 0>
     std::vector<double>
     cumtrapz(Iterator ybegin, Iterator yend, Iterator xbegin, Iterator xend,
              typename Iterator::value_type initial =
@@ -253,6 +254,25 @@ namespace math {
             ++i;
         }
         return result;
+    }
+
+    /**
+     * Overload for cumtrapz that works directly with the containers instead of iterators.
+     * @tparam Sequence1
+     * @tparam Sequence2
+     * @param y
+     * @param x
+     * @param initial
+     * @return
+     */
+    template <typename Sequence1, typename Sequence2,
+              std::enable_if_t<is_container<Sequence1>::value, int> = 0,
+              std::enable_if_t<is_container<Sequence2>::value, int> = 0>
+    std::vector<double>
+    cumtrapz(const Sequence1& y, const Sequence2& x,
+             typename Sequence1::value_type initial =
+                 std::numeric_limits<typename Sequence1::value_type>::quiet_NaN()) {
+        return cumtrapz(y.begin(), y.end(), x.begin(), x.end(), initial);
     }
 
 } // namespace math
