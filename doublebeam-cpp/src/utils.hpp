@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <xtensor/xtensor.hpp>
+
 
 namespace seismo {
 
@@ -274,6 +276,19 @@ namespace math {
                  std::numeric_limits<typename Sequence1::value_type>::quiet_NaN()) {
         return cumtrapz(y.begin(), y.end(), x.begin(), x.end(), initial);
     }
+
+
+    /**
+     * Generate num_values of unit vectors in a 180° arc around the central direction.
+     * The first vector of the returned range will have a clockwise angle of -90° of the central
+     * direction, the last vector will have a 90° clockwise angle to the central direction.
+     * @param num_values The first dimension of the returned result will have this size.
+     * @param central_direction_x X component of central direction.
+     * @param central_direction_y Y component of central direction.
+     * @return
+     */
+    xt::xtensor<double, 2> generate_vector_arc(int num_values, double central_direction_x,
+                                               double central_direction_y);
 
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP
