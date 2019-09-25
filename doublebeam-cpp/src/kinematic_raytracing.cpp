@@ -344,8 +344,9 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
     if (ray_code.empty()) {
         return beam;
     }
+    // dont include start index since first layer was already done above
     auto layer_indices = seismo::ray_code_to_layer_indices(
-        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]));
+        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]), false);
     InterfacePropagator ip;
     size_t index;
     char wave_type;

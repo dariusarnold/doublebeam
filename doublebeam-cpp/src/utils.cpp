@@ -20,8 +20,11 @@ namespace seismo {
     }
 
     std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
-                                               int start_index) {
-        std::vector<int> indices{start_index};
+                                               int start_index, bool include_start) {
+        std::vector<int> indices;
+        if (include_start) {
+            indices.push_back(start_index);
+        }
         bool ray_down = seismo::ray_direction_down(pz_initial);
         for (auto c : ray_code) {
             if (c == 'T') {

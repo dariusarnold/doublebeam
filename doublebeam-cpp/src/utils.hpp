@@ -41,7 +41,7 @@ namespace seismo {
      * @return
      */
     std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
-                                               int start_index = 0);
+                                               int start_index = 0, bool include_start = true);
 
     /**
      * Calculate next layer index for a given layer index and state at an interface (state before
