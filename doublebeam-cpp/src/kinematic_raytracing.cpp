@@ -326,7 +326,7 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
     auto v0 = model.eval_at(initial_state[Index::Z]);
     xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
     xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
-                                {0, beam_frequency * beam_width * beam_width / v0}};
+                               {0, beam_frequency * beam_width * beam_width / v0}};
     // evaluate velocity at all points of the ray
     // TODO this was already done during ray tracing itself, maybe we can reuse the results. Could
     //  be problematic since the ODE solving code evaluates the function multiple times at different
@@ -355,8 +355,9 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
         auto old_state = beam.segments.back().ray_segment.data.back();
         auto new_initial_state = snells_law(old_state, model, wave_type);
         // transform dynamic ray tracing across interface using snells law
-        auto [P0_new, Q0_new] = ip.transform(xt::squeeze(xt::view(P, xt::keep(-1))), xt::squeeze(xt::view(Q, xt::keep(-1))),
-                                             wave_type, old_state, new_initial_state, index, model);
+        auto [P0_new, Q0_new] = ip.transform(xt::squeeze(xt::view(P, xt::keep(-1))),
+                                             xt::squeeze(xt::view(Q, xt::keep(-1))), wave_type,
+                                             old_state, new_initial_state, index, model);
         // do kinematic ray tracing for new segment
         segment = trace_layer(new_initial_state, current_layer, segment.arclength.back(), step_size,
                               max_step);
