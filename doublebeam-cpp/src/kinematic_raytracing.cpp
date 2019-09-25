@@ -372,4 +372,5 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
         Q = Q0_new + sigma * P0_new;
         beam.segments.emplace_back(segment, P, Q);
     }
+    return beam;
 }
