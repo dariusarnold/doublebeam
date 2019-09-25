@@ -182,7 +182,7 @@ RaySegment KinematicRayTracer::trace_layer(const state_type& initial_state, cons
 
 class InterfacePropagator {
 
-    using matrix_t = xt::xtensor<std::complex<double>, 3>;
+    using matrix_t = xt::xtensor<std::complex<double>, 2>;
 
 public:
     std::pair<matrix_t, matrix_t> transform(matrix_t P, matrix_t Q, char wave_type,
@@ -215,11 +215,10 @@ public:
         auto kappa = 0.;
         auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
         // right equations of (4.4.49) in Cerveny2001
-        matrix_t G_orthogonal{{{cos_kappa, -sin_kappa}, {sin_kappa, cos_kappa}}};
+        matrix_t G_orthogonal{{cos_kappa, -sin_kappa}, {sin_kappa, cos_kappa}};
         auto G_orthogonal_tilde = G_orthogonal;
         // left equations of (4.4.49) in Cerveny2001
-        matrix_t G_parallel = {{{1, 0}, {0, 1}}};
-        G_parallel(0) = epsilon * std::cos(i_S);
+        matrix_t G_parallel{{epsilon * std::cos(i_S), 0}, {0, 1}};
         auto G_parallel_tilde = G_parallel;
         G_parallel_tilde(0) *= wave_type == 'T' ? 1 : -1;
         // equation (4.4.48) from Cerveny2001
@@ -327,9 +326,9 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     // initial values for P, Q
     auto v0 = model.eval_at(initial_state[Index::Z]);
-    xt::xtensor<complex, 3> P0{{{1j / v0, 0}, {0, 1j / v0}}};
-    xt::xtensor<complex, 3> Q0{{{beam_frequency * beam_width * beam_width / v0, 0},
-                                {0, beam_frequency * beam_width * beam_width / v0}}};
+    xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
+    xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
+                                {0, beam_frequency * beam_width * beam_width / v0}};
     // evaluate velocity at all points of the ray
     // TODO this was already done during ray tracing itself, maybe we can reuse the results. Could
     //  be problematic since the ODE solving code evaluates the function multiple times at different
@@ -357,7 +356,7 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
         auto old_state = beam.segments.back().ray_segment.data.back();
         auto new_initial_state = snells_law(old_state, model, wave_type);
         // transform dynamic ray tracing across interface using snells law
-        auto [P0_new, Q0_new] = ip.transform(xt::view(P, xt::keep(-1)), xt::view(Q, xt::keep(-1)),
+        auto [P0_new, Q0_new] = ip.transform(xt::squeeze(xt::view(P, xt::keep(-1))), xt::squeeze(xt::view(Q, xt::keep(-1))),
                                              wave_type, old_state, new_initial_state, index, model);
         // do kinematic ray tracing for new segment
         segment = trace_layer(new_initial_state, current_layer, segment.arclength.back(), step_size,
