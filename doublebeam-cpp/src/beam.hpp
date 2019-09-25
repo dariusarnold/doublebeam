@@ -30,9 +30,22 @@ public:
     std::vector<BeamSegment>::iterator end();
     std::vector<BeamSegment> segments;
 
+    /**
+     * Allow indexing beam to return its segments.
+     * @param i
+     * @return
+     */
+    BeamSegment& operator[](int i);
+    const BeamSegment& operator[](int i) const;
+
+    size_t size();
+
+    double width();
+    double frequency();
+
 private:
-    double width;
-    double frequency;
+    double m_width;
+    double m_frequency;
 };
 
 #endif // DOUBLEBEAM_CPP_BEAM_HPP

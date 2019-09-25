@@ -11,9 +11,29 @@ std::vector<BeamSegment>::iterator Beam::end() {
 
 Beam::Beam(double beam_width, double beam_frequency, BeamSegment segment) :
         segments{segment},
-        width(beam_width),
-        frequency(beam_frequency) {}
+        m_width(beam_width),
+        m_frequency(beam_frequency) {}
 
 Beam::Beam(double beam_width, double beam_frequency) :
-        width(beam_width),
-        frequency(beam_frequency) {}
+        m_width(beam_width),
+        m_frequency(beam_frequency) {}
+
+double Beam::width() {
+    return m_width;
+}
+
+double Beam::frequency() {
+    return m_frequency;
+}
+
+BeamSegment& Beam::operator[](int i) {
+    return segments[i];
+}
+
+const BeamSegment& Beam::operator[](int i) const {
+    return segments[i];
+}
+
+size_t Beam::size() {
+    return segments.size();
+}
