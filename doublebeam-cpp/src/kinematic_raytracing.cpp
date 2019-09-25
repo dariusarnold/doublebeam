@@ -222,8 +222,6 @@ public:
         auto G_parallel_tilde = G_parallel;
         G_parallel_tilde(0) *= wave_type == 'T' ? 1 : -1;
         // equation (4.4.48) from Cerveny2001
-        std::cout << G_parallel << std::endl;
-        std::cout << G_orthogonal << std::endl;
         auto G = xtl::dot(G_parallel, G_orthogonal);
         auto G_tilde = xtl::dot(G_parallel_tilde, G_orthogonal_tilde);
 
