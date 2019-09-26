@@ -264,7 +264,7 @@ private:
                     epsilon * std::cos(i_S) * std::sin(i_S) * dV_dz3);
         auto E12 = -std::sin(i_S) / (V * V) * dV_dz2;
         auto E22 = 0.;
-        return {{{E11, E12}, {E12, E22}}};
+        return {{E11, E12}, {E12, E22}};
     }
 
     /**
@@ -287,7 +287,7 @@ private:
                     minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
         auto E12 = -std::sin(i_R) / (V_tilde * V_tilde) * dV_tilde_dz2;
         auto E22 = 0.;
-        return {{{E11, E12}, {E12, E22}}};
+        return {{E11, E12}, {E12, E22}};
     }
 
     /**
