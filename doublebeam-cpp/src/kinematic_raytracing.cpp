@@ -281,10 +281,10 @@ private:
         auto dV_tilde_dz2 = 0.;
         auto dV_tilde_dz3 = new_gradient;
         auto minus_plus = wave_type == 'R' ? -1. : 1.;
-        auto E11 = -sin(i_R) / (V_tilde * V_tilde);
-        E11 *= ((1 + std::pow(cos(i_R), 2)) * dV_tilde_dz1 +
-                minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
-        auto E12 = -sin(i_R) / (V_tilde * V_tilde) * dV_tilde_dz2;
+        auto E11 = -std::sin(i_R) / (V_tilde * V_tilde) *
+                   ((1 + std::pow(cos(i_R), 2)) * dV_tilde_dz1 +
+                    minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
+        auto E12 = -std::sin(i_R) / (V_tilde * V_tilde) * dV_tilde_dz2;
         auto E22 = 0.;
         return {{{E11, E12}, {E12, E22}}};
     }
