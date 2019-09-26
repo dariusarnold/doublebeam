@@ -95,6 +95,16 @@ private:
      */
     RaySegment trace_layer_const(const state_type& initial_state, const Layer& layer,
                                  double s_start, double ds);
+    /**
+     * Dispatching function that decides to use analytic or numerical ray tracing depending on 
+     * whether the layer has constant velocity or not.
+     * @param initial_state State of ray tracing when the ray enters the layer.
+     * @param layer Layer which is traced.
+     * @param s_start Initial value of arc length of ray up to the current point.
+     * @param ds Step size of arc length.
+     * @param max_ds Maximum time step size.
+     * @return RaySegment for this layer.
+     */
     RaySegment trace_layer(const state_type& initial_state, const Layer& layer, double s_start,
                            double ds, double max_ds);
     VelocityModel model;
