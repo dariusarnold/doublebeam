@@ -46,7 +46,7 @@ get_state_at_interface(std::function<double(state_type)> crossing_function, Step
     return {x_middle, s_middle};
 }
 
-RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_state,
+RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state,
                                                     const Layer& layer, double s_start, double ds,
                                                     double max_ds) {
     InterfaceCrossed crossing(layer);
@@ -75,7 +75,7 @@ RaySegment KinematicRayTracer::trace_layer_gradient(const state_type& initial_st
 }
 
 
-RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state,
+RaySegment RayTracer::trace_layer_const(const state_type& initial_state,
                                                  const Layer& layer, double s_start, double ds) {
     auto [x, y, z, px, py, pz, t] = initial_state;
     auto c = layer.intercept;
@@ -105,10 +105,10 @@ RaySegment KinematicRayTracer::trace_layer_const(const state_type& initial_state
 }
 
 
-KinematicRayTracer::KinematicRayTracer(VelocityModel velocity_model) :
+RayTracer::RayTracer(VelocityModel velocity_model) :
         model(std::move(velocity_model)) {}
 
-Ray KinematicRayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
+Ray RayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
                                   double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
     current_layer = model[layer_index];
@@ -149,7 +149,7 @@ double dvdz(double z, const Layer& layer) {
 }
 
 
-void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
+void RayTracer::operator()(const state_type& state, state_type& dfds,
                                     const double /* s */) const {
     auto [x, y, z, px, py, pz, T] = state;
     auto v = model.eval_at(z);
@@ -168,7 +168,7 @@ void KinematicRayTracer::operator()(const state_type& state, state_type& dfds,
 }
 
 
-RaySegment KinematicRayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
+RaySegment RayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
                                            double s_start, double ds, double max_ds) {
     current_layer = layer;
     if (layer.gradient == 0) {
@@ -345,7 +345,7 @@ private:
     }
 };
 
-Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
+Beam RayTracer::trace_beam(state_type initial_state, double beam_width,
                                     double beam_frequency, const std::string& ray_code,
                                     double step_size, double max_step) {
     current_layer = model.get_layer(initial_state[Index::Z]);

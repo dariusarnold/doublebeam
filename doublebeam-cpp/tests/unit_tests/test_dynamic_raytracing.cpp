@@ -12,7 +12,7 @@
 class DynamicRaytracingBase : public testing::Test {
 protected:
     VelocityModel model = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
-    KinematicRayTracer rt{model};
+    RayTracer rt{model};
 };
 
 TEST_F(DynamicRaytracingBase, TestThrowWhenStartingOutOfModel) {
@@ -100,7 +100,7 @@ namespace testing::internal {
 TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     // trace beam through single layer and compare with previous result.
     VelocityModel model{{{0, 10, 2000, 1}}};
-    KinematicRayTracer rt{model};
+    RayTracer rt{model};
     auto P_desired =
         xt::load_npy<std::complex<double>>(current_source_path() / "data/P_analytic.npy");
     auto Q_desired =
@@ -124,7 +124,7 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
 
 TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
     VelocityModel model{{{0, 10, 2000, 1}, {10, 20, 2000, -1}}};
-    KinematicRayTracer rt{model};
+    RayTracer rt{model};
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "TRT");
     for (auto i = 0; i < beam.size(); ++i) {

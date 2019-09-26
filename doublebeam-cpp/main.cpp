@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 
 int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
-    auto drt = KinematicRayTracer(vm);
+    auto drt = RayTracer(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
     auto beam = drt.trace_beam(initial_state, 10, 40, "TTTT");
     return 0;

@@ -9,10 +9,10 @@
 #include "ray.hpp"
 
 
-class KinematicRayTracer {
+class RayTracer {
 public:
     // TODO change to const ref
-    explicit KinematicRayTracer(VelocityModel velocity_model);
+    explicit RayTracer(VelocityModel velocity_model);
 
     /**
      * Trace ray specified by ray code through velocity model.

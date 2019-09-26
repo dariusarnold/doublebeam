@@ -16,7 +16,7 @@ protected:
             krt(vm) {}
 
     VelocityModel vm;
-    KinematicRayTracer krt;
+    RayTracer krt;
 };
 
 TEST_P(TestRayTracing, TestCorrectEndpoint) {
@@ -57,7 +57,7 @@ INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn
 // is checked for a crossing
 TEST(TestRayTracing, TestTurningRay) {
     VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}});
-    KinematicRayTracer rt(vm);
+    RayTracer rt(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
     auto ray = rt.trace_ray(initial_state, "TT");
     EXPECT_TRUE(Close(ray.segments.back().data.back()[Index::X], 9403.354242));
