@@ -219,8 +219,7 @@ public:
         auto G_orthogonal_tilde = G_orthogonal;
         // left equations of (4.4.49) in Cerveny2001
         matrix_t G_parallel{{epsilon * std::cos(i_S), 0}, {0, 1}};
-        auto G_parallel_tilde = G_parallel;
-        G_parallel_tilde(0) *= wave_type == 'T' ? 1 : -1;
+        matrix_t G_parallel_tilde{{(wave_type == 'T' ? 1 : -1) * epsilon * std::cos(i_R), 0}, {0, 1}};
         // equation (4.4.48) from Cerveny2001
         auto G = xtl::dot(G_parallel, G_orthogonal);
         auto G_tilde = xtl::dot(G_parallel_tilde, G_orthogonal_tilde);
