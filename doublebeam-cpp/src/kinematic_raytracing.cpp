@@ -234,7 +234,7 @@ public:
         auto new_gradient = model[next_layer_index].gradient;
         auto E = E_(V_before, i_S, epsilon, old_gradient);
         auto E_tilde = E_tilde_(wave_type, V_after, i_R, epsilon, new_gradient);
-        auto u = u_(wave_type, V_before, V_after, i_R, epsilon, new_gradient);
+        auto u = u_(wave_type, V_before, V_after, i_S, i_R, epsilon);
         auto D = D_();
         // eq. (4.4.67) Cerveny2001
         auto P_tilde = xtl::dot(
