@@ -319,7 +319,7 @@ class InterfacePropagator:
         self.G_parallel[0][0] = epsilon * cos(i_S)
         # upper sign probably corresponds to transmitted wave
         plus_minus = 1 if wave_type == "T" else -1
-        self.G_orthogonal[0][0] = plus_minus * epsilon * cos(i_R)
+        self.G_parallel_tilde[0][0] = plus_minus * epsilon * cos(i_R)
         return self.G_parallel @ self.G_orthogonal
 
     def G_tilde(self) -> np.ndarray:
