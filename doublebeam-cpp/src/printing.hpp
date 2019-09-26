@@ -1,7 +1,13 @@
 #ifndef DOUBLEBEAM_CPP_PRINTING_HPP
 #define DOUBLEBEAM_CPP_PRINTING_HPP
 
-template <typename T, size_t N>
+#include <cstddef>
+#include <ostream>
+#include <array>
+#include <vector>
+
+
+template <typename T, std::size_t N>
 std::ostream& operator<<(std::ostream& os, std::array<T, N> a) {
     os << "(";
     for (auto& i : a) {

@@ -2,7 +2,8 @@
 #define DOUBLEBEAM_CPP_RAY_HPP
 
 #include <vector>
-#include "raytracing_helpers.hpp"
+#include "raytracing_types.hpp"
+
 
 class RaySegment {
 public:

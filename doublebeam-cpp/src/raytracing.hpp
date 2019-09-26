@@ -1,10 +1,27 @@
 #ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
 #define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
-
+#include "raytracing_types.hpp"
 #include "beam.hpp"
-#include "model.hpp"
 #include "ray.hpp"
+#include "model.hpp"
+
+
+/**
+ * Factory function to create a state type for a position and a starting angle.
+ * @param x X coordinate of start point of ray.
+ * @param y Y  coordinate of start point of ray.
+ * @param z Z  coordinate of start point of ray.
+ * @param model Model will be evaluated at start point to calculate starting slowness.
+ * @param theta Angle against downgoing vertical axis (z) at start point in rad, increasing upwards.
+ * Valid range 0 <= theta <= pi.
+ * @param phi Angle against x axis at start point in rad, with increasing angle towards the y axis.
+ * Valid range 0 <= phi <= 2*pi.
+ * @param T Travel time at the start point of the ray.
+ * @return state_type with coordinate and slowness calculated from the given parameters.
+ */
+state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
+                      double phi, double T);
 
 
 class RayTracer {

@@ -1,0 +1,29 @@
+#ifndef DOUBLEBEAM_CPP_RAYTRACING_TYPES_HPP
+#define DOUBLEBEAM_CPP_RAYTRACING_TYPES_HPP
+
+#include <array>
+#include <complex>
+#include <cstddef>
+
+
+using state_type = std::array<double, 7>;
+
+using complex = std::complex<double>;
+
+namespace Index {
+    /*
+     * Indices of variables in state_type.
+     * X, Y, Z are cartesian coordinates.
+     * PX, PY, PZ are components of slowness vector.
+     * T is travel time.
+     */
+    static constexpr size_t X = 0;
+    static constexpr size_t Y = 1;
+    static constexpr size_t Z = 2;
+    static constexpr size_t PX = 3;
+    static constexpr size_t PY = 4;
+    static constexpr size_t PZ = 5;
+    static constexpr size_t T = 6;
+}; // namespace Index
+
+#endif // DOUBLEBEAM_CPP_RAYTRACING_TYPES_HPP

@@ -67,11 +67,3 @@ double InterfaceCrossed::get_closest_layer_depth(const state_type& state) const 
                ? top_depth
                : bottom_depth;
 }
-
-
-state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
-                      double phi, double T) {
-    double velocity = model.eval_at(z);
-    auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
-    return {x, y, z, px, py, pz, T};
-}

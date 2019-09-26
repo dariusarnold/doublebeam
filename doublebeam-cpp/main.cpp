@@ -1,10 +1,7 @@
-#include "model.hpp"
 #include "printing.hpp"
 #include "raytracing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
-#include <iomanip>
-#include <xtensor/xio.hpp>
 
 
 std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {

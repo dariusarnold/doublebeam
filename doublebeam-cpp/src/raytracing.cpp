@@ -15,8 +15,13 @@
 
 namespace odeint = boost::numeric::odeint;
 
-using complex = std::complex<double>;
 
+state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
+                      double phi, double T) {
+    double velocity = model.eval_at(z);
+    auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
+    return {x, y, z, px, py, pz, T};
+}
 
 /**
  * Calculate exact state at interface crossing.
@@ -187,7 +192,7 @@ RaySegment RayTracer::trace_layer(const state_type& initial_state, const Layer& 
 
 class InterfacePropagator {
 
-    using matrix_t = xt::xtensor<std::complex<double>, 2>;
+    using matrix_t = xt::xtensor<complex, 2>;
 
 public:
     /**

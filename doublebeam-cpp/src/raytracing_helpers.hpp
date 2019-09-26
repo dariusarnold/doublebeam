@@ -4,26 +4,8 @@
 #include <array>
 #include <functional>
 
+#include "raytracing_types.hpp"
 #include "model.hpp"
-
-
-typedef std::array<double, 7> state_type;
-
-namespace Index {
-    /*
-     * Indices of variables in state_type.
-     * X, Y, Z are cartesian coordinates.
-     * PX, PY, PZ are components of slowness vector.
-     * T is travel time.
-     */
-    static constexpr size_t X = 0;
-    static constexpr size_t Y = 1;
-    static constexpr size_t Z = 2;
-    static constexpr size_t PX = 3;
-    static constexpr size_t PY = 4;
-    static constexpr size_t PZ = 5;
-    static constexpr size_t T = 6;
-}; // namespace Index
 
 
 /**
@@ -84,23 +66,5 @@ public:
 private:
     double top_depth, bottom_depth;
 };
-
-
-/**
- * Factory function to create a state type for a position and a starting angle.
- * @param x X coordinate of start point of ray.
- * @param y Y  coordinate of start point of ray.
- * @param z Z  coordinate of start point of ray.
- * @param model Model will be evaluated at start point to calculate starting slowness.
- * @param theta Angle against downgoing vertical axis (z) at start point in rad, increasing upwards.
- * Valid range 0 <= theta <= pi.
- * @param phi Angle against x axis at start point in rad, with increasing angle towards the y axis.
- * Valid range 0 <= phi <= 2*pi.
- * @param T Travel time at the start point of the ray.
- * @return state_type with coordinate and slowness calculated from the given parameters.
- */
-state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
-                      double phi, double T);
-
 
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HELPERS_HPP

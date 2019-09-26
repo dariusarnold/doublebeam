@@ -102,9 +102,9 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     VelocityModel model{{{0, 10, 2000, 1}}};
     RayTracer rt{model};
     auto P_desired =
-        xt::load_npy<std::complex<double>>(current_source_path() / "data/P_analytic.npy");
+        xt::load_npy<complex>(current_source_path() / "data/P_analytic.npy");
     auto Q_desired =
-        xt::load_npy<std::complex<double>>(current_source_path() / "data/Q_analytic.npy");
+        xt::load_npy<complex>(current_source_path() / "data/Q_analytic.npy");
     // std::cout << P_desired.shape() << std::endl;
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4);
@@ -128,9 +128,9 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "TRT");
     for (auto i = 0; i < beam.size(); ++i) {
-        auto P_desired = xt::load_npy<std::complex<double>>(
+        auto P_desired = xt::load_npy<complex>(
             current_source_path() / ("data/P_multilayer" + std::to_string(i) + ".npy"));
-        auto Q_desired = xt::load_npy<std::complex<double>>(
+        auto Q_desired = xt::load_npy<complex>(
             current_source_path() / ("data/Q_multilayer" + std::to_string(i) + ".npy"));
         // compare dimension instead of shape since different number of points may have been
         // calculated during ray tracing.
