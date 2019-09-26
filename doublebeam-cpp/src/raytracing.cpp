@@ -22,6 +22,45 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
     return {x, y, z, px, py, pz, T};
 }
 
+
+/**
+ * Calculate first derivative of inverse of velocity after depth z analytically.
+ * Valid for linear velocity gradient v = v(z) = a * z + b).
+ * @param z
+ * @param layer
+ * @return Derivative d/dz of 1/v(z) = -(az+b)^{-2}*a
+ */
+inline double dvdz(double z, const Layer& layer) {
+    return -layer.gradient /
+           ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
+}
+
+/**
+ * This function implements the system of ODEs required to compute the ray.
+ * The method is not called directly from my code, only by the solver.
+ * @param state Current state is input from this.
+ * @param dfds Next step is stored here.
+ * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
+ * on this parameter.
+ */
+void ray_tracing_equation(const state_type& state, state_type& dfds, const double /* s */,
+                          const VelocityModel& model, const Layer& layer) {
+    auto [x, y, z, px, py, pz, T] = state;
+    auto v = model.eval_at(z);
+    auto dxds = px * v;
+    auto dyds = py * v;
+    auto dzds = pz * v;
+    auto dpzds = dvdz(z, layer);
+    auto dTds = 1. / v;
+    dfds[0] = dxds;
+    dfds[1] = dyds;
+    dfds[2] = dzds;
+    dfds[3] = 0.;
+    dfds[4] = 0.;
+    dfds[5] = dpzds;
+    dfds[6] = dTds;
+}
+
 RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state, const Layer& layer,
                                            double s_start, double ds, double max_ds) {
     InterfaceCrossed crossing(layer);
@@ -30,11 +69,14 @@ RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state, cons
     stepper.initialize(initial_state, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
+    auto equation = [&](const state_type& state, state_type& dfds, double s) {
+      return ray_tracing_equation(state, dfds, s, model, layer);
+    };
     // advance stepper until first event occurs
     do {
         states.emplace_back(stepper.current_state());
         arclengths.emplace_back(stepper.current_time());
-        stepper.do_step(*this);
+        stepper.do_step(equation);
     } while (not crossing(stepper.current_state()));
     // find exact point of zero crossing
     auto crossing_function = crossing.get_zero_crossing_event_function(stepper.current_state());
@@ -107,37 +149,6 @@ Ray RayTracer::trace_ray(state_type initial_state, const std::vector<WaveType>& 
         ray.segments.push_back(segment);
     }
     return ray;
-}
-
-
-/**
- * Calculate first derivative of inverse of velocity after depth z analytically.
- * Valid for linear velocity gradient v = v(z) = a * z + b).
- * @param z
- * @param layer
- * @return Derivative d/dz of 1/v(z) = -(az+b)^{-2}*a
- */
-double dvdz(double z, const Layer& layer) {
-    return -layer.gradient /
-           ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
-}
-
-
-void RayTracer::operator()(const state_type& state, state_type& dfds, const double /* s */) const {
-    auto [x, y, z, px, py, pz, T] = state;
-    auto v = model.eval_at(z);
-    auto dxds = px * v;
-    auto dyds = py * v;
-    auto dzds = pz * v;
-    auto dpzds = dvdz(z, current_layer);
-    auto dTds = 1. / v;
-    dfds[0] = dxds;
-    dfds[1] = dyds;
-    dfds[2] = dzds;
-    dfds[3] = 0.;
-    dfds[4] = 0.;
-    dfds[5] = dpzds;
-    dfds[6] = dTds;
 }
 
 

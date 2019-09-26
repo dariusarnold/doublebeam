@@ -70,16 +70,6 @@ public:
      */
     Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
                     const std::string& ray_code, double step_size = 1., double max_step = 1.1);
-    /**
-     * This call operator implements the system of ODEs required to compute the ray.
-     * The method is not called directly from my code, only by the solver.
-     * @param state Current state is input from this.
-     * @param dfds Next step is stored here.
-     * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
-     * on this parameter.
-     */
-    // TODO make this private if possible to remove it from the api.
-    void operator()(const state_type& state, state_type& dfds, const double /* s */) const;
 
 private:
     /**
