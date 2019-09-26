@@ -179,6 +179,12 @@ RaySegment KinematicRayTracer::trace_layer(const state_type& initial_state, cons
     }
 }
 
+#define USEDEBUG_NO
+#ifdef USEDEBUG
+#define msg(x) std::cout << #x << ": " << x << std::endl;
+#else
+#define msg(x)
+#endif
 
 class InterfacePropagator {
 
@@ -192,16 +198,21 @@ public:
         namespace xtl = xt::linalg;
         // TODO modify interface unit vector (params x2, y2, z2) for more general velocity model.
         //  Here it is assumed the model consists only of horizontal layers.
+        msg(layer_index);
+        msg(wave_type);
         auto i_S =
             math::angle(old_state[Index::PX], old_state[Index::PY], old_state[Index::PZ], 0, 0, 1);
+        msg(i_S);
         auto i_R = wave_type == 'T' ? math::angle(new_state[Index::PX], new_state[Index::PY],
                                                   new_state[Index::PZ], 0, 0, 1)
                                     : i_S;
+        msg(i_R);
         // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
         // horizontal interfaces (unit vector (0, 0, 1)).
         auto epsilon = std::copysign(1., old_state[Index::PZ]);
-        // for a downgoing transmitted ray the velocity above the interface is the before velocity
-        // and the velocity below the interface is the after velocity.
+        msg(epsilon);
+        // for a downgoing transmitted ray the velocity above the interface is the before
+        // velocity and the velocity below the interface is the after velocity.
         auto [V_top, V_bottom] = model.interface_velocities(old_state[Index::Z]);
         auto V_before = V_top, V_after = V_bottom;
         if (wave_type == 'R') {
@@ -211,36 +222,54 @@ public:
                 std::swap(V_before, V_after);
             }
         }
+        msg(V_after);
+        msg(V_before);
         // TODO this kappa is only valid for simple velocity model v = v(z) and horizontal
         //  interfaces
         auto kappa = 0.;
         auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
         // right equations of (4.4.49) in Cerveny2001
         matrix_t G_orthogonal{{cos_kappa, -sin_kappa}, {sin_kappa, cos_kappa}};
+        msg(G_orthogonal);
         auto G_orthogonal_tilde = G_orthogonal;
         // left equations of (4.4.49) in Cerveny2001
         matrix_t G_parallel{{epsilon * std::cos(i_S), 0}, {0, 1}};
-        matrix_t G_parallel_tilde{{(wave_type == 'T' ? 1 : -1) * epsilon * std::cos(i_R), 0}, {0, 1}};
+        msg(G_parallel);
+        matrix_t G_parallel_tilde{{(wave_type == 'T' ? 1 : -1) * epsilon * std::cos(i_R), 0},
+                                  {0, 1}};
+        msg(G_parallel_tilde);
         // equation (4.4.48) from Cerveny2001
         auto G = xtl::dot(G_parallel, G_orthogonal);
+        msg(G);
         auto G_tilde = xtl::dot(G_parallel_tilde, G_orthogonal_tilde);
-
+        msg(G_tilde);
         auto G_inverted = xtl::inv(G);
+        msg(G_inverted);
         auto G_tilde_inverted = xtl::inv(G_tilde);
-        // eq. (4.4.53) from Cerveny2001
+        msg(G_tilde_inverted);
         auto old_gradient = model[layer_index].gradient;
+        msg(old_gradient);
         auto next_layer_index =
             seismo::next_layer_index(layer_index, old_state[Index::PZ], wave_type);
         auto new_gradient = model[next_layer_index].gradient;
+        msg(new_gradient);
+        // eq. (4.4.53) from Cerveny2001
         auto E = E_(V_before, i_S, epsilon, old_gradient);
+        msg(E);
         auto E_tilde = E_tilde_(wave_type, V_after, i_R, epsilon, new_gradient);
+        msg(E_tilde);
         auto u = u_(wave_type, V_before, V_after, i_S, i_R, epsilon);
+        msg(u);
         auto D = D_();
         // eq. (4.4.67) Cerveny2001
+        msg(D);
         auto P_tilde = xtl::dot(
             G_tilde_inverted,
             xtl::dot(G, P) + xtl::dot(E - E_tilde - u * D, xtl::dot(xt::transpose(G_inverted), Q)));
+        // eq. (4.4.64) from Cerveny2001
+        msg(P_tilde);
         auto Q_tilde = xtl::dot(xt::transpose(G_tilde), xtl::dot(xt::transpose(G_inverted), Q));
+        msg(Q_tilde);
         return {P_tilde, Q_tilde};
     }
 
