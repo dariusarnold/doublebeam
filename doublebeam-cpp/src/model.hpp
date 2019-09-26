@@ -122,7 +122,7 @@ public:
     /**
      * Get Layer at depth z.
      */
-    Layer get_layer(double z);
+    Layer get_layer(double z) const;
 };
 
 

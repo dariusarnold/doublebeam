@@ -149,7 +149,7 @@ const std::vector<double>& VelocityModel::interface_depths() const {
     return m_interface_depths;
 }
 
-Layer VelocityModel::get_layer(double z) {
+Layer VelocityModel::get_layer(double z) const {
     auto index = layer_index(z);
     return layers[index];
 }
