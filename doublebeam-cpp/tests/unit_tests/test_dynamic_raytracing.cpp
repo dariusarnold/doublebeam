@@ -120,6 +120,8 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
                              xt::view(xt::squeeze(Q_desired), xt::keep(-1))));
 }
 
+#define name_and_value(x) #x << ": " << x << "\n"
+
 TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
     VelocityModel model{{{0, 10, 2000, 1}, {10, 20, 2000, -1}}};
     KinematicRayTracer rt{model};
@@ -135,14 +137,25 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
         EXPECT_EQ(beam[i].P.dimension(), P_desired.dimension());
         EXPECT_EQ(beam[i].Q.dimension(), Q_desired.dimension());
         // compare first and last entry of P and Q (value at interface)
-        //std::cout << beam[i].P << std::endl;
-        EXPECT_EQ(xt::view(beam[i].P, xt::keep(0)), xt::view(P_desired, xt::keep(0)))
-            << "First value of P different for beam segment index " << i;
-        EXPECT_EQ(xt::view(beam[i].Q, xt::keep(0)), xt::view(Q_desired, xt::keep(0)))
-            << "First value of Q different for beam segment index " << i;
-        EXPECT_EQ(xt::view(beam[i].P, xt::keep(-1)), xt::view(P_desired, xt::keep(-1)))
-            << "Last value of P different for beam segment index " << i;
-        EXPECT_EQ(xt::view(beam[i].Q, xt::keep(-1)), xt::view(Q_desired, xt::keep(-1)))
-            << "Last value of Q different for beam segment index " << i;
+        EXPECT_TRUE(
+            xt::allclose(xt::view(beam[i].P, xt::keep(0)), xt::view(P_desired, xt::keep(0))))
+            << "First value of P different for beam segment index " << i << ".\n"
+            << name_and_value(xt::view(beam[i].P, xt::keep(0)))
+            << name_and_value(xt::view(P_desired, xt::keep(0)));
+        EXPECT_TRUE(
+            xt::allclose(xt::view(beam[i].Q, xt::keep(0)), xt::view(Q_desired, xt::keep(0)), 1E-5, 1E-2))
+            << "First value of Q different for beam segment index " << i << ".\n"
+            << name_and_value(xt::view(beam[i].Q, xt::keep(0)))
+            << name_and_value(xt::view(Q_desired, xt::keep(0)));
+        EXPECT_TRUE(
+            xt::allclose(xt::view(beam[i].P, xt::keep(-1)), xt::view(P_desired, xt::keep(-1))))
+            << "Last value of P different for beam segment index " << i << ".\n"
+            << name_and_value(xt::view(beam[i].P, xt::keep(-1)))
+            << name_and_value(xt::view(P_desired, xt::keep(-1)));
+        EXPECT_TRUE(
+            xt::allclose(xt::view(beam[i].Q, xt::keep(-1)), xt::view(Q_desired, xt::keep(-1)), 1E-5, 1E-2))
+            << "Last value of Q different for beam segment index " << i << ".\n"
+            << name_and_value(xt::view(beam[i].Q, xt::keep(-1)))
+            << name_and_value(xt::view(Q_desired, xt::keep(-1)));
     }
 }
