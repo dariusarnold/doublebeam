@@ -10,8 +10,9 @@
 
 #include <boost/math/tools/toms748_solve.hpp>
 
-#include "raytracing_types.hpp"
 #include "model.hpp"
+#include "raytracing.hpp"
+#include "raytracing_types.hpp"
 
 
 /**
@@ -25,7 +26,7 @@
  * @return New slowness values px, py, pz.
  */
 std::tuple<double, double, double> snells_law(double px, double py, double pz, double v_above,
-                                              double v_below, char wave_type);
+                                              double v_below, WaveType wave_type);
 
 /**
  * Wrapper around snells law.
@@ -34,7 +35,7 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
  * @param wave_type Which wave type to take ('T' for transmitted, 'R' for reflected).
  * @return New state at interface with changed slowness.
  */
-state_type snells_law(const state_type& old_state, const VelocityModel& model, char wave_type);
+state_type snells_law(const state_type& old_state, const VelocityModel& model, WaveType wave_type);
 
 
 class InterfaceCrossed {

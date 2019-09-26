@@ -26,4 +26,14 @@ namespace Index {
     static constexpr size_t T = 6;
 }; // namespace Index
 
+/**
+ * Specifies wave type to take when crossing an interface. Can be used to build ray codes (sequences
+ * of wave types), which specify the behaviour of a ray during it's travel through the velocity
+ * model.
+ */
+enum class WaveType {
+    Transmitted,
+    Reflected
+};
+
 #endif // DOUBLEBEAM_CPP_RAYTRACING_TYPES_HPP

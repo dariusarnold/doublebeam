@@ -22,9 +22,8 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
     return {x, y, z, px, py, pz, T};
 }
 
-RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state,
-                                                    const Layer& layer, double s_start, double ds,
-                                                    double max_ds) {
+RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state, const Layer& layer,
+                                           double s_start, double ds, double max_ds) {
     InterfaceCrossed crossing(layer);
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
@@ -51,8 +50,8 @@ RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state,
 }
 
 
-RaySegment RayTracer::trace_layer_const(const state_type& initial_state,
-                                                 const Layer& layer, double s_start, double ds) {
+RaySegment RayTracer::trace_layer_const(const state_type& initial_state, const Layer& layer,
+                                        double s_start, double ds) {
     auto [x, y, z, px, py, pz, t] = initial_state;
     auto c = layer.intercept;
     auto z_interface = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
@@ -81,11 +80,10 @@ RaySegment RayTracer::trace_layer_const(const state_type& initial_state,
 }
 
 
-RayTracer::RayTracer(VelocityModel velocity_model) :
-        model(std::move(velocity_model)) {}
+RayTracer::RayTracer(VelocityModel velocity_model) : model(std::move(velocity_model)) {}
 
-Ray RayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
-                                  double step_size, double max_step) {
+Ray RayTracer::trace_ray(state_type initial_state, const std::vector<WaveType>& ray_code,
+                         double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
     current_layer = model[layer_index];
     Ray ray{{trace_layer(initial_state, current_layer, 0., step_size, max_step)}};
@@ -97,7 +95,7 @@ Ray RayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
         //  refactor it by improving Ray class
         auto [x, y, z, px, py, pz, t] = ray.segments.back().data.back();
         // reflected waves stay in the same layer, so the index doesn't change
-        if (ray_type == 'T') {
+        if (ray_type == WaveType::Transmitted) {
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
             current_layer = model[layer_index];
         }
@@ -125,8 +123,7 @@ double dvdz(double z, const Layer& layer) {
 }
 
 
-void RayTracer::operator()(const state_type& state, state_type& dfds,
-                                    const double /* s */) const {
+void RayTracer::operator()(const state_type& state, state_type& dfds, const double /* s */) const {
     auto [x, y, z, px, py, pz, T] = state;
     auto v = model.eval_at(z);
     auto dxds = px * v;
@@ -145,7 +142,7 @@ void RayTracer::operator()(const state_type& state, state_type& dfds,
 
 
 RaySegment RayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
-                                           double s_start, double ds, double max_ds) {
+                                  double s_start, double ds, double max_ds) {
     current_layer = layer;
     if (layer.gradient == 0) {
         return trace_layer_const(initial_state, layer, s_start, ds);
@@ -178,7 +175,7 @@ public:
      * @param model Velocity model.
      * @return New values for P, Q.
      */
-    std::pair<matrix_t, matrix_t> transform(matrix_t P, matrix_t Q, char wave_type,
+    std::pair<matrix_t, matrix_t> transform(matrix_t P, matrix_t Q, WaveType wave_type,
                                             const state_type& old_state,
                                             const state_type& new_state, int layer_index,
                                             const VelocityModel& model) {
@@ -190,9 +187,10 @@ public:
         auto i_S =
             math::angle(old_state[Index::PX], old_state[Index::PY], old_state[Index::PZ], 0, 0, 1);
         msg(i_S);
-        auto i_R = wave_type == 'T' ? math::angle(new_state[Index::PX], new_state[Index::PY],
-                                                  new_state[Index::PZ], 0, 0, 1)
-                                    : i_S;
+        auto i_R = wave_type == WaveType::Transmitted
+                       ? math::angle(new_state[Index::PX], new_state[Index::PY],
+                                     new_state[Index::PZ], 0, 0, 1)
+                       : i_S;
         msg(i_R);
         // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
         // horizontal interfaces (unit vector (0, 0, 1)).
@@ -202,7 +200,7 @@ public:
         // velocity and the velocity below the interface is the after velocity.
         auto [V_top, V_bottom] = model.interface_velocities(old_state[Index::Z]);
         auto V_before = V_top, V_after = V_bottom;
-        if (wave_type == 'R') {
+        if (wave_type == WaveType::Reflected) {
             V_after = V_before;
         } else {
             if (not seismo::ray_direction_down(old_state[Index::PZ])) {
@@ -222,8 +220,8 @@ public:
         // left equations of (4.4.49) in Cerveny2001
         matrix_t G_parallel{{epsilon * std::cos(i_S), 0}, {0, 1}};
         msg(G_parallel);
-        matrix_t G_parallel_tilde{{(wave_type == 'T' ? 1 : -1) * epsilon * std::cos(i_R), 0},
-                                  {0, 1}};
+        matrix_t G_parallel_tilde{
+            {(wave_type == WaveType::Transmitted ? 1 : -1) * epsilon * std::cos(i_R), 0}, {0, 1}};
         msg(G_parallel_tilde);
         // equation (4.4.48) from Cerveny2001
         auto G = xtl::dot(G_parallel, G_orthogonal);
@@ -292,12 +290,12 @@ private:
      * @param new_gradient
      * @return
      */
-    matrix_t E_tilde_(char wave_type, double V_tilde, double i_R, double epsilon,
+    matrix_t E_tilde_(WaveType wave_type, double V_tilde, double i_R, double epsilon,
                       double new_gradient) const {
         auto dV_tilde_dz1 = 0.;
         auto dV_tilde_dz2 = 0.;
         auto dV_tilde_dz3 = new_gradient;
-        auto minus_plus = wave_type == 'R' ? -1. : 1.;
+        auto minus_plus = wave_type == WaveType::Reflected ? -1. : 1.;
         auto E11 = -std::sin(i_R) / (V_tilde * V_tilde) *
                    ((1 + std::pow(cos(i_R), 2)) * dV_tilde_dz1 +
                     minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
@@ -316,9 +314,10 @@ private:
      * @param i_R Acute angle of reflection/transmission
      * @param epsilon sign(p * n)
      */
-    static double u_(char wave_type, double V, double V_tilde, double i_S, double i_R,
+    static double u_(WaveType wave_type, double V, double V_tilde, double i_S, double i_R,
                      double epsilon) {
-        auto minusplus = wave_type == 'T' ? -1 : 1;
+        // TODO make this a function
+        auto minusplus = wave_type == WaveType::Reflected ? -1 : 1;
         return epsilon * (std::cos(i_S) / V + minusplus * std::cos(i_R) / V_tilde);
     }
 
@@ -333,9 +332,9 @@ private:
     }
 };
 
-Beam RayTracer::trace_beam(state_type initial_state, double beam_width,
-                                    double beam_frequency, const std::string& ray_code,
-                                    double step_size, double max_step) {
+Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double beam_frequency,
+                           const std::vector<WaveType>& ray_code, double step_size,
+                           double max_step) {
     current_layer = model.get_layer(initial_state[Index::Z]);
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     // initial values for P, Q
@@ -362,12 +361,10 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width,
     auto layer_indices = seismo::ray_code_to_layer_indices(
         ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]));
     InterfacePropagator ip;
-    size_t index;
-    char wave_type;
     for (auto i = 0UL; i < ray_code.size(); ++i) {
-        index = layer_indices[i];
+        auto index = layer_indices[i];
         auto new_index = layer_indices[i + 1];
-        wave_type = ray_code[i];
+        auto wave_type = ray_code[i];
         current_layer = model[new_index];
         // transform kinematic ray tracing across interface using snells law
         auto old_state = beam.segments.back().ray_segment.data.back();
@@ -390,4 +387,15 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width,
         beam.segments.emplace_back(segment, P, Q);
     }
     return beam;
+}
+
+Ray RayTracer::trace_ray(state_type initial_state, const std::string& ray_code, double step_size,
+                         double max_step) {
+    return trace_ray(initial_state, seismo::make_ray_code(ray_code), step_size, max_step);
+}
+
+Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double beam_frequency,
+                           const std::string& ray_code, double step_size, double max_step) {
+    return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
+                      step_size, max_step);
 }

@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <xtensor/xview.hpp>
 
-
 #include "utils.hpp"
 
 
@@ -19,15 +18,16 @@ namespace seismo {
         return {px, py, pz};
     }
 
-    std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
-                                               int start_index, bool include_start) {
+    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
+                                               double pz_initial, int start_index,
+                                               bool include_start) {
         std::vector<int> indices;
         if (include_start) {
             indices.push_back(start_index);
         }
         bool ray_down = seismo::ray_direction_down(pz_initial);
         for (auto c : ray_code) {
-            if (c == 'T') {
+            if (c == WaveType::Transmitted) {
                 start_index += ray_down ? 1 : -1;
             } else {
                 ray_down = !ray_down;
@@ -37,15 +37,36 @@ namespace seismo {
         return indices;
     }
 
-    int next_layer_index(int current_index, double pz, char wave_type) {
-        if (wave_type == 'R') {
+    std::vector<int> ray_code_to_layer_indices(const std::string& code, double pz_initial,
+                                               int start_index, bool include_start) {
+        return ray_code_to_layer_indices(make_ray_code(code), pz_initial, start_index,
+                                         include_start);
+    }
+
+    int next_layer_index(int current_index, double pz, WaveType wave_type) {
+        if (wave_type == WaveType::Reflected) {
             return current_index;
-        } else if (wave_type == 'T') {
+        } else if (wave_type == WaveType::Transmitted) {
             return current_index + (seismo::ray_direction_down(pz) ? 1 : -1);
         } else {
-            throw std::invalid_argument("Wave type not recognized: " + std::string(1, wave_type));
+            throw std::invalid_argument("Wave type not recognized.");
         }
     }
+
+    std::vector<WaveType> make_ray_code(const std::string s) {
+        std::vector<WaveType> ray_code;
+        for (char c : s) {
+            if (c == 'T') {
+                ray_code.push_back(WaveType::Transmitted);
+            } else if (c == 'R') {
+                ray_code.push_back(WaveType::Reflected);
+            } else {
+                throw std::invalid_argument("Invalid char " + std::string(1, c) + " in ray code.");
+            }
+        }
+        return ray_code;
+    }
+
 } // namespace seismo
 
 namespace math {

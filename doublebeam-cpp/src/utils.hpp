@@ -9,6 +9,7 @@
 
 #include <xtensor/xtensor.hpp>
 
+#include <raytracing_types.hpp>
 
 namespace seismo {
 
@@ -32,6 +33,15 @@ namespace seismo {
     bool ray_direction_down(double pz);
 
     /**
+     * Generate ray code from string.
+     * Raise invalid_argument exception when string is not valid (contains characters other than T
+     * and R).
+     * @param s String of T, R, where T specifies the transmitted wave and R the reflected wave.
+     * @return Ray code.
+     */
+    std::vector<WaveType> make_ray_code(const std::string s);
+
+    /**
      * Transform a ray code to a sequence of layer indices.
      * @param ray_code Specifies which ray type (reflected, transmitted) to take at an interface.
      * Valid values are 'R' for reflected and 'T' for transmitted.
@@ -40,7 +50,10 @@ namespace seismo {
      * @param start_index At which layer index the sequence should start.
      * @return
      */
-    std::vector<int> ray_code_to_layer_indices(const std::string& ray_code, double pz_initial,
+    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code, double pz_initial,
+                                               int start_index = 0, bool include_start = true);
+
+    std::vector<int> ray_code_to_layer_indices(const std::string& code, double pz_initial,
                                                int start_index = 0, bool include_start = true);
 
     /**
@@ -51,7 +64,7 @@ namespace seismo {
      * @param wave_type
      * @return
      */
-    int next_layer_index(int current_index, double pz, char wave_type);
+    int next_layer_index(int current_index, double pz, WaveType wave_type);
 } // namespace seismo
 
 

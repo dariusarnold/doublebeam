@@ -1,10 +1,10 @@
 #ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
 #define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
-#include "raytracing_types.hpp"
 #include "beam.hpp"
-#include "ray.hpp"
 #include "model.hpp"
+#include "ray.hpp"
+#include "raytracing_types.hpp"
 
 
 /**
@@ -39,8 +39,14 @@ public:
      * @return Traced ray.
      */
     // TODO take initial state by const ref for ray and beam
-    // TODO replace ray code string by classes
-    Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
+    Ray trace_ray(state_type initial_state, const std::vector<WaveType>& ray_code = {},
+                  double step_size = 1., double max_step = 1.1);
+
+    /**
+     * Overload that takes a string and converts it to a ray code.
+     * An invalid_argument exception will be thrown when the ray code contains invalid characters.
+     */
+    Ray trace_ray(state_type initial_state, const std::string& ray_code, double step_size = 1.,
                   double max_step = 1.1);
 
     /**
@@ -48,15 +54,22 @@ public:
      * @param initial_state Initial State (position, slowness, travel time) at the start position.
      * @param beam_width Width of beam.
      * @param beam_frequency Central frequency of beam.
-     * @param ray_code Target ray code specifyinghe ray type to take at an interface.
+     * @param ray_code Target ray code specifying the ray type to take at an interface.
      * Use 'R' for reflected and 'T' for transmitted.
      * @param step_size Initial step size along the ray.
      * @param max_step Maximum step size along the ray.
      * @return Traced beam.
      */
     Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
-                    const std::string& ray_code = "", double step_size = 1., double max_step = 1.1);
+                    const std::vector<WaveType>& ray_code = {}, double step_size = 1.,
+                    double max_step = 1.1);
 
+    /**
+     * Overload that takes a string and converts it to a ray code.
+     * An invalid_argument exception will be thrown when the ray code contains invalid characters.
+     */
+    Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
+                    const std::string& ray_code, double step_size = 1., double max_step = 1.1);
     /**
      * This call operator implements the system of ODEs required to compute the ray.
      * The method is not called directly from my code, only by the solver.
@@ -65,7 +78,7 @@ public:
      * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
      * on this parameter.
      */
-     // TODO make this private if possible to remove it from the api.
+    // TODO make this private if possible to remove it from the api.
     void operator()(const state_type& state, state_type& dfds, const double /* s */) const;
 
 private:
@@ -96,7 +109,7 @@ private:
     RaySegment trace_layer_const(const state_type& initial_state, const Layer& layer,
                                  double s_start, double ds);
     /**
-     * Dispatching function that decides to use analytic or numerical ray tracing depending on 
+     * Dispatching function that decides to use analytic or numerical ray tracing depending on
      * whether the layer has constant velocity or not.
      * @param initial_state State of ray tracing when the ray enters the layer.
      * @param layer Layer which is traced.
