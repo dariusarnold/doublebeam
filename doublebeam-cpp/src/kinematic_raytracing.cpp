@@ -344,13 +344,15 @@ Beam KinematicRayTracer::trace_beam(state_type initial_state, double beam_width,
     }
     // dont include start index since first layer was already done above
     auto layer_indices = seismo::ray_code_to_layer_indices(
-        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]), false);
+        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]));
     InterfacePropagator ip;
     size_t index;
     char wave_type;
-    for (auto el : boost::combine(layer_indices, ray_code)) {
-        boost::tie(index, wave_type) = el;
-        current_layer = model[index];
+    for (auto i = 0; i < ray_code.size(); ++i) {
+        index = layer_indices[i];
+        auto new_index = layer_indices[i + 1];
+        wave_type = ray_code[i];
+        current_layer = model[new_index];
         // transform kinematic ray tracing across interface using snells law
         auto old_state = beam.segments.back().ray_segment.data.back();
         auto new_initial_state = snells_law(old_state, model, wave_type);
