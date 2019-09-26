@@ -4,7 +4,6 @@
 #include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-#include <boost/range/combine.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
