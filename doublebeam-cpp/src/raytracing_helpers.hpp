@@ -1,8 +1,14 @@
 #ifndef DOUBLEBEAM_CPP_RAYTRACING_HELPERS_HPP
 #define DOUBLEBEAM_CPP_RAYTRACING_HELPERS_HPP
 
+/*
+ * Functions and classes used for implementing ray tracing.
+ */
+
 #include <array>
 #include <functional>
+
+#include <boost/math/tools/toms748_solve.hpp>
 
 #include "raytracing_types.hpp"
 #include "model.hpp"
@@ -67,4 +73,32 @@ private:
     double top_depth, bottom_depth;
 };
 
+
+/**
+ * Calculate exact state at interface crossing.
+ * @tparam Stepper Boost dense output stepper type.
+ * @param crossing_function Continuous function of state that has a zero crossing at the interface
+ * depth.
+ * @param stepper Stepper used for solving the system of ODEs.
+ * @return Pair of: state at interface and arclength at interface.
+ */
+template <typename Stepper>
+std::pair<state_type, double>
+get_state_at_interface(std::function<double(state_type)> crossing_function, Stepper stepper) {
+    // our integration variable is not time t but arclengths s
+    double s0 = stepper.previous_time();
+    double s1 = stepper.current_time();
+    state_type x_middle;
+    boost::uintmax_t max_calls = 1000;
+    auto [s_left, s_right] = boost::math::tools::toms748_solve(
+        [&](double t) {
+          stepper.calc_state(t, x_middle);
+          return (crossing_function(x_middle));
+        },
+        s0, s1, boost::math::tools::eps_tolerance<double>(), max_calls);
+    // calculate final position of crossing and save state at crossing
+    auto s_middle = (s_left + s_right) * 0.5;
+    stepper.calc_state(s_middle, x_middle);
+    return {x_middle, s_middle};
+}
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HELPERS_HPP
