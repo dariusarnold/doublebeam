@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <kinematic_raytracing.cpp>
+#include <raytracing.cpp>
 
 TEST(SnellsLaw, CompareWithPython) {
     double_t v_before = 2000, v_after = 2200;

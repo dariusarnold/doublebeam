@@ -1,5 +1,5 @@
-#ifndef DOUBLEBEAM_CPP_KINEMATIC_RAYTRACING_HPP
-#define DOUBLEBEAM_CPP_KINEMATIC_RAYTRACING_HPP
+#ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
+#define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
 #include <array>
 #include <vector>
@@ -28,6 +28,16 @@ public:
     Ray trace_ray(state_type initial_state, const std::string& ray_code = "", double step_size = 1.,
                   double max_step = 1.1);
 
+    /**
+     *
+     * @param initial_state
+     * @param beam_width
+     * @param beam_frequency
+     * @param ray_code
+     * @param step_size
+     * @param max_step
+     * @return
+     */
     Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
                     const std::string& ray_code = "", double step_size = 1., double max_step = 1.1);
 
@@ -39,6 +49,7 @@ public:
      * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
      * on this parameter.
      */
+     // TODO make this private if possible to remove it from the api.
     void operator()(const state_type& state, state_type& dfds, const double /* s */) const;
 
 private:
@@ -74,4 +85,4 @@ private:
     Layer current_layer;
 };
 
-#endif // DOUBLEBEAM_CPP_KINEMATIC_RAYTRACING_HPP
+#endif // DOUBLEBEAM_CPP_RAYTRACING_HPP

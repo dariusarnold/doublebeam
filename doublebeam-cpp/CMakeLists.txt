@@ -16,7 +16,7 @@ find_package(LAPACK REQUIRED)
 #find_package(xsimd)
 #add_definitions(-DXTENSOR_ENABLE_XSIMD)
 
-add_library(doublebeam_lib src/model.cpp src/utils.cpp src/kinematic_raytracing.cpp src/twopoint.cpp
+add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/raytracing_helpers.hpp src/ray.cpp src/ray.hpp
         src/beam.cpp src/beam.hpp)
 target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs)

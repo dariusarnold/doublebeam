@@ -1,6 +1,6 @@
-#include "kinematic_raytracing.hpp"
 #include "model.hpp"
 #include "printing.hpp"
+#include "raytracing.hpp"
 #include "testing_utils.hpp"
 #include "gtest/gtest.h"
 

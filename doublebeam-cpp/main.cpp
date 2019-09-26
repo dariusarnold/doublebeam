@@ -1,6 +1,6 @@
-#include "kinematic_raytracing.hpp"
 #include "model.hpp"
 #include "printing.hpp"
+#include "raytracing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
 #include <iomanip>

@@ -4,8 +4,8 @@
 #include <xtensor/xnpy.hpp>
 #include <xtensor/xview.hpp>
 
-#include "kinematic_raytracing.hpp"
 #include "model.hpp"
+#include "raytracing.hpp"
 #include "utils.hpp"
 
 
