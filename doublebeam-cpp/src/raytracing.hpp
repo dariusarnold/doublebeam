@@ -1,8 +1,6 @@
 #ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
 #define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
-#include <array>
-#include <vector>
 
 #include "beam.hpp"
 #include "model.hpp"
