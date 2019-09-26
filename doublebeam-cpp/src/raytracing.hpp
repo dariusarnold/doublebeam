@@ -29,14 +29,15 @@ public:
                   double max_step = 1.1);
 
     /**
-     *
-     * @param initial_state
-     * @param beam_width
-     * @param beam_frequency
-     * @param ray_code
-     * @param step_size
-     * @param max_step
-     * @return
+     * Do dynamic ray tracing and return gaussian beam.
+     * @param initial_state Initial State (position, slowness, travel time) at the start position.
+     * @param beam_width Width of beam.
+     * @param beam_frequency Central frequency of beam.
+     * @param ray_code Target ray code specifyinghe ray type to take at an interface.
+     * Use 'R' for reflected and 'T' for transmitted.
+     * @param step_size Initial step size along the ray.
+     * @param max_step Maximum step size along the ray.
+     * @return Traced beam.
      */
     Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
                     const std::string& ray_code = "", double step_size = 1., double max_step = 1.1);

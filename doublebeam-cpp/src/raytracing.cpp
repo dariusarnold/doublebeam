@@ -190,6 +190,18 @@ class InterfacePropagator {
     using matrix_t = xt::xtensor<std::complex<double>, 2>;
 
 public:
+    /**
+     * Transform matrix P and Q across an interface in a velocity model of horizontal layers.
+     * Procedure is described in Seismic Ray Theory - Cerveny 2001.
+     * @param P Value of P (shape 2x2) at the interface.
+     * @param Q Value of Q (shape 2x2) at the interface).
+     * @param wave_type Wave type, valid 'R' for reflected or 'T' for transmitted.
+     * @param old_state State before interface crossing (position, slowness, trave time).
+     * @param new_state State after interface crossing (position, slowness, trave time).
+     * @param layer_index Index of the layer the wave is in before the interface is crossed.
+     * @param model Velocity model.
+     * @return New values for P, Q.
+     */
     std::pair<matrix_t, matrix_t> transform(matrix_t P, matrix_t Q, char wave_type,
                                             const state_type& old_state,
                                             const state_type& new_state, int layer_index,
