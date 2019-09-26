@@ -194,8 +194,9 @@ public:
         //  Here it is assumed the model consists only of horizontal layers.
         auto i_S =
             math::angle(old_state[Index::PX], old_state[Index::PY], old_state[Index::PZ], 0, 0, 1);
-        auto i_R =
-            math::angle(new_state[Index::PX], new_state[Index::PY], new_state[Index::PZ], 0, 0, 1);
+        auto i_R = wave_type == 'T' ? math::angle(new_state[Index::PX], new_state[Index::PY],
+                                                  new_state[Index::PZ], 0, 0, 1)
+                                    : i_S;
         // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
         // horizontal interfaces (unit vector (0, 0, 1)).
         auto epsilon = std::copysign(1., old_state[Index::PZ]);
