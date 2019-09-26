@@ -376,7 +376,7 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width,
     InterfacePropagator ip;
     size_t index;
     char wave_type;
-    for (auto i = 0; i < ray_code.size(); ++i) {
+    for (auto i = 0UL; i < ray_code.size(); ++i) {
         index = layer_indices[i];
         auto new_index = layer_indices[i + 1];
         wave_type = ray_code[i];
