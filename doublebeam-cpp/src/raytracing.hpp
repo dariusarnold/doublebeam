@@ -111,7 +111,6 @@ private:
     RaySegment trace_layer(const state_type& initial_state, const Layer& layer, double s_start,
                            double ds, double max_ds);
     VelocityModel model;
-    Layer current_layer;
 };
 
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HPP

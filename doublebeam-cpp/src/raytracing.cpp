@@ -127,7 +127,7 @@ RayTracer::RayTracer(VelocityModel velocity_model) : model(std::move(velocity_mo
 Ray RayTracer::trace_ray(state_type initial_state, const std::vector<WaveType>& ray_code,
                          double step_size, double max_step) {
     auto layer_index = model.layer_index(initial_state[Index::Z]);
-    current_layer = model[layer_index];
+    auto current_layer = model[layer_index];
     Ray ray{{trace_layer(initial_state, current_layer, 0., step_size, max_step)}};
     if (ray_code.empty()) {
         return ray;
@@ -154,7 +154,6 @@ Ray RayTracer::trace_ray(state_type initial_state, const std::vector<WaveType>& 
 
 RaySegment RayTracer::trace_layer(const state_type& initial_state, const Layer& layer,
                                   double s_start, double ds, double max_ds) {
-    current_layer = layer;
     if (layer.gradient == 0) {
         return trace_layer_const(initial_state, layer, s_start, ds);
     } else {
@@ -346,7 +345,7 @@ private:
 Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double beam_frequency,
                            const std::vector<WaveType>& ray_code, double step_size,
                            double max_step) {
-    current_layer = model.get_layer(initial_state[Index::Z]);
+    auto current_layer = model.get_layer(initial_state[Index::Z]);
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     // initial values for P, Q
     auto v0 = model.eval_at(initial_state[Index::Z]);
