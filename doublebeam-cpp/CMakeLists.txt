@@ -22,7 +22,7 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
 target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs)
 target_link_libraries(doublebeam_lib PUBLIC xtensor ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 target_include_directories(doublebeam_lib PUBLIC src)
-target_compile_options(doublebeam_lib PRIVATE -Wall -Wextra)
+target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
 add_executable(doublebeam main.cpp)
