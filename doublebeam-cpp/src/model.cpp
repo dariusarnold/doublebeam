@@ -112,7 +112,7 @@ const Layer& VelocityModel::operator[](size_t index) const {
 
 std::optional<size_t> VelocityModel::layer_index(double x, double y, double z) const {
     if (not in_model(x, y, z)) {
-        return {};
+        return std::nullopt;
     }
     auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
     return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
