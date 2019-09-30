@@ -21,12 +21,12 @@
  * @return state_type with coordinate and slowness calculated from the given parameters.
  */
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
-                      double phi, double T);
+                      double phi, double T = 0);
 
 /**
  * Overload for init_state taking tuple of x, y, z coordinate.
  */
-state_type init_state(position_t position, const VelocityModel& model, double theta, double phi, double T);
+state_type init_state(position_t position, const VelocityModel& model, double theta, double phi, double T = 0);
 
 
 class RayTracer {
