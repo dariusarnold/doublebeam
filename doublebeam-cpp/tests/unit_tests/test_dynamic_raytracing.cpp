@@ -15,10 +15,13 @@ protected:
     RayTracer rt{model};
 };
 
+// currently this tests throws in init state not the beam tracing
 TEST_F(DynamicRaytracingBase, TestThrowWhenStartingOutOfModel) {
     auto [top, bottom] = model.get_top_bottom();
-    auto above = init_state(0, 0, top - 1, model, 0, 0, 0);
-    auto below = init_state(0, 0, bottom + 1, model, 0, 0, 0);
+    auto above = init_state(0, 0, top, model, 0, 0, 0);
+    above[Index::Z] -= 1;
+    auto below = init_state(0, 0, bottom, model, 0, 0, 0);
+    below[Index::Z] += 1;
     EXPECT_THROW(rt.trace_beam(above, 0, 0), std::domain_error);
     EXPECT_THROW(rt.trace_beam(below, 0, 0), std::domain_error);
 }

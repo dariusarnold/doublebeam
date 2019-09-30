@@ -105,19 +105,19 @@ INSTANTIATE_TEST_SUITE_P(TestIndexOnInterface, TestLayerIndex,
 /*
  * Test if access to layer index outside of model boundaries throws error
  */
-class TestLayerIndexThrows : public ::testing::Test {
+class TestLayerIndexReturnsInvalidOptional : public ::testing::Test {
 protected:
-    TestLayerIndexThrows() : vm(std::vector<Layer>{{0, 100, 0, 0}}, 1000, 1000) {}
+    TestLayerIndexReturnsInvalidOptional() : vm(std::vector<Layer>{{0, 100, 0, 0}}, 1000, 1000) {}
 
     VelocityModel vm;
 };
 
-TEST_F(TestLayerIndexThrows, TestDepthAboveModel) {
-    ASSERT_THROW(vm.layer_index(-1.1), std::domain_error);
+TEST_F(TestLayerIndexReturnsInvalidOptional, TestDepthAboveModel) {
+    ASSERT_FALSE(vm.layer_index(-1.1));
 }
 
-TEST_F(TestLayerIndexThrows, TestDepthBelowModel) {
-    ASSERT_THROW(vm.layer_index(1001), std::domain_error);
+TEST_F(TestLayerIndexReturnsInvalidOptional, TestDepthBelowModel) {
+    ASSERT_FALSE(vm.layer_index(1001));
 }
 
 

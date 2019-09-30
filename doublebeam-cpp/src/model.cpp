@@ -110,41 +110,31 @@ const Layer& VelocityModel::operator[](size_t index) const {
     return layers[index];
 }
 
-size_t VelocityModel::layer_index(double x, double y, double z) const {
+std::optional<size_t> VelocityModel::layer_index(double x, double y, double z) const {
     if (not in_model(x, y, z)) {
-        throw std::domain_error(impl::Formatter()
-                                << "Evaluating model outside of its boundaries range: " << x << " "
-                                << y << " " << z << " not in " << *this);
+        return {};
     }
     auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
     return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
                     static_cast<long int>(layers.size()) - 1);
 }
 
-size_t VelocityModel::layer_index(double z) const {
-    auto [top, bottom] = get_top_bottom();
-    if (z < top or z > bottom) {
-        throw std::domain_error(impl::Formatter()
-                                << "Evaluating model outside of its vertical boundaries: " << z
-                                << " not in " << *this);
-    }
-    auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
-    return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
-                    static_cast<long int>(layers.size()) - 1);
+
+std::optional<size_t> VelocityModel::layer_index(double z) const {
+    return layer_index(x0_, y0_, z);
 }
 
-double VelocityModel::eval_at(double x, double y, double z) const {
-    try {
-        Layer layer = layers[layer_index(x, y, z)];
-        return layer.gradient * z + layer.intercept;
-    } catch (const std::domain_error&) {
-        // TODO find better handling of out of model evaluation
-        return -1;
+
+std::optional<double> VelocityModel::eval_at(double x, double y, double z) const {
+    auto index = layer_index(x, y, z);
+    if (not index) {
+        return {};
     }
+    return layer_velocity(layers[index.value()], z);
 }
 
 std::pair<double, double> VelocityModel::interface_velocities(double z) const {
-    auto index = layer_index(z);
+    auto index = layer_index(z).value();
     auto half_depth =
         layers[index].top_depth + 0.5 * (layers[index].bot_depth - layers[index].top_depth);
     // index is layer index, which goes from 0 to n-1. Indices for interface velocities go from
@@ -174,8 +164,8 @@ bool VelocityModel::in_model(double x, double y, double z) const {
 std::pair<VelocityModel::iterator, VelocityModel::iterator>
 VelocityModel::interface_velocities(double z1, double z2) const {
     auto [z_low, z_high] = std::minmax(z1, z2);
-    auto index_low = layer_index(z_low);
-    auto index_high = layer_index(z_high);
+    auto index_low = layer_index(z_low).value();
+    auto index_high = layer_index(z_high).value();
     return {_interface_velocities.begin() + 2 * (index_low + 1),
             _interface_velocities.begin() + 2 * (index_high + 1)};
 }
@@ -196,9 +186,9 @@ const std::vector<double>& VelocityModel::interface_depths() const {
     return m_interface_depths;
 }
 
-Layer VelocityModel::get_layer(double z) const {
-    auto index = layer_index(z);
-    return layers[index];
+Layer VelocityModel::get_layer(double x, double y, double z) const {
+    auto index = layer_index(x, y, z);
+    return layers[index.value()];
 }
 
 std::pair<double, double> VelocityModel::get_x_extent() const {
@@ -242,8 +232,8 @@ std::ostream& operator<<(std::ostream& os, const VelocityModel& model) {
 
 double highest_velocity_between(double source_depth, double receiver_depth,
                                 const VelocityModel& model) {
-    auto receiver_index = model.layer_index(receiver_depth);
-    auto source_index = model.layer_index(source_depth);
+    auto receiver_index = model.layer_index(receiver_depth).value();
+    auto source_index = model.layer_index(source_depth).value();
     auto receiver_layer = model[receiver_index];
     auto source_layer = model[source_index];
     // if points in same layer, maximum has to be at either point for linear velocity gradient

@@ -325,5 +325,23 @@ namespace impl {
         std::stringstream stream;
     };
 
+    /**
+     * Streamed in arguments will be separated by ", " string, except for the last argument, which 
+     * will have no comma following it.
+     */
+    class CommaSeparated {
+    public:
+        template <typename T>
+        CommaSeparated& operator<<(const T& t) {
+            stream << t << ", ";
+            return *this;
+        }
+
+        operator std::string() const;
+
+    private:
+        std::stringstream stream;
+    };
+
 } // namespace impl
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

@@ -14,10 +14,17 @@
 
 namespace odeint = boost::numeric::odeint;
 
+std::string point_to_str(double x, double y, double z) {
+    return impl::CommaSeparated() << x << y << z;
+}
 
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T) {
-    double velocity = model.eval_at(x, y, z);
+    if (not model.in_model(x, y, z)) {
+        throw std::domain_error(impl::Formatter()
+                                << "Point " << point_to_str(x, y, z) << " not in model " << model);
+    }
+    double velocity = model.eval_at(x, y, z).value();
     auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
     return {x, y, z, px, py, pz, T};
 }
@@ -46,12 +53,12 @@ inline double dvdz(double z, const Layer& layer) {
 void ray_tracing_equation(const state_type& state, state_type& dfds, const double /* s */,
                           const VelocityModel& model, const Layer& layer) {
     auto [x, y, z, px, py, pz, T] = state;
-    auto v = model.eval_at(x, y, z);
+    auto v = model.eval_at(x, y, z).value_or(0);
     auto dxds = px * v;
     auto dyds = py * v;
     auto dzds = pz * v;
     auto dpzds = dvdz(z, layer);
-    auto dTds = 1. / v;
+    auto dTds = v == 0 ? 0. : 1. / v;
     dfds[0] = dxds;
     dfds[1] = dyds;
     dfds[2] = dzds;
@@ -127,7 +134,15 @@ RayTracer::RayTracer(VelocityModel velocity_model) : model(std::move(velocity_mo
 
 Ray RayTracer::trace_ray(state_type initial_state, const std::vector<WaveType>& ray_code,
                          double step_size, double max_step) {
-    auto layer_index = model.layer_index(initial_state[Index::Z]);
+    if (not model.in_model(initial_state[Index::X], initial_state[Index::Y],
+                           initial_state[Index::Z])) {
+        throw std::domain_error(impl::Formatter()
+                                << "Point "
+                                << point_to_str(initial_state[Index::X], initial_state[Index::Y],
+                                                initial_state[Index::Z])
+                                << " not in model " << model);
+    }
+    auto layer_index = model.layer_index(initial_state[Index::Z]).value();
     auto current_layer = model[layer_index];
     Ray ray{{trace_layer(initial_state, current_layer, 0., step_size, max_step)}};
     if (ray_code.empty()) {
@@ -346,11 +361,21 @@ private:
 Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double beam_frequency,
                            const std::vector<WaveType>& ray_code, double step_size,
                            double max_step) {
-    auto current_layer = model.get_layer(initial_state[Index::Z]);
+    if (not model.in_model(initial_state[Index::X], initial_state[Index::Y],
+                           initial_state[Index::Z])) {
+        throw std::domain_error(impl::Formatter()
+                                << "Point "
+                                << point_to_str(initial_state[Index::X], initial_state[Index::Y],
+                                                initial_state[Index::Z])
+                                << " not in model " << model);
+    }
+    auto current_layer =
+        model.get_layer(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z]);
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     // initial values for P, Q
     auto v0 =
-        model.eval_at(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z]);
+        model.eval_at(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z])
+            .value();
     xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
     xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
                                {0, beam_frequency * beam_width * beam_width / v0}};
@@ -359,10 +384,11 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
     //  be problematic since the ODE solving code evaluates the function multiple times at different
     //  points, not only the ones kept later.
     std::vector<double> v;
-    std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
-                   [&](const state_type& state) {
-                       return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]);
-                   });
+    std::transform(
+        segment.data.begin(), segment.data.end(), std::back_inserter(v),
+        [&](const state_type& state) {
+            return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
+        });
     auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
     auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
     xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
@@ -373,7 +399,7 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
     }
     // dont include start index since first layer was already done above
     auto layer_indices = seismo::ray_code_to_layer_indices(
-        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]));
+        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]).value());
     InterfacePropagator ip;
     for (auto i = 0UL; i < ray_code.size(); ++i) {
         auto index = layer_indices[i];
@@ -392,10 +418,11 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
                               max_step);
         // do dynamic ray tracing for new segment
         std::vector<double> v;
-        std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
-                       [&](const state_type& state) {
-                           return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]);
-                       });
+        std::transform(
+            segment.data.begin(), segment.data.end(), std::back_inserter(v),
+            [&](const state_type& state) {
+                return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
+            });
         auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
         auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
         P = xt::broadcast(P0_new, {sigma_.size(), 2UL, 2UL});

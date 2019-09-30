@@ -110,4 +110,7 @@ namespace impl {
         return stream.str();
     }
 
+    CommaSeparated::operator std::string() const {
+        auto s = stream.str();
+        return s.substr(0, s.size() - 2);    }
 } // namespace impl

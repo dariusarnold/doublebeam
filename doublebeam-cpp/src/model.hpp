@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <tuple>
 #include <vector>
+#include <optional>
 
 struct Layer {
     double top_depth;
@@ -72,7 +73,7 @@ public:
      * @return Index of layer in velocity model, 0 indexed.
      * @throw std::domain_error is thrown when depth is out of model range
      */
-    size_t layer_index(double x, double y, double z) const;
+    std::optional<size_t> layer_index(double x, double y, double z) const;
 
     /**
      * Get index of layer at depth z.
@@ -83,7 +84,7 @@ public:
      * @return Index of layer in velocity model, 0 indexed.
      * @throw std::domain_error is thrown when depth is out of model range
      */
-    size_t layer_index(double z) const;
+    std::optional<size_t> layer_index(double z) const;
 
     /**
      * Evaluate model at a certain position.
@@ -92,14 +93,13 @@ public:
      * @param z Depth in meter.
      * @return Velocity in m/s.
      */
-    double eval_at(double x, double y, double z) const;
+    std::optional<double> eval_at(double x, double y, double z) const;
 
     /**
      * Return true if point given by depth, z coordinates is within the velocity model.
      * @param z Depth of point in m.
      * @return
      */
-    // TODO extend velocity model by horizontal extent and add checks for this here
     bool in_model(double x, double y, double z) const;
 
     /**
@@ -192,7 +192,7 @@ public:
     /**
      * Get Layer at depth z.
      */
-    Layer get_layer(double z) const;
+    Layer get_layer(double x, double y, double z) const;
 };
 
 

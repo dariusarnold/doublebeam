@@ -166,7 +166,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
                                 << "Receiver at " << stringify(receiver) << "  outside of model.");
     }
     // while the paper uses source based indexing, C++ doesn't.
-    auto source_index = model.layer_index(source_z) + 1;
+    auto source_index = model.layer_index(source_z).value() + 1;
     if (source_index > num_layers) {
         source_index = num_layers;
     }
@@ -283,7 +283,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
         q = q_next;
     }
     double horizontal_slowness = q_to_p(q, vM);
-    double c = model.eval_at(source_x, source_y, source_z);
+    double c = model.eval_at(source_x, source_y, source_z).value();
     double vertical_slowness =
         std::sqrt(std::pow(c, -2) - horizontal_slowness * horizontal_slowness);
     if (source_below_receiver) {
