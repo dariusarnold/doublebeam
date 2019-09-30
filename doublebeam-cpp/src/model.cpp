@@ -230,6 +230,13 @@ std::ostream& operator<<(std::ostream& os, const VelocityModel& model) {
     return os;
 }
 
+size_t VelocityModel::number_of_interfaces_between(double z1, double z2) const {
+    // sort by depth since index is unsigned so we can only subtract the smaller one from the larger
+    // one otherwise
+    auto [min, max] = std::minmax(z1, z2);
+    return layer_index(max).value() - layer_index(min).value();
+}
+
 double highest_velocity_between(double source_depth, double receiver_depth,
                                 const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth).value();

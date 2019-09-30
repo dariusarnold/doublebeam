@@ -193,6 +193,15 @@ public:
      * Get Layer at depth z.
      */
     Layer get_layer(double x, double y, double z) const;
+
+    /**
+     * Get number of interfaces between two points.
+     * Depths do not have to have any order.
+     * @param z1
+     * @param z2
+     * @return
+     */
+    size_t number_of_interfaces_between(double z1, double z2) const;
 };
 
 

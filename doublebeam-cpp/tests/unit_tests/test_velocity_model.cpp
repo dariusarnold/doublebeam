@@ -220,3 +220,26 @@ INSTANTIATE_TEST_SUITE_P(
                     DepthVelocityData{50, 150, 2400}, DepthVelocityData{25, 150, 2500},
                     DepthVelocityData{301, 302, 2700}, DepthVelocityData{0, 1, 2600},
                     DepthVelocityData{50, 250, 2650}));
+
+struct DepthIntData {
+    double z1, z2;
+    size_t num_of_layers;
+};
+
+class TestNumberOfInterfaces : public ::testing::TestWithParam<DepthIntData> {
+protected:
+    // same model as Fang2019 fig. 3 but negative gradient in first layer
+    TestNumberOfInterfaces() :
+            model({{0, 100, 2600, -4},
+                   {100, 200, 2400, 0},
+                   {200, 300, 2400, 1},
+                   {300, 400, 2700, 0},
+                   {400, 500, 2250, 1.5}},
+                  1000, 1000) {}
+
+    VelocityModel model;
+};
+
+std::vector<DepthIntData> values = {{0, 500, 4}, {50, 450, 4}, {50, 150, 1}, {200, 250, 0}};
+
+INSTANTIATE_TEST_SUITE_P(TestInOrder, TestNumberOfInterfaces, testing::ValuesIn(values));
