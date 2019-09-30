@@ -1,10 +1,10 @@
 #include "twopoint.hpp"
 #include "utils.hpp"
 #include <cmath>
+#include <iostream>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xindex_view.hpp>
 #include <xtensor/xio.hpp>
-#include <iostream>
 
 
 TwoPointRayTracing::TwoPointRayTracing(VelocityModel& velocity_model) :
@@ -157,11 +157,13 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
                                      __attribute__((unused)) double accuracy) {
     auto [source_x, source_y, source_z] = source;
     auto [receiver_x, receiver_y, receiver_z] = receiver;
-    if (not model.in_model(source_z)) {
-        throw std::domain_error("Source outside of model " + stringify(source));
+    if (not model.in_model(source_x, source_y, source_z)) {
+        throw std::domain_error(impl::Formatter()
+                                << "Source at " << stringify(source) << " outside of model.");
     }
-    if (not model.in_model(receiver_z)) {
-        throw std::domain_error("Receiver outside of model " + stringify(receiver));
+    if (not model.in_model(receiver_x, receiver_y, receiver_z)) {
+        throw std::domain_error(impl::Formatter()
+                                << "Receiver at " << stringify(receiver) << "  outside of model.");
     }
     // while the paper uses source based indexing, C++ doesn't.
     auto source_index = model.layer_index(source_z) + 1;
@@ -272,7 +274,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
     double q = (numerator / denominator)[0];
 
     double q_next;
-    while (std::isfinite(q) and q!= 0) {
+    while (std::isfinite(q) and q != 0) {
         q_next = next_q(q, X);
         if (std::abs(q - q_next) < accuracy) {
             q = q_next;
@@ -281,7 +283,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
         q = q_next;
     }
     double horizontal_slowness = q_to_p(q, vM);
-    double c = model.eval_at(source_z);
+    double c = model.eval_at(source_x, source_y, source_z);
     double vertical_slowness =
         std::sqrt(std::pow(c, -2) - horizontal_slowness * horizontal_slowness);
     if (source_below_receiver) {

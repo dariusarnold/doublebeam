@@ -99,12 +99,10 @@ namespace testing::internal {
 
 TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     // trace beam through single layer and compare with previous result.
-    VelocityModel model{{{0, 10, 2000, 1}}};
+    VelocityModel model{{{0, 10, 2000, 1}}, 1000, 1000};
     RayTracer rt{model};
-    auto P_desired =
-        xt::load_npy<complex>(current_source_path() / "data/P_analytic.npy");
-    auto Q_desired =
-        xt::load_npy<complex>(current_source_path() / "data/Q_analytic.npy");
+    auto P_desired = xt::load_npy<complex>(current_source_path() / "data/P_analytic.npy");
+    auto Q_desired = xt::load_npy<complex>(current_source_path() / "data/Q_analytic.npy");
     // std::cout << P_desired.shape() << std::endl;
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4);
@@ -123,15 +121,15 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
 #define name_and_value(x) #x << ": " << x << "\n"
 
 TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
-    VelocityModel model{{{0, 10, 2000, 1}, {10, 20, 2000, -1}}};
+    VelocityModel model{{{0, 10, 2000, 1}, {10, 20, 2000, -1}}, 1000, 1000};
     RayTracer rt{model};
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "TRT");
     for (auto i = 0; i < beam.size(); ++i) {
-        auto P_desired = xt::load_npy<complex>(
-            current_source_path() / ("data/P_multilayer" + std::to_string(i) + ".npy"));
-        auto Q_desired = xt::load_npy<complex>(
-            current_source_path() / ("data/Q_multilayer" + std::to_string(i) + ".npy"));
+        auto P_desired = xt::load_npy<complex>(current_source_path() /
+                                               ("data/P_multilayer" + std::to_string(i) + ".npy"));
+        auto Q_desired = xt::load_npy<complex>(current_source_path() /
+                                               ("data/Q_multilayer" + std::to_string(i) + ".npy"));
         // compare dimension instead of shape since different number of points may have been
         // calculated during ray tracing.
         EXPECT_EQ(beam[i].P.dimension(), P_desired.dimension());
@@ -142,8 +140,8 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
             << "First value of P different for beam segment index " << i << ".\n"
             << name_and_value(xt::view(beam[i].P, xt::keep(0)))
             << name_and_value(xt::view(P_desired, xt::keep(0)));
-        EXPECT_TRUE(
-            xt::allclose(xt::view(beam[i].Q, xt::keep(0)), xt::view(Q_desired, xt::keep(0)), 1E-5, 1E-2))
+        EXPECT_TRUE(xt::allclose(xt::view(beam[i].Q, xt::keep(0)), xt::view(Q_desired, xt::keep(0)),
+                                 1E-5, 1E-2))
             << "First value of Q different for beam segment index " << i << ".\n"
             << name_and_value(xt::view(beam[i].Q, xt::keep(0)))
             << name_and_value(xt::view(Q_desired, xt::keep(0)));
@@ -152,8 +150,8 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
             << "Last value of P different for beam segment index " << i << ".\n"
             << name_and_value(xt::view(beam[i].P, xt::keep(-1)))
             << name_and_value(xt::view(P_desired, xt::keep(-1)));
-        EXPECT_TRUE(
-            xt::allclose(xt::view(beam[i].Q, xt::keep(-1)), xt::view(Q_desired, xt::keep(-1)), 1E-5, 1E-2))
+        EXPECT_TRUE(xt::allclose(xt::view(beam[i].Q, xt::keep(-1)),
+                                 xt::view(Q_desired, xt::keep(-1)), 1E-5, 1E-2))
             << "Last value of Q different for beam segment index " << i << ".\n"
             << name_and_value(xt::view(beam[i].Q, xt::keep(-1)))
             << name_and_value(xt::view(Q_desired, xt::keep(-1)));

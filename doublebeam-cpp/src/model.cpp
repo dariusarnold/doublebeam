@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "model.hpp"
+#include "utils.hpp"
 
 
 namespace fs = std::filesystem;
@@ -16,9 +17,21 @@ double layer_velocity(Layer layer, double depth) {
 }
 
 
-VelocityModel::VelocityModel(const std::vector<Layer>& layers) : layers(layers) {
+VelocityModel::VelocityModel(const std::vector<Layer>& layers, double x1, double y1, double x0,
+                             double y0) :
+        layers(layers),
+        x0_(x0),
+        x1_(x1),
+        y0_(y0),
+        y1_(y1) {
     if (layers.empty()) {
-        throw std::invalid_argument("Velocity model has to contain layers");
+        throw std::invalid_argument("Velocity model has to contain layers.");
+    }
+    if (x_width() != y_width()) {
+        throw std::invalid_argument(
+            impl::Formatter()
+            << "Different model widths along x and y axis not allowed. Widths are: x " << x_width()
+            << " y " << y_width());
     }
     // First get interface depths
     auto top_layer = layers.front();
@@ -48,7 +61,23 @@ VelocityModel read_velocity_file(const fs::path& filepath) {
     std::ifstream file(filepath);
     std::string line;
     std::istringstream iss;
+    std::vector<double> widths;
     double depth_top, depth_bot, velocity_top, velocity_bottom, intercept, gradient;
+    // extract widths
+    int number_of_widths = 4;
+    while (number_of_widths > 0) {
+        std::getline(file, line);
+        if (line.empty() or line.find('#') != std::string::npos) {
+            continue;
+        }
+        iss = std::istringstream(line);
+        iss.ignore(std::numeric_limits<std::streamsize>::max(), ' ');
+        double x;
+        iss >> x;
+        widths.push_back(x);
+        --number_of_widths;
+    }
+    // extract layers
     std::vector<Layer> ls;
     while (std::getline(file, line)) {
         // skip empty line and comments
@@ -67,7 +96,8 @@ VelocityModel read_velocity_file(const fs::path& filepath) {
         intercept = velocity_top - gradient * depth_top;
         ls.push_back({depth_top, depth_bot, intercept, gradient});
     }
-    return VelocityModel{ls};
+    // widths from file are given as x0 x1 y0 y1, but constructor takes them as x1 y1 x0 y0
+    return VelocityModel{ls, widths[1], widths[3], widths[0], widths[2]};
 }
 
 bool operator==(const Layer& l1, const Layer& l2) {
@@ -80,21 +110,35 @@ Layer VelocityModel::operator[](size_t index) const {
     return layers[index];
 }
 
-size_t VelocityModel::layer_index(double z) const {
-    if (z < m_interface_depths.front() or z > m_interface_depths.back()) {
-        throw std::domain_error("Evaluating model outside of its depth range: " +
-                                std::to_string(z));
+size_t VelocityModel::layer_index(double x, double y, double z) const {
+    if (not in_model(x, y, z)) {
+        throw std::domain_error(impl::Formatter()
+                                << "Evaluating model outside of its boundaries range: " << x << " "
+                                << y << " " << z << " not in " << *this);
     }
     auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
     return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
                     static_cast<long int>(layers.size()) - 1);
 }
 
-double VelocityModel::eval_at(double z) const {
+size_t VelocityModel::layer_index(double z) const {
+    auto [top, bottom] = get_top_bottom();
+    if (z < top or z > bottom) {
+        throw std::domain_error(impl::Formatter()
+                                << "Evaluating model outside of its vertical boundaries: " << z
+                                << " not in " << *this);
+    }
+    auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
+    return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
+                    static_cast<long int>(layers.size()) - 1);
+}
+
+double VelocityModel::eval_at(double x, double y, double z) const {
     try {
-        Layer layer = layers[layer_index(z)];
+        Layer layer = layers[layer_index(x, y, z)];
         return layer.gradient * z + layer.intercept;
     } catch (const std::domain_error&) {
+        // TODO find better handling of out of model evaluation
         return -1;
     }
 }
@@ -117,11 +161,14 @@ std::pair<double, double> VelocityModel::get_top_bottom() const {
 }
 
 bool VelocityModel::operator==(const VelocityModel& other) const {
-    return layers == other.layers;
+    return layers == other.layers and x0_ == other.x0_ and x1_ == other.x1_ and y0_ == other.y0_ and
+           y1_ == other.y1_;
 }
 
-bool VelocityModel::in_model(double z) const {
-    return z >= m_interface_depths.front() and z <= m_interface_depths.back();
+bool VelocityModel::in_model(double x, double y, double z) const {
+    bool in_depth = z >= m_interface_depths.front() and z <= m_interface_depths.back();
+    bool in_widths = x0_ <= x and x <= x1_ and y0_ <= y and y <= y1_;
+    return in_depth and in_widths;
 }
 
 std::pair<VelocityModel::iterator, VelocityModel::iterator>
@@ -154,15 +201,58 @@ Layer VelocityModel::get_layer(double z) const {
     return layers[index];
 }
 
+std::pair<double, double> VelocityModel::get_x_extent() const {
+    return {x0_, x1_};
+}
+
+std::pair<double, double> VelocityModel::get_y_extent() const {
+    return {y0_, y1_};
+}
+
+double VelocityModel::x0() const {
+    return x0_;
+}
+
+double VelocityModel::x1() const {
+    return x1_;
+}
+
+double VelocityModel::y0() const {
+    return y0_;
+}
+
+double VelocityModel::y1() const {
+    return y1_;
+}
+
+double VelocityModel::x_width() const {
+    return x1_ - x0_;
+}
+
+double VelocityModel::y_width() const {
+    return y1_ - y0_;
+}
+
+std::ostream& operator<<(std::ostream& os, const VelocityModel& model) {
+    os << "VelocityModel(x0 = " << model.x0_ << ", x1 = " << model.x1_ << ", y0 = " << model.y0_
+       << ", y1 = " << model.y1_ << ", z0 = " << model.interface_depths().front()
+       << ", z1 = " << model.interface_depths().back() << ")";
+    return os;
+}
+
 double highest_velocity_between(double source_depth, double receiver_depth,
                                 const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth);
     auto source_index = model.layer_index(source_depth);
+    auto receiver_layer = model[receiver_index];
+    auto source_layer = model[source_index];
     // if points in same layer, maximum has to be at either point for linear velocity gradient
     if (source_index == receiver_index) {
-        return std::max(model.eval_at(receiver_depth), model.eval_at(source_depth));
+        return std::max(layer_velocity(receiver_layer, receiver_depth),
+                        layer_velocity(source_layer, source_depth));
     }
     auto [iterator_begin, iterator_end] = model.interface_velocities(receiver_depth, source_depth);
     auto max_vel = std::max_element(iterator_begin, iterator_end);
-    return std::max({*max_vel, model.eval_at(source_depth), model.eval_at(receiver_depth)});
+    return std::max({*max_vel, layer_velocity(source_layer, source_depth),
+                     layer_velocity(receiver_layer, receiver_depth)});
 }

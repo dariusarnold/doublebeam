@@ -1,5 +1,9 @@
 # this is a test file containing a velocity model
 #depth top, depth bottom, p velocity top, p velocity bottom
+x0 0
+x1 100
+y0 0
+y1 100
 0, 100, 1000, 1100
 100, 200, 1100, 1000
 

@@ -9,8 +9,8 @@ class TestInterfaceVelocity : public ::testing::Test {
 protected:
     TestInterfaceVelocity() :
             vm(VelocityModel(
-                std::vector<Layer>{{0, 100, 1000, 0}, {100, 200, 1500, 1}, {200, 300, 3000, -1}})) {
-    }
+                std::vector<Layer>{{0, 100, 1000, 0}, {100, 200, 1500, 1}, {200, 300, 3000, -1}},
+                1000, 1000)) {}
 
     VelocityModel vm;
 };
@@ -54,16 +54,16 @@ protected:
 };
 
 TEST_F(TestInModel, TestAboveModel) {
-    EXPECT_FALSE(vm.in_model(-0.1));
+    EXPECT_FALSE(vm.in_model(0, 0, -0.1));
 }
 
 TEST_F(TestInModel, TestBelowModel) {
-    EXPECT_FALSE(vm.in_model(300.1));
+    EXPECT_FALSE(vm.in_model(0, 0, 300.1));
 }
 
 TEST_F(TestInModel, TestInterfacesShouldBeInModel) {
     for (double interface_depth : {0, 100, 200, 300}) {
-        EXPECT_TRUE(vm.in_model(interface_depth)) << "depth " << interface_depth;
+        EXPECT_TRUE(vm.in_model(0, 0, interface_depth)) << "depth " << interface_depth;
     }
 }
 
@@ -76,7 +76,8 @@ protected:
                                                 {100, 200, 2400, 0},
                                                 {200, 300, 2400, 1},
                                                 {300, 400, 2700, 0},
-                                                {400, 500, 2250, 1.5}})) {}
+                                                {400, 500, 2250, 1.5}},
+                             1000, 1000)) {}
 
     VelocityModel vm;
 };
@@ -106,7 +107,7 @@ INSTANTIATE_TEST_SUITE_P(TestIndexOnInterface, TestLayerIndex,
  */
 class TestLayerIndexThrows : public ::testing::Test {
 protected:
-    TestLayerIndexThrows() : vm(std::vector<Layer>{{0, 100, 0, 0}}) {}
+    TestLayerIndexThrows() : vm(std::vector<Layer>{{0, 100, 0, 0}}, 1000, 1000) {}
 
     VelocityModel vm;
 };
@@ -152,8 +153,31 @@ TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     std::filesystem::path filepath(
         "/home/darius/git/doublebeam/doublebeam-cpp/tests/unit_tests/data/model.txt");
     auto vm = read_velocity_file(filepath);
-    VelocityModel expected({{0, 100, 1000, 1}, {100, 200, 1200, -1}});
+    VelocityModel expected({{0, 100, 1000, 1}, {100, 200, 1200, -1}}, 100, 100);
     EXPECT_EQ(vm, expected);
+}
+
+TEST(TestCreateVelocityModel, TestThrowOnInvalidWidths) {
+    std::vector<Layer> l{{0, 1, 2, 3}};
+    EXPECT_THROW(VelocityModel(l, 100, 50), std::invalid_argument)
+        << "Not throwing for model creation with different width along x and y axis when using "
+           "default values for x0 and y0.";
+    EXPECT_THROW(VelocityModel(l, 100, 100, 0, 1), std::invalid_argument)
+        << "Not throwing for model creation with different width along x and y axis.";
+}
+
+TEST(TestCreateVelocityModel, TestThrowOnEmptyListOfLayers) {
+    EXPECT_THROW(VelocityModel({}, 1, 1), std::invalid_argument)
+        << "Not throwing when constructing from empty list of layers.";
+}
+
+TEST(TestCreateVelocityModel, DISABLED_TestThrowOnInvalidListOfLayers) {
+    std::vector<Layer> l_gap{{0, 10, 1, 1}, {20, 30, 1, 1}};
+    std::vector<Layer> l_overlapping{{0, 11, 1, 1}, {10, 20, 1, 1}};
+    EXPECT_THROW(VelocityModel(l_gap, 1, 1), std::invalid_argument)
+        << "Not throwing when constructing velocity model with gap between layers.";
+    EXPECT_THROW(VelocityModel(l_overlapping, 1, 1), std::invalid_argument)
+        << "Not throwing when constructing velocity model with overlapping layers.";
 }
 
 
@@ -177,7 +201,8 @@ protected:
                    {100, 200, 2400, 0},
                    {200, 300, 2400, 1},
                    {300, 400, 2700, 0},
-                   {400, 500, 2250, 1.5}}) {}
+                   {400, 500, 2250, 1.5}},
+                  1000, 1000) {}
 
     VelocityModel model;
 };

@@ -50,8 +50,9 @@ namespace seismo {
      * @param start_index At which layer index the sequence should start.
      * @return
      */
-    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code, double pz_initial,
-                                               int start_index = 0, bool include_start = true);
+    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
+                                               double pz_initial, int start_index = 0,
+                                               bool include_start = true);
 
     std::vector<int> ray_code_to_layer_indices(const std::string& code, double pz_initial,
                                                int start_index = 0, bool include_start = true);
@@ -304,4 +305,25 @@ namespace math {
                                                double central_direction_y);
 
 } // namespace math
+
+// Helper code used for implementation, not for user code
+namespace impl {
+
+    // Use to throw exceptions with customized error message by streaming into a Formatter instance.
+    class Formatter {
+    public:
+
+        template <typename T>
+        Formatter& operator<<(const T& t) {
+            stream << t;
+            return *this;
+        }
+
+        operator std::string() const;
+
+    private:
+        std::stringstream stream;
+    };
+
+} // namespace impl
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

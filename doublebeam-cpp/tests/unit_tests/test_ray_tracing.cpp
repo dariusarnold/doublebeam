@@ -12,7 +12,9 @@ protected:
                 {100, 200, 2400, 0},
                 {200, 300, 2400, 1},
                 {300, 400, 2700, 0},
-                {400, 500, 2250, 1.5}}},
+                {400, 500, 2250, 1.5}},
+               3000,
+               3000},
             krt(vm) {}
 
     VelocityModel vm;
@@ -37,8 +39,9 @@ TEST_P(TestRayTracing, TestArcLengthIncreasesContinuously) {
     auto ray = krt.trace_ray(initial_state, "TTTT");
     auto arclength = ray.segments.front().arclength.front();
     EXPECT_EQ(arclength, 0) << "Initial arc length not zero.";
-    for (const auto& segment: ray.segments) {
-        EXPECT_EQ(segment.arclength.front(), arclength) << "Arclength changed when crossing interface.";
+    for (const auto& segment : ray.segments) {
+        EXPECT_EQ(segment.arclength.front(), arclength)
+            << "Arclength changed when crossing interface.";
         EXPECT_GE(segment.arclength.back(), arclength) << "Arclength did not increase in layer.";
         arclength = segment.arclength.back();
     }
@@ -53,10 +56,9 @@ test_data_t test_data = {{{0.000166674323178, 0., 0.0005299638150872}, 469},
 
 INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn(test_data));
 
-// turning ray currently not working because only the interface in the initial direction of the ray
-// is checked for a crossing
+
 TEST(TestRayTracing, TestTurningRay) {
-    VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}});
+    VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}}, 10000, 10000);
     RayTracer rt(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
     auto ray = rt.trace_ray(initial_state, "TT");

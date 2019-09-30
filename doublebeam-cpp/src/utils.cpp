@@ -101,4 +101,13 @@ namespace math {
         xt::view(vectors, xt::all(), xt::keep(1)) = y_values;
         return vectors;
     }
-}
+
+} // namespace math
+
+namespace impl {
+
+    impl::Formatter::operator std::string() const {
+        return stream.str();
+    }
+
+} // namespace impl

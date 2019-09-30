@@ -17,7 +17,7 @@ namespace odeint = boost::numeric::odeint;
 
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T) {
-    double velocity = model.eval_at(z);
+    double velocity = model.eval_at(x, y, z);
     auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
     return {x, y, z, px, py, pz, T};
 }
@@ -46,7 +46,7 @@ inline double dvdz(double z, const Layer& layer) {
 void ray_tracing_equation(const state_type& state, state_type& dfds, const double /* s */,
                           const VelocityModel& model, const Layer& layer) {
     auto [x, y, z, px, py, pz, T] = state;
-    auto v = model.eval_at(z);
+    auto v = model.eval_at(x, y, z);
     auto dxds = px * v;
     auto dyds = py * v;
     auto dzds = pz * v;
@@ -65,12 +65,13 @@ RaySegment RayTracer::trace_layer_gradient(const state_type& initial_state, cons
                                            double s_start, double ds, double max_ds) {
     InterfaceCrossed crossing(layer);
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
+    // error values can be lowered to 1e-8 with only minimal loss in precision to improve speed
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
     stepper.initialize(initial_state, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
     auto equation = [&](const state_type& state, state_type& dfds, double s) {
-      return ray_tracing_equation(state, dfds, s, model, layer);
+        return ray_tracing_equation(state, dfds, s, model, layer);
     };
     // advance stepper until first event occurs
     do {
@@ -348,7 +349,8 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
     auto current_layer = model.get_layer(initial_state[Index::Z]);
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     // initial values for P, Q
-    auto v0 = model.eval_at(initial_state[Index::Z]);
+    auto v0 =
+        model.eval_at(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z]);
     xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
     xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
                                {0, beam_frequency * beam_width * beam_width / v0}};
@@ -358,7 +360,9 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
     //  points, not only the ones kept later.
     std::vector<double> v;
     std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
-                   [&](const state_type& state) { return model.eval_at(state[Index::Z]); });
+                   [&](const state_type& state) {
+                       return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]);
+                   });
     auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
     auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
     xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
@@ -389,7 +393,9 @@ Beam RayTracer::trace_beam(state_type initial_state, double beam_width, double b
         // do dynamic ray tracing for new segment
         std::vector<double> v;
         std::transform(segment.data.begin(), segment.data.end(), std::back_inserter(v),
-                       [&](const state_type& state) { return model.eval_at(state[Index::Z]); });
+                       [&](const state_type& state) {
+                           return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]);
+                       });
         auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
         auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
         P = xt::broadcast(P0_new, {sigma_.size(), 2UL, 2UL});
