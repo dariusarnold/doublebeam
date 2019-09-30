@@ -28,10 +28,10 @@ target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 add_executable(doublebeam main.cpp)
 target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
 #target_link_libraries(doublebeam PRIVATE timing)
-target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS})
+target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS} timing)
 
 add_subdirectory(src/timing)
-target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost)
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing)
 
 add_subdirectory(tests)
 
