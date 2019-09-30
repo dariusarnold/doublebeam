@@ -35,6 +35,16 @@ state_type init_state(position_t position, const VelocityModel& model, double th
     return init_state(x, y, z, model, theta, phi, T);
 }
 
+state_type make_state(double x, double y, double z, double px, double py, double pz, double T) {
+    return {x, y, z, px, py, pz, T};
+}
+
+state_type make_state(position_t position, slowness_t slowness, double T) {
+    auto [x, y, z] = position;
+    auto [px, py, pz] = slowness;
+    return {x, y, z, px, py, pz, T};
+}
+
 
 /**
  * Calculate first derivative of inverse of velocity after depth z analytically.

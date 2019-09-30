@@ -8,9 +8,6 @@
 #include "raytracing_types.hpp"
 #include "model.hpp"
 
-// TODO evaluate if these type aliases can be moved into TwoPointRayTracing class
-using slowness_t = std::tuple<double, double, double>;
-
 
 class TwoPointRayTracing {
 public:

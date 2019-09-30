@@ -28,6 +28,27 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
  */
 state_type init_state(position_t position, const VelocityModel& model, double theta, double phi, double T = 0);
 
+/**
+ * Create state type instance.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param z Z coordinate.
+ * @param px X component of slowness vector.
+ * @param py Y component of slowness vector.
+ * @param pz Z component of slowness vector.
+ * @param T Travel time.
+ * @return
+ */
+state_type make_state(double x, double y, double z, double px, double py, double pz, double T = 0);
+
+/**
+ * Overload taking tuples for position and slowness.
+ * @param position x, y, z coordinate tuple.
+ * @param slowness x, y, z slowness vector.
+ * @param T Travel time.
+ */
+state_type make_state(position_t position, slowness_t slowness, double T = 0);
+
 
 class RayTracer {
 public:

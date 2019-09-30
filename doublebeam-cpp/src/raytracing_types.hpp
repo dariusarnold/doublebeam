@@ -10,6 +10,8 @@ using state_type = std::array<double, 7>;
 
 using position_t = std::tuple<double, double, double>;
 
+using slowness_t = std::tuple<double, double, double>;
+
 using complex = std::complex<double>;
 
 namespace Index {
