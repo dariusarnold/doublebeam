@@ -23,6 +23,11 @@
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
                       double phi, double T);
 
+/**
+ * Overload for init_state taking tuple of x, y, z coordinate.
+ */
+state_type init_state(position_t position, const VelocityModel& model, double theta, double phi, double T);
+
 
 class RayTracer {
 public:

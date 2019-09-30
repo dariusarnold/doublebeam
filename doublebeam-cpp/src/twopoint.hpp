@@ -1,13 +1,15 @@
 #ifndef DOUBLEBEAM_CPP_TWOPOINT_HPP
 #define DOUBLEBEAM_CPP_TWOPOINT_HPP
 
-#include "model.hpp"
 #include <tuple>
+
 #include <xtensor/xtensor.hpp>
+
+#include "raytracing_types.hpp"
+#include "model.hpp"
 
 // TODO evaluate if these type aliases can be moved into TwoPointRayTracing class
 using slowness_t = std::tuple<double, double, double>;
-using position_t = std::tuple<double, double, double>;
 
 
 class TwoPointRayTracing {
