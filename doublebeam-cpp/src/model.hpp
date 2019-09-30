@@ -59,7 +59,7 @@ public:
      * @param index Index of layer.
      * @return Layer at index.
      */
-    Layer operator[](size_t index) const;
+    const Layer& operator[](size_t index) const;
 
     /**
      * Get index of layer at position x, y, z.

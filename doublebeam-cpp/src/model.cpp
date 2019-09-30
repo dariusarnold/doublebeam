@@ -106,7 +106,7 @@ bool operator==(const Layer& l1, const Layer& l2) {
 }
 
 
-Layer VelocityModel::operator[](size_t index) const {
+const Layer& VelocityModel::operator[](size_t index) const {
     return layers[index];
 }
 
