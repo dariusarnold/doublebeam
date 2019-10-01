@@ -7,7 +7,7 @@
 #include <xtensor/xio.hpp>
 
 
-TwoPointRayTracing::TwoPointRayTracing(VelocityModel& velocity_model) :
+TwoPointRayTracing::TwoPointRayTracing(const VelocityModel& velocity_model) :
         model(velocity_model),
         num_layers(model.size()),
         gradients(model.size() + 1),

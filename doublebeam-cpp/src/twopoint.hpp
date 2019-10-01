@@ -11,7 +11,7 @@
 
 class TwoPointRayTracing {
 public:
-    explicit TwoPointRayTracing(VelocityModel& velocity_model);
+    explicit TwoPointRayTracing(const VelocityModel& velocity_model);
 
     slowness_t trace(position_t source, position_t receiver, double accuracy = 1E-10);
 
