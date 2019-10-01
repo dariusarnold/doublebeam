@@ -246,11 +246,13 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(LinspaceExpectedResult{0, 10, 0, {}}, LinspaceExpectedResult{0, 1, 1, {0}},
                     LinspaceExpectedResult{0, 10, 2, {0, 10}},
                     LinspaceExpectedResult{0, 10, 11, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
-                    LinspaceExpectedResult{1, 2, 6, {1, 1.2, 1.4, 1.6, 1.8, 2.0}}));
+                    LinspaceExpectedResult{1, 2, 6, {1, 1.2, 1.4, 1.6, 1.8, 2.0}},
+                    LinspaceExpectedResult{-2, 2, 5, {-2, -1, 0, 1, 2}}));
 
 INSTANTIATE_TEST_SUITE_P(
     TestLinspaceDecreasing, TestLinspaceByComparingWithExpectedResult,
     testing::Values(LinspaceExpectedResult{10, 0, 0, {}}, LinspaceExpectedResult{1, 0, 1, {1}},
                     LinspaceExpectedResult{10, 0, 2, {10, 0}},
                     LinspaceExpectedResult{10, 0, 11, {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0}},
-                    LinspaceExpectedResult{2, 1, 6, {2.0, 1.8, 1.6, 1.4, 1.2, 1.0}}));
+                    LinspaceExpectedResult{2, 1, 6, {2.0, 1.8, 1.6, 1.4, 1.2, 1.0}},
+                    LinspaceExpectedResult{2, -2, 5, {2, 1, 0, -1, -2}}));
