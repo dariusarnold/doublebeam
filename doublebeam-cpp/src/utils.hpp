@@ -304,6 +304,15 @@ namespace math {
     xt::xtensor<double, 2> generate_vector_arc(int num_values, double central_direction_x,
                                                double central_direction_y);
 
+    /**
+     * Create vector filled with num values from start to stop.
+     * @param start
+     * @param stop
+     * @param num
+     * @return
+     */
+    std::vector<double> linspace(double start, double stop, size_t num = 50);
+
 } // namespace math
 
 // Helper code used for implementation, not for user code

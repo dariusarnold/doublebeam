@@ -102,6 +102,20 @@ namespace math {
         return vectors;
     }
 
+
+    std::vector<double> linspace(double start, double stop, size_t num) {
+        if (num == 0) {
+            return {};
+        }
+        if (num == 1) {
+            return {start};
+        }
+        auto distance = (stop - start) / (num - 1);
+        std::vector<double> result(num);
+        size_t i = 0;
+        std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance;});
+        return result;
+    }
 } // namespace math
 
 namespace impl {
