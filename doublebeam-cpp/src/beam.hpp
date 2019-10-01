@@ -5,14 +5,13 @@
 
 #include <xtensor/xtensor.hpp>
 
-#include "raytracing_types.hpp"
 #include "ray.hpp"
+#include "raytracing_types.hpp"
 
 
 class BeamSegment {
 public:
-    BeamSegment(RaySegment segment, xt::xtensor<complex , 3> P,
-                xt::xtensor<complex, 3> Q) :
+    BeamSegment(RaySegment segment, xt::xtensor<complex, 3> P, xt::xtensor<complex, 3> Q) :
             ray_segment(segment),
             P(P),
             Q(Q) {}
