@@ -30,7 +30,9 @@ namespace seismo {
      * Return true if ray is going downwards, false otherwise.
      * @param pz Vertical component of slowness vector.
      */
-    bool ray_direction_down(double pz);
+    constexpr bool ray_direction_down(double pz) {
+        return pz > 0;
+    }
 
     /**
      * Generate ray code from string.
@@ -78,7 +80,7 @@ namespace math {
      * @return Angle in radians.
      */
     template <typename T>
-    double radians(T degrees) {
+    constexpr double radians(T degrees) {
         constexpr double factor = M_PI / 180.;
         if constexpr (std::is_integral<T>::value) {
             degrees = static_cast<double>(degrees);
