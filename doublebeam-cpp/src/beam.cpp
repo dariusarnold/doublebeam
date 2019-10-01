@@ -18,11 +18,11 @@ Beam::Beam(double beam_width, double beam_frequency) :
         m_width(beam_width),
         m_frequency(beam_frequency) {}
 
-double Beam::width() {
+double Beam::width() const {
     return m_width;
 }
 
-double Beam::frequency() {
+double Beam::frequency() const {
     return m_frequency;
 }
 
@@ -34,6 +34,14 @@ const BeamSegment& Beam::operator[](int i) const {
     return segments[i];
 }
 
-size_t Beam::size() {
+size_t Beam::size() const {
     return segments.size();
+}
+
+slowness_t last_slowness(const Beam& beam) {
+    if (beam.size() == 0) {
+        throw std::length_error("Accessing empty beam.");
+    }
+    auto last_segment = beam.segments.back().ray_segment.data.back();
+    return {last_segment[Index::PX], last_segment[Index::PY], last_segment[Index::PZ]};
 }

@@ -39,14 +39,21 @@ public:
     BeamSegment& operator[](int i);
     const BeamSegment& operator[](int i) const;
 
-    size_t size();
+    size_t size() const;
 
-    double width();
-    double frequency();
+    double width() const;
+    double frequency() const;
 
 private:
     double m_width;
     double m_frequency;
 };
+
+/**
+ * Return last slowness value of a beam.
+ * @param beam
+ * @return
+ */
+slowness_t last_slowness(const Beam& beam);
 
 #endif // DOUBLEBEAM_CPP_BEAM_HPP
