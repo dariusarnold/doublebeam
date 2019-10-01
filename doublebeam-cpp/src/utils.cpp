@@ -106,7 +106,7 @@ namespace math {
         auto distance = (stop - start) / (num - 1);
         std::vector<double> result(num);
         size_t i = 0;
-        std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance;});
+        std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance; });
         return result;
     }
 } // namespace math
@@ -119,5 +119,6 @@ namespace impl {
 
     CommaSeparated::operator std::string() const {
         auto s = stream.str();
-        return s.substr(0, s.size() - 2);    }
+        return s.substr(0, s.size() - 2);
+    }
 } // namespace impl

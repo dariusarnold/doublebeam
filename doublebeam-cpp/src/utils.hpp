@@ -326,7 +326,6 @@ namespace impl {
     // Use to throw exceptions with customized error message by streaming into a Formatter instance.
     class Formatter {
     public:
-
         template <typename T>
         Formatter& operator<<(const T& t) {
             stream << t;
@@ -340,7 +339,7 @@ namespace impl {
     };
 
     /**
-     * Streamed in arguments will be separated by ", " string, except for the last argument, which 
+     * Streamed in arguments will be separated by ", " string, except for the last argument, which
      * will have no comma following it.
      */
     class CommaSeparated {
