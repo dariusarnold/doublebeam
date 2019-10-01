@@ -291,6 +291,9 @@ namespace math {
         return cumtrapz(y.begin(), y.end(), x.begin(), x.end(), initial);
     }
 
+    struct Vector2 {
+        double x, y;
+    };
 
     /**
      * Generate num_values of unit vectors in a 180° arc around the central direction.
@@ -301,8 +304,8 @@ namespace math {
      * @param central_direction_y Y component of central direction.
      * @return
      */
-    xt::xtensor<double, 2> generate_vector_arc(int num_values, double central_direction_x,
-                                               double central_direction_y);
+    std::vector<Vector2> generate_vector_arc(int num_values, double central_direction_x,
+                                             double central_direction_y);
 
     /**
      * Create vector filled with num values from start to stop.

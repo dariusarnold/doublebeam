@@ -87,19 +87,17 @@ namespace math {
         return x1 * x2 + y1 * y2 + z1 * z2;
     }
 
-    xt::xtensor<double, 2> generate_vector_arc(int num_values, double central_direction_x,
-                                               double central_direction_y) {
-        xt::xtensor<double, 2> angles = xt::linspace<double>(0, math::radians(180), num_values);
+    std::vector<Vector2> generate_vector_arc(int num_values, double central_direction_x,
+                                             double central_direction_y) {
         auto angle_against_xaxis =
             math::angle_clockwise(1., 0., central_direction_x, central_direction_y);
-        // rotate 90° to the left
-        angles = angles + angle_against_xaxis - math::radians(90);
-        auto x_values = xt::cos(angles);
-        auto y_values = -xt::sin(angles);
-        auto vectors = xt::empty<double>({num_values, 2});
-        xt::view(vectors, xt::all(), xt::keep(0)) = x_values;
-        xt::view(vectors, xt::all(), xt::keep(1)) = y_values;
-        return vectors;
+        auto angles = math::linspace(angle_against_xaxis - radians(90),
+                                     angle_against_xaxis + math::radians(90), num_values);
+        std::vector<Vector2> v(num_values);
+        std::transform(angles.begin(), angles.end(), v.begin(), [](double angle) {
+            return Vector2{std::cos(angle), -std::sin(angle)};
+        });
+        return v;
     }
 
 
