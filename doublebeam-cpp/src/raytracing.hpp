@@ -26,7 +26,8 @@ state_type init_state(double x, double y, double z, const VelocityModel& model, 
 /**
  * Overload for init_state taking tuple of x, y, z coordinate.
  */
-state_type init_state(position_t position, const VelocityModel& model, double theta, double phi, double T = 0);
+state_type init_state(position_t position, const VelocityModel& model, double theta, double phi,
+                      double T = 0);
 
 /**
  * Create state type instance.
@@ -50,10 +51,31 @@ state_type make_state(double x, double y, double z, double px, double py, double
 state_type make_state(position_t position, slowness_t slowness, double T = 0);
 
 
+enum class Status {
+    // Ray tracing finished successfully
+    Success,
+    // Ray left velocity model
+    OutOfHorizontalBounds
+};
+
+
+template <typename ResultType>
+class RayTracingResult {
+public:
+    Status status;
+    // this only holds a ray/beam if ray tracing finished successfully
+    std::optional<ResultType> result;
+
+    ResultType value() {
+        return result.value();
+    }
+};
+
+
 class RayTracer {
 public:
     // TODO change to const ref
-    explicit RayTracer(VelocityModel velocity_model);
+    explicit RayTracer(const VelocityModel& velocity_model);
 
     /**
      * Trace ray specified by ray code through velocity model.
@@ -65,15 +87,16 @@ public:
      * @return Traced ray.
      */
     // TODO take initial state by const ref for ray and beam
-    Ray trace_ray(state_type initial_state, const std::vector<WaveType>& ray_code = {},
-                  double step_size = 1., double max_step = 1.1);
+    RayTracingResult<Ray> trace_ray(state_type initial_state,
+                                    const std::vector<WaveType>& ray_code = {},
+                                    double step_size = 1., double max_step = 1.1);
 
     /**
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
-    Ray trace_ray(state_type initial_state, const std::string& ray_code, double step_size = 1.,
-                  double max_step = 1.1);
+    RayTracingResult<Ray> trace_ray(state_type initial_state, const std::string& ray_code,
+                                    double step_size = 1., double max_step = 1.1);
 
     /**
      * Do dynamic ray tracing and return gaussian beam.
@@ -86,16 +109,18 @@ public:
      * @param max_step Maximum step size along the ray.
      * @return Traced beam.
      */
-    Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
-                    const std::vector<WaveType>& ray_code = {}, double step_size = 1.,
-                    double max_step = 1.1);
+    RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
+                                      double beam_frequency,
+                                      const std::vector<WaveType>& ray_code = {},
+                                      double step_size = 1., double max_step = 1.1);
 
     /**
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
-    Beam trace_beam(state_type initial_state, double beam_width, double beam_frequency,
-                    const std::string& ray_code, double step_size = 1., double max_step = 1.1);
+    RayTracingResult<struct Beam> trace_beam(state_type initial_state, double beam_width,
+                                             double beam_frequency, const std::string& ray_code,
+                                             double step_size = 1., double max_step = 1.1);
 
 private:
     /**
@@ -110,8 +135,9 @@ private:
      * @param max_ds Maximum time step size.
      * @return
      */
-    RaySegment trace_layer_gradient(const state_type& initial_state, const Layer& layer,
-                                    double s_start, double ds, double max_ds);
+    std::optional<RaySegment> trace_layer_gradient(const state_type& initial_state,
+                                                   const Layer& layer, double s_start, double ds,
+                                                   double max_ds);
     /**
      * Use analytic ray tracing equation for a constant velocity layer.
      * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system: Introducing
@@ -122,8 +148,8 @@ private:
      * @param ds Step size of arc length.
      * @return RaySegment for this layer.
      */
-    RaySegment trace_layer_const(const state_type& initial_state, const Layer& layer,
-                                 double s_start, double ds);
+    std::optional<RaySegment> trace_layer_const(const state_type& initial_state, const Layer& layer,
+                                                double s_start, double ds);
     /**
      * Dispatching function that decides to use analytic or numerical ray tracing depending on
      * whether the layer has constant velocity or not.
@@ -134,8 +160,8 @@ private:
      * @param max_ds Maximum time step size.
      * @return RaySegment for this layer.
      */
-    RaySegment trace_layer(const state_type& initial_state, const Layer& layer, double s_start,
-                           double ds, double max_ds);
+    std::optional<RaySegment> trace_layer(const state_type& initial_state, const Layer& layer,
+                                          double s_start, double ds, double max_ds);
     VelocityModel model;
 };
 

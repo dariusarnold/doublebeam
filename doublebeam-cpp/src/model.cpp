@@ -237,6 +237,10 @@ size_t VelocityModel::number_of_interfaces_between(double z1, double z2) const {
     return layer_index(max).value() - layer_index(min).value();
 }
 
+bool VelocityModel::in_horizontal_extent(double x, double y) const {
+    return x0_ <= x and x <= x1_ and y0_ <= y and y <= y1_;
+}
+
 double highest_velocity_between(double source_depth, double receiver_depth,
                                 const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth).value();

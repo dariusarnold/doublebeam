@@ -202,6 +202,8 @@ public:
      * @return
      */
     size_t number_of_interfaces_between(double z1, double z2) const;
+
+    bool in_horizontal_extent(double x, double y) const;
 };
 
 

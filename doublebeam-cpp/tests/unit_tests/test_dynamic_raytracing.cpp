@@ -30,7 +30,7 @@ TEST_F(DynamicRaytracingBase, TestBasicCredibilityOfResult) {
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto width = 1;
     auto frequency = 2;
-    auto beam = rt.trace_beam(initial_state, width, frequency, "TTTT");
+    auto beam = rt.trace_beam(initial_state, width, frequency, "TTTT").value();
     EXPECT_EQ(beam.segments.size(), 5) << "Not matching expected number of segments.";
     EXPECT_EQ(beam.width(), width) << "Beam width not set correctly.";
     EXPECT_EQ(beam.frequency(), frequency) << "Beam frequency not set correctly.";
@@ -43,8 +43,8 @@ TEST_F(DynamicRaytracingBase, TestBasicCredibilityOfResult) {
 
 TEST_F(DynamicRaytracingBase, DynamicRayTracingAndKinematicRayTracingShouldResultInSamePath) {
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
-    auto ray = rt.trace_ray(initial_state, "TRT");
-    auto beam = rt.trace_beam(initial_state, 1, 1, "TRT");
+    auto ray = rt.trace_ray(initial_state, "TRT").value();
+    auto beam = rt.trace_beam(initial_state, 1, 1, "TRT").value();
     ASSERT_EQ(ray.size(), beam.size()) << "Size of array and beam are different.";
     for (auto segment_i = 0; segment_i < beam.size(); segment_i++) {
         ASSERT_EQ(beam[segment_i].ray_segment.data.size(), ray[segment_i].data.size())
@@ -108,7 +108,7 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     auto Q_desired = xt::load_npy<complex>(current_source_path() / "data/Q_analytic.npy");
     // std::cout << P_desired.shape() << std::endl;
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
-    auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4);
+    auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4).value();
     ASSERT_EQ(beam.segments.size(), 1);
     // result loaded from disk has a different number of steps, compare only first and last entry.
     // compare first/last of P
@@ -127,7 +127,7 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
     VelocityModel model{{{0, 10, 2000, 1}, {10, 20, 2000, -1}}, 1000, 1000};
     RayTracer rt{model};
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
-    auto beam = rt.trace_beam(initial_state, 10, 40, "TRT");
+    auto beam = rt.trace_beam(initial_state, 10, 40, "TRT").value();
     for (auto i = 0; i < beam.size(); ++i) {
         auto P_desired = xt::load_npy<complex>(current_source_path() /
                                                ("data/P_multilayer" + std::to_string(i) + ".npy"));
@@ -159,4 +159,10 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
             << name_and_value(xt::view(beam[i].Q, xt::keep(-1)))
             << name_and_value(xt::view(Q_desired, xt::keep(-1)));
     }
+}
+
+TEST_F(DynamicRaytracingBase, TestIfFailingCaseWorks) {
+    auto initial_state = make_state(10, 10, 450, -3.8270212473354787e-20, -0.00062500000000000001,
+                                    -0.00055555555555555556);
+    EXPECT_EQ(rt.trace_beam(initial_state, 10, 45, "TTTT").status, Status::OutOfHorizontalBounds);
 }

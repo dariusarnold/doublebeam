@@ -25,7 +25,7 @@ TEST_P(TestRayTracing, TestCorrectEndpoint) {
     auto [slowness, endpoint] = GetParam();
     auto [px, py, pz] = slowness;
     state_type initial_state{0, 0, 0, px, py, pz, 0};
-    auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", 1, 1);
+    auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", 1, 1).value();
     auto last_traced_point = ray.segments.back().data.back();
     EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint));
 }
@@ -36,7 +36,7 @@ TEST_P(TestRayTracing, TestArcLengthIncreasesContinuously) {
     auto [slowness, _] = GetParam();
     auto [px, py, pz] = slowness;
     state_type initial_state{0, 0, 0, px, py, pz, 0};
-    auto ray = krt.trace_ray(initial_state, "TTTT");
+    auto ray = krt.trace_ray(initial_state, "TTTT").value();
     auto arclength = ray.segments.front().arclength.front();
     EXPECT_EQ(arclength, 0) << "Initial arc length not zero.";
     for (const auto& segment : ray.segments) {
@@ -61,6 +61,6 @@ TEST(TestRayTracing, TestTurningRay) {
     VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}}, 10000, 10000);
     RayTracer rt(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
-    auto ray = rt.trace_ray(initial_state, "TT");
+    auto ray = rt.trace_ray(initial_state, "TT").value();
     EXPECT_TRUE(Close(ray.segments.back().data.back()[Index::X], 9403.354242));
 }

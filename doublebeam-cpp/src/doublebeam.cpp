@@ -71,7 +71,7 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             for (auto spacing : fracture_info.spacings) {
                 for (auto [phi_hat_x, phi_hat_y] : fracture_info.orientations) {
                     auto a = std::chrono::high_resolution_clock::now();
-                    auto last_p = last_slowness(source_beam);
+                    auto last_p = last_slowness(source_beam.value());
                     auto [px, py] =
                         scattered_slowness(std::get<0>(last_p), std::get<1>(last_p), phi_hat_x,
                                            phi_hat_y, spacing, beam_frequency);
@@ -86,6 +86,7 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto duration =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     std::cout << duration << "\n";
+                    std::cout << window_length;
                 }
             }
         }
