@@ -256,3 +256,19 @@ INSTANTIATE_TEST_SUITE_P(
                     LinspaceExpectedResult{10, 0, 11, {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0}},
                     LinspaceExpectedResult{2, 1, 6, {2.0, 1.8, 1.6, 1.4, 1.2, 1.0}},
                     LinspaceExpectedResult{2, -2, 5, {2, 1, 0, -1, -2}}));
+
+
+TEST(TestFormatter, TestWithoutSeparator) {
+    auto s = "Welt";
+    EXPECT_EQ(std::string(impl::Formatter() << "Hallo " << s << 123), "Hallo Welt123");
+}
+
+TEST(TestFormatter, TestWithSeparator) {
+    EXPECT_EQ(std::string(impl::Formatter(", ") << 1.9 << 2 << 3.0), "1.9, 2, 3");
+}
+
+TEST(TestFormatter, TestToOStream) {
+    std::stringstream os;
+    os << (impl::Formatter() << "Hallo Welt");
+    EXPECT_EQ(os.str(), "Hallo Welt");
+}

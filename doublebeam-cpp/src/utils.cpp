@@ -117,8 +117,11 @@ namespace impl {
         return stream.str();
     }
 
-    CommaSeparated::operator std::string() const {
-        auto s = stream.str();
-        return s.substr(0, s.size() - 2);
+    Formatter::Formatter(const std::string& sep) {
+        separator = sep;
+    }
+
+    std::ostream& operator<<(std::ostream& os, const Formatter& f) {
+        return os << std::string(f);
     }
 } // namespace impl

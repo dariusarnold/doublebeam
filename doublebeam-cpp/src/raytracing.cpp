@@ -15,7 +15,7 @@
 namespace odeint = boost::numeric::odeint;
 
 std::string point_to_str(double x, double y, double z) {
-    return impl::CommaSeparated() << x << y << z;
+    return impl::Formatter(",") << x << y << z;
 }
 
 state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,

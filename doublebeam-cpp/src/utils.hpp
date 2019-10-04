@@ -326,34 +326,32 @@ namespace impl {
     // Use to throw exceptions with customized error message by streaming into a Formatter instance.
     class Formatter {
     public:
+        Formatter(const std::string& sep = "");
+
         template <typename T>
         Formatter& operator<<(const T& t) {
-            stream << t;
+            if (not first_used) {
+                // On first use, only stream t to avoid prepending a separator
+                first_used = true;
+                stream << t;
+            } else{
+                // stream separator and then new value so there is never a trailing separator
+                stream << separator << t;
+            }
             return *this;
         }
+
+        /**
+         * Alllow streaming Formatter to stream by converting it explicitly to a string.
+         */
+        friend std::ostream& operator<<(std::ostream& os, const Formatter& f);
 
         operator std::string() const;
 
     private:
+        bool first_used = false;
         std::stringstream stream;
-    };
-
-    /**
-     * Streamed in arguments will be separated by ", " string, except for the last argument, which
-     * will have no comma following it.
-     */
-    class CommaSeparated {
-    public:
-        template <typename T>
-        CommaSeparated& operator<<(const T& t) {
-            stream << t << ", ";
-            return *this;
-        }
-
-        operator std::string() const;
-
-    private:
-        std::stringstream stream;
+        std::string separator;
     };
 
 } // namespace impl
