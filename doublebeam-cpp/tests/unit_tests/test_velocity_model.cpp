@@ -1,6 +1,7 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+#include <utils.hpp>
 
 #include "model.hpp"
 
@@ -46,25 +47,6 @@ TEST_F(TestInterfaceVelocity, TestVelocityBottom) {
     auto [v_above, v_below] = vm.interface_velocities(299.);
     EXPECT_DOUBLE_EQ(v_above, 2700);
     EXPECT_DOUBLE_EQ(v_below, 0);
-}
-
-
-class TestInModel : public TestInterfaceVelocity {
-protected:
-};
-
-TEST_F(TestInModel, TestAboveModel) {
-    EXPECT_FALSE(vm.in_model(0, 0, -0.1));
-}
-
-TEST_F(TestInModel, TestBelowModel) {
-    EXPECT_FALSE(vm.in_model(0, 0, 300.1));
-}
-
-TEST_F(TestInModel, TestInterfacesShouldBeInModel) {
-    for (double interface_depth : {0, 100, 200, 300}) {
-        EXPECT_TRUE(vm.in_model(0, 0, interface_depth)) << "depth " << interface_depth;
-    }
 }
 
 
@@ -243,3 +225,75 @@ protected:
 std::vector<DepthIntData> values = {{0, 500, 4}, {50, 450, 4}, {50, 150, 1}, {200, 250, 0}};
 
 INSTANTIATE_TEST_SUITE_P(TestInOrder, TestNumberOfInterfaces, testing::ValuesIn(values));
+
+
+class TestModelGeometry : public testing::Test {
+protected:
+    TestModelGeometry() : model({{0, 500, 1, 1}, {5000, 1000, 1, 1}}, 1000, 1000) {}
+
+    VelocityModel model;
+};
+
+TEST_F(TestModelGeometry, TestAboveModel) {
+    ASSERT_FALSE(model.in_model(0, 0, -2));
+}
+
+TEST_F(TestModelGeometry, TestBelowModel) {
+    ASSERT_FALSE(model.in_model(0, 0, 1001));
+}
+
+class TestModelGeometryParametrized
+        : public TestModelGeometry,
+          public testing::WithParamInterface<std::tuple<double, double, double>> {};
+
+class TestInModel : public TestModelGeometryParametrized {};
+
+TEST_P(TestInModel, TestIfPointInModel) {
+    auto [x, y, z] = GetParam();
+    EXPECT_TRUE(model.in_model(x, y, z)) << "Position " << (impl::Formatter(" ") << x << y << z)
+                                         << " not recognized as inside model " << model;
+}
+
+class TestOutsideModel : public TestModelGeometryParametrized {};
+
+
+TEST_P(TestOutsideModel, TestIfPointOutsideModel) {
+    auto [x, y, z] = GetParam();
+    EXPECT_FALSE(model.in_model(x, y, z)) << "Position " << (impl::Formatter(" ") << x << y << z)
+                                          << "not recognized as outside model" << model;
+}
+
+INSTANTIATE_TEST_SUITE_P(TestCombinationsOfPointsInsideModel, TestInModel,
+                         testing::Combine(testing::Values(0, 100, 900, 1000),
+                                          testing::Values(0, 100, 900, 1000),
+                                          testing::Values(0, 400, 500, 900, 1000)));
+
+INSTANTIATE_TEST_SUITE_P(TestAboveModel, TestOutsideModel,
+                         testing::Combine(testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(-1)));
+
+INSTANTIATE_TEST_SUITE_P(TestBelowModel, TestOutsideModel,
+                         testing::Combine(testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(1001)));
+
+INSTANTIATE_TEST_SUITE_P(TestOutSideXLess, TestOutsideModel,
+                         testing::Combine(testing::Values(-1),
+                                          testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(0, 100, 500, 900, 1000)));
+
+INSTANTIATE_TEST_SUITE_P(TestOutSideXGreater, TestOutsideModel,
+                         testing::Combine(testing::Values(1001),
+                                          testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(0, 100, 500, 900, 1000)));
+
+INSTANTIATE_TEST_SUITE_P(TestOutSideYLess, TestOutsideModel,
+                         testing::Combine(testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(-1),
+                                          testing::Values(0, 100, 500, 900, 1000)));
+
+INSTANTIATE_TEST_SUITE_P(TestOutSideYGreater, TestOutsideModel,
+                         testing::Combine(testing::Values(0, 100, 500, 900, 1000),
+                                          testing::Values(1001),
+                                          testing::Values(0, 100, 500, 900, 1000)));
