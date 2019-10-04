@@ -90,7 +90,7 @@ class VelocityModel3D:
         """
         # TODO update README to reflect changes: Only LinearVelocityLayer is kept
         try:
-            raw_data = np.loadtxt(str(filepath), delimiter=",")
+            raw_data = np.loadtxt(str(filepath), delimiter=",", skiprows=6)
         except IndexError:
             msg = f"Error parsing velocity model file {str(filepath)}"
             raise ValueError(msg)
