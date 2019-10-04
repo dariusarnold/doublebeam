@@ -3,6 +3,7 @@
 #include "timing/timing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
+#include "doublebeam.hpp"
 
 
 std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {
@@ -24,13 +25,9 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 
 int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
-    auto drt = RayTracer(vm);
-    auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
-    auto a = std::chrono::high_resolution_clock::now();
-    auto beam0 = drt.trace_beam(initial_state, 10, 40, "TTTT");
-    auto b = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-    std::cout << duration << "\n";
-    auto res = measure_runtime([&]() { auto beam = drt.trace_beam(initial_state, 10, 40, "TTTT"); });
-    std::cout << res << std::endl;
+    auto db = DoubleBeam(vm);
+    auto sources = grid_coordinates(10, 100, 10, 100, 0, 10, 10);
+    auto targets = grid_coordinates(10, 100, 10, 100, 450, 10, 10);
+    FractureParameters fractures(400, 1, 0, 61, 40, 120, 41);
+    db.algorithm(sources, targets, fractures, 10, 40, 0.006);
 }
