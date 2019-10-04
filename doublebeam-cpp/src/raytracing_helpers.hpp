@@ -59,7 +59,7 @@ public:
      * locate to exact depth of the interface.
      * @return
      */
-    std::function<double(state_type)>
+    std::function<double(const state_type&)>
     get_zero_crossing_event_function(const state_type& state) const;
 
     /**
@@ -85,7 +85,7 @@ private:
  */
 template <typename Stepper>
 std::pair<state_type, double>
-get_state_at_interface(std::function<double(state_type)> crossing_function, Stepper stepper) {
+get_state_at_interface(std::function<double(const state_type&)> crossing_function, Stepper stepper) {
     // our integration variable is not time t but arclengths s
     double s0 = stepper.previous_time();
     double s1 = stepper.current_time();

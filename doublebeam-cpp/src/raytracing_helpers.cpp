@@ -51,7 +51,7 @@ bool InterfaceCrossed::operator()(const state_type& state) const {
     return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;
 }
 
-std::function<double(state_type)>
+std::function<double(const state_type&)>
 InterfaceCrossed::get_zero_crossing_event_function(const state_type& state) const {
     if (state[Index::Z] < top_depth) {
         // top interface was crossed
