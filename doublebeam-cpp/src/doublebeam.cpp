@@ -60,7 +60,7 @@ DoubleBeam::DoubleBeam(const VelocityModel& model) : model(model), twopoint(mode
 void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                            std::vector<position_t> target_geometry,
                            FractureParameters fracture_info, double beam_width,
-                           double beam_frequency, double window_length) {
+                           double beam_frequency, double __attribute__((unused)) window_length) {
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
             auto slowness = twopoint.trace(target, source_beam_center);
@@ -86,7 +86,6 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto duration =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     std::cout << duration << "\n";
-                    std::cout << window_length;
                 }
             }
         }
