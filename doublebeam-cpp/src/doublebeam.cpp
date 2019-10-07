@@ -63,8 +63,8 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                            double beam_frequency, double __attribute__((unused)) window_length) {
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
-            auto slowness = twopoint.trace(target, source_beam_center);
-            auto initial_state = make_state(target, slowness, 0);
+            auto slowness = twopoint.trace(source_beam_center, target);
+            auto initial_state = make_state(source_beam_center, slowness, 0);
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
