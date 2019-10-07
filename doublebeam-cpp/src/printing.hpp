@@ -5,6 +5,7 @@
 #include <ostream>
 #include <array>
 #include <vector>
+#include <tuple>
 
 
 template <typename T, std::size_t N>
@@ -30,6 +31,13 @@ std::ostream& operator<<(std::ostream& os, std::vector<T> v) {
 template <typename T, typename U>
 std::ostream& operator<<(std::ostream& os, const std::pair<T, U>& p) {
     os << p.first << " " << p.second;
+    return os;
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::tuple<T, T, T>& t) {
+    auto [x, y, z] = t;
+    os << x << " " << y << " " << z;
     return os;
 }
 
