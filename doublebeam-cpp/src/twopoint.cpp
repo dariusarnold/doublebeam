@@ -2,22 +2,27 @@
 #include "utils.hpp"
 #include <cmath>
 #include <iostream>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xindex_view.hpp>
-#include <xtensor/xio.hpp>
+#include <valarray>
+
+#define USEDEBUG false
+#if USEDEBUG
+#define msg(x) std::cout << #x << " = " << x << std::endl;
+#else
+#define msg(x)
+#endif
 
 
 TwoPointRayTracing::TwoPointRayTracing(const VelocityModel& velocity_model) :
         model(velocity_model),
         num_layers(model.size()),
-        gradients(model.size() + 1),
-        intercepts(model.size() + 1),
-        interface_depths(model.interface_depths()) {
+        a(model.size() + 1),
+        b(model.size() + 1),
+        z(model.interface_depths().data(), model.interface_depths().size()) {
     // index zero is reserved for property of source layer, will be filled in trace method
     size_t index = 1;
     for (const auto& layer : model) {
-        gradients[index] = layer.gradient;
-        intercepts[index] = layer.intercept;
+        a[index] = layer.gradient;
+        b[index] = layer.intercept;
         ++index;
     }
 }
@@ -53,72 +58,83 @@ double mu_k(size_t k, size_t s, size_t n, bool source_below_receiver) {
 }
 
 // eq. A3
-auto TwoPointRayTracing::X_tilde(double q) {
+template <typename A>
+TwoPointRayTracing::array_t X_tilde(double q, const A& delta_a, const A& mu_tilde,
+                                    const A& epsilon_tilde, const A& omega_tilde,
+                                    const A& h_tilde) {
     return delta_a * mu_tilde *
-               (xt::sqrt(std::pow(q, -2) + epsilon_tilde) -
-                xt::sqrt(std::pow(q, -2) + omega_tilde)) +
-           (1 - delta_a) * h_tilde / xt::sqrt(std::pow(q, -2) + epsilon_tilde);
+               (std::sqrt(std::pow(q, -2) + epsilon_tilde) -
+                std::sqrt(std::pow(q, -2) + omega_tilde)) +
+           (1. - delta_a) * h_tilde / std::sqrt(std::pow(q, -2) + epsilon_tilde);
 }
 
 // eq. B9
-auto TwoPointRayTracing::X_tilde_prime(double q) {
+template <typename A>
+TwoPointRayTracing::array_t X_tilde_prime(double q, const A& delta_a, const A& mu_tilde,
+                                          const A& epsilon_tilde, const A& omega_tilde,
+                                          const A& h_tilde) {
     return delta_a * mu_tilde / (q * q) *
-               (1 / xt::sqrt(1 + omega_tilde * q * q) - 1 / xt::sqrt(1 + epsilon_tilde * q * q)) +
-           (1 - delta_a) * h_tilde / xt::pow(1 + epsilon_tilde * q * q, 1.5);
+               (1 / std::sqrt(1 + omega_tilde * q * q) - 1 / std::sqrt(1 + epsilon_tilde * q * q)) +
+           (1. - delta_a) * h_tilde / std::pow(1 + epsilon_tilde * q * q, 1.5);
 }
 
 // eq. B10
-auto TwoPointRayTracing::X_tilde_double_prime(double q) {
+template <typename A>
+TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& delta_a, const A& mu_tilde,
+                                                 const A& epsilon_tilde, const A& omega_tilde,
+                                                 const A& h_tilde) {
     return delta_a * mu_tilde / (q * q * q) *
-               ((2 + 3 * epsilon_tilde * q * q) / xt::pow(1 + epsilon_tilde * q * q, 1.5) -
-                (2 + 3 * omega_tilde * q * q) / xt::pow(1 + omega_tilde * q * q, 1.5)) -
-           (1 - delta_a) * 3 * h_tilde * epsilon_tilde * q /
-               xt::pow(1 + epsilon_tilde * q * q, 2.5);
+               ((2 + 3. * epsilon_tilde * q * q) / std::pow(1 + epsilon_tilde * q * q, 1.5) -
+                (2 + 3. * omega_tilde * q * q) / std::pow(1 + omega_tilde * q * q, 1.5)) -
+           (1. - delta_a) * 3 * h_tilde * epsilon_tilde * q /
+               std::pow(1 + epsilon_tilde * q * q, 2.5);
 }
 
 // eq. 16
-double TwoPointRayTracing::f_tilde(double q, double X) {
-    return xt::sum(X_tilde(q))[0] - X;
+template <typename A>
+double f_tilde(double q, double X, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
+               const A& omega_tilde, const A& h_tilde) {
+    return X_tilde(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum() - X;
 }
 
 // eq. B3
-double TwoPointRayTracing::f_tilde_prime(double q) {
-    return xt::sum(X_tilde_prime(q))[0];
+template <typename A>
+double f_tilde_prime(double q, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
+                     const A& omega_tilde, const A& h_tilde) {
+    return X_tilde_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum();
 }
 
 // eq. B4
-double TwoPointRayTracing::f_tilde_double_prime(double q) {
-    return xt::sum(X_tilde_double_prime(q))[0];
+template <typename A>
+double f_tilde_double_prime(double q, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
+                            const A& omega_tilde, const A& h_tilde) {
+    return X_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum();
 }
 
-double TwoPointRayTracing::next_q(double q, double X) {
-    auto A = 0.5 * f_tilde_double_prime(q);
-    auto B = f_tilde_prime(q);
-    auto C = f_tilde(q, X);
+template <typename AA>
+double next_q(double q, double X, const AA& delta_a, const AA& mu_tilde, const AA& epsilon_tilde,
+              const AA& omega_tilde, const AA& h_tilde) {
+    msg(q);
+    double A =
+        0.5 * f_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
+    double B = f_tilde_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
+    double C = f_tilde(q, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
     double delta_q_plus = (-B + std::sqrt(B * B - 4 * A * C)) / (2 * A);
     double delta_q_minus = (-B - std::sqrt(B * B - 4 * A * C)) / (2 * A);
     // both q plus and q minus are 0D tensors, get their value out to pass to function
     double q_plus = (q + delta_q_plus);
     double q_minus = (q + delta_q_minus);
+    msg(q_plus);
+    msg(q_minus);
     // use all to convert 0D array of bool to bool explicitly
-    if (std::abs(f_tilde(q_plus, X)) < std::abs(f_tilde(q_minus, X))) {
+    if (std::abs(f_tilde(q_plus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde)) <
+        std::abs(f_tilde(q_minus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde))) {
         return q_plus;
     } else {
         return q_minus;
     }
 }
 
-template <typename T>
-auto is_invalid(T x) {
-    return xt::isinf(x) || xt::isnan(x);
-}
-
-template <typename E>
-void filter_invalid(E& e, typename E::value_type replace = 0.) {
-    xt::filtration(e, is_invalid(e)) = replace;
-}
-
-template <typename E1, typename E2>
 /**
  * Replace parts of expression by 0 as indicated by the zeros in the guard clause.
  * This function is used because the algorithm described in Fang2019 can yield invalid mathematical
@@ -143,13 +159,34 @@ template <typename E1, typename E2>
  * @param guard Guard clause, consisting of 1 or 0.
  * @return Elements of e where the guard clause is unequal 0, else 0.
  */
-auto guard(E1&& e, E2&& guard) {
-    return xt::where(xt::equal(guard, 0), guard, e);
+TwoPointRayTracing::array_t guard(const TwoPointRayTracing::array_t& e,
+                                  const TwoPointRayTracing::array_t& guard) {
+    TwoPointRayTracing::array_t out(e.size());
+    for (size_t i = 0; i < e.size(); ++i) {
+        out[i] = guard[i] == 0 ? guard[i] : e[i];
+    }
+    return out;
 }
 
 
 double q_to_p(double q, double vM) {
     return std::sqrt(q * q / (vM * vM + vM * vM * q * q));
+}
+
+
+TwoPointRayTracing::array_t delta(const TwoPointRayTracing::array_t& in) {
+    return in.apply([](double d) -> double { return d != 0 ? 1 : 0; });
+}
+
+TwoPointRayTracing::array_t::value_type nansum(const TwoPointRayTracing::array_t& in) {
+    TwoPointRayTracing::array_t::value_type sum{0};
+    for (auto e : in) {
+        if (std::isnan(e)) {
+            break;
+        }
+        sum += e;
+    }
+    return sum;
 }
 
 
@@ -171,111 +208,119 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
         source_index = num_layers;
     }
     // insert source layer properties in first place
-    gradients[0] = gradients[source_index];
-    intercepts[0] = intercepts[source_index];
-
-    auto a = xt::adapt(gradients);
-    auto b = xt::adapt(intercepts);
-    auto z = xt::adapt(interface_depths);
+    a[0] = a[source_index];
+    b[0] = b[source_index];
 
     // eq. A5
     // TODO move instantiation to constructor so they can be reused.
-    auto epsilon = xt::empty<double>({num_layers + 1});
+    auto epsilon = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
-        epsilon(k) = std::pow(a(k) * z(k - 1) + b(k), 2);
+        epsilon[k] = std::pow(a[k] * z[k - 1] + b[k], 2);
     }
-    epsilon(0) = std::pow(a(source_index) * z(source_index - 1) + b(source_index), 2);
+    epsilon[0] = std::pow(a[source_index] * z[source_index - 1] + b[source_index], 2);
 
     // eq. A6
     // TODO decide if kept as loop or as xtensor view initialization as for epsilon
-    auto omega = xt::empty<double>({num_layers + 1});
+    auto omega = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
-        omega(k) = std::pow(a(k) * z(k) + b(k), 2);
+        omega[k] = std::pow(a[k] * z[k] + b[k], 2);
     }
-    omega(0) = std::pow(a(source_index) * source_z + b(source_index), 2);
+    omega[0] = std::pow(a[source_index] * source_z + b[source_index], 2);
 
     // eq. A7
-    auto h = xt::empty<double>({num_layers + 1});
+    auto h = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
-        h(k) = (a(k) * z(k - 1) + b(k)) * (z(k) - z(k - 1));
+        h[k] = (a[k] * z[k - 1] + b[k]) * (z[k] - z[k - 1]);
     }
-    h(0) = (a(source_index) * z(source_index - 1) + b(source_index)) *
-           (source_z - z(source_index - 1));
+    h[0] = (a[source_index] * z[source_index - 1] + b[source_index]) *
+           (source_z - z[source_index - 1]);
 
     bool source_below_receiver = source_z > receiver_z;
-    auto mu = xt::empty<double>({num_layers + 1});
+    auto mu = array_t(num_layers + 1);
     for (size_t k = 0; k <= num_layers; k++) {
-        mu(k) = mu_k(k, source_index, num_layers, source_below_receiver);
+        mu[k] = mu_k(k, source_index, num_layers, source_below_receiver);
     }
 
-    auto vM = highest_velocity_between(source_z, receiver_z, model);
+    msg("Initialized");
+
+    double vM = highest_velocity_between(source_z, receiver_z, model);
 
     // eq. A10
-    mu_tilde = mu * vM / a;
-    xt::filtration(mu_tilde, xt::equal(a, 0)) = 0;
-
+    array_t mu_tilde = mu * vM / a;
+    for (size_t i = 0; i < mu_tilde.size(); ++i) {
+        if (a[i] == 0) {
+            mu_tilde[i] = 0;
+        }
+    }
 
     // eq. A11
-    h_tilde = mu * h / vM;
+    array_t h_tilde = mu * h / vM;
 
 
     // eq. A12
-    epsilon_tilde = 1 - epsilon / (vM * vM);
+    array_t epsilon_tilde = 1 - epsilon / (vM * vM);
 
 
     // eq. A13
-    omega_tilde = 1 - omega / (vM * vM);
+    array_t omega_tilde = 1 - omega / (vM * vM);
 
 
     // eq. A9
-    delta_a = xt::abs(xt::sign(a));
+    array_t delta_a = delta(a);
 
 
     // eq. C13
-    auto d1 = xt::nansum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) +
-                         (1 - delta_a) * h_tilde);
+    auto d1 =
+        nansum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) + (1. - delta_a) * h_tilde);
 
     // eq. C18
-    delta_epsilon = xt::abs(xt::sign(epsilon_tilde));
+    array_t delta_epsilon = delta(epsilon_tilde);
 
     // eq. C19
-    delta_omega = xt::abs(xt::sign(omega_tilde));
+    array_t delta_omega = delta(omega_tilde);
 
     // eq. C14
-    auto c0 = xt::nansum(
+    auto c0 = nansum(
         delta_a * mu_tilde *
-            (delta_epsilon * xt::sqrt(epsilon_tilde) - delta_omega * xt::sqrt(omega_tilde)) +
-        (1 - delta_a) * delta_epsilon * h_tilde / xt::sqrt(epsilon_tilde));
+            (delta_epsilon * std::sqrt(epsilon_tilde) - delta_omega * std::sqrt(omega_tilde)) +
+        (1. - delta_a) * delta_epsilon * h_tilde / std::sqrt(epsilon_tilde));
 
 
     // eq. C16
-    auto cminus1 = xt::nansum(delta_a * (delta_omega - delta_epsilon) * mu_tilde);
+    auto cminus1 = nansum(delta_a * (delta_omega - delta_epsilon) * mu_tilde);
 
 
     // eq. C17
     auto cminus2 =
-        xt::nansum(delta_a * 0.5 * mu_tilde *
-                       (guard(delta_epsilon / xt::sqrt(epsilon_tilde), delta_epsilon) -
-                        guard(delta_omega / xt::sqrt(omega_tilde), delta_omega)) -
-                   (1 - delta_a) * delta_epsilon * h_tilde * 0.5 / xt::pow(epsilon_tilde, 1.5));
-
+        nansum(delta_a * 0.5 * mu_tilde *
+                   (guard(delta_epsilon / std::sqrt(epsilon_tilde), delta_epsilon) -
+                    guard(delta_omega / std::sqrt(omega_tilde), delta_omega)) -
+               (1. - delta_a) * delta_epsilon * h_tilde * 0.5 / std::pow(epsilon_tilde, 1.5));
 
     // horizontal distance between source and receiver
     auto X = std::sqrt(std::pow(source_x - receiver_x, 2) + std::pow(source_y - receiver_y, 2));
-
+    msg(X);
     auto alpha1 = d1;
+    msg(alpha1);
     auto alpha2 = c0 * (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
+    msg(alpha2);
     auto beta1 = (c0 * cminus1 + d1 * cminus2) / (c0 * cminus2 - cminus1 * cminus1);
+    msg(beta1);
     auto beta2 = (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
+    msg(beta2);
     auto numerator = (beta1 * X - alpha1 +
                       sqrt((beta1 * beta1 - 4 * beta2) * X * X +
                            2 * (2 * alpha2 - alpha1 * beta1) * X + alpha1 * alpha1));
+    msg(numerator);
     auto denominator = 2 * (alpha2 - beta2 * X);
-    double q = (numerator / denominator)[0];
-
+    msg(denominator);
+    double q = numerator / denominator;
+    msg(q);
     double q_next;
+    msg("Before loop");
     while (std::isfinite(q) and q != 0) {
-        q_next = next_q(q, X);
+        q_next = next_q(q, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
+        msg(q_next);
         if (std::abs(q - q_next) < accuracy) {
             q = q_next;
             break;
