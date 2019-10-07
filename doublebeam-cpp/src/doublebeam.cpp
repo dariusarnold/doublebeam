@@ -68,10 +68,10 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
+            auto last_p = last_slowness(source_beam.value());
             for (auto spacing : fracture_info.spacings) {
                 for (auto [phi_hat_x, phi_hat_y] : fracture_info.orientations) {
                     auto a = std::chrono::high_resolution_clock::now();
-                    auto last_p = last_slowness(source_beam.value());
                     auto [px, py] =
                         scattered_slowness(std::get<0>(last_p), std::get<1>(last_p), phi_hat_x,
                                            phi_hat_y, spacing, beam_frequency);
