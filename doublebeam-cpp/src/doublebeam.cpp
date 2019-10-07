@@ -76,8 +76,8 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         scattered_slowness(std::get<0>(last_p), std::get<1>(last_p), phi_hat_x,
                                            phi_hat_y, spacing, beam_frequency);
                     // -pz to reflect beam upwards from target
-                    slowness = {px, py, -std::get<2>(slowness)};
-                    initial_state = make_state(target, slowness);
+                    slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
+                    initial_state = make_state(target, new_slowness);
                     // reuse ray code since beam should pass through the same layers
                     auto receiver_beam =
                         tracer.trace_beam(initial_state, beam_width, beam_frequency,
