@@ -89,3 +89,12 @@ TEST_F(TestTwopointRayTracingBase, TestStraightDown) {
     EXPECT_EQ(py, 0);
     EXPECT_DOUBLE_EQ(pz, 0.00055555555555555556);
 }
+
+TEST_F(TestTwopointRayTracingBase, TestNanReturn) {
+    // This test fails due to a Nan which has to be summed using Nansum. Check if code handles
+    // this case correctly.
+    auto [px, py, pz] = twopoint.trace({400, 500, 0}, {400, 400, 450});
+    EXPECT_FALSE(std::isnan(px));
+    EXPECT_FALSE(std::isnan(py));
+    EXPECT_FALSE(std::isnan(pz));
+}
