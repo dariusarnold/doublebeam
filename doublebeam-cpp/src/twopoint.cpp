@@ -11,6 +11,22 @@
 #define msg(x)
 #endif
 
+/**
+ * Summ values in array treating nan as zero.
+ * @param in
+ * @return
+ */
+TwoPointRayTracing::array_t::value_type nansum(const TwoPointRayTracing::array_t& in) {
+    TwoPointRayTracing::array_t::value_type sum{0};
+    for (auto e : in) {
+        if (std::isnan(e)) {
+            break;
+        }
+        sum += e;
+    }
+    return sum;
+}
+
 
 TwoPointRayTracing::TwoPointRayTracing(const VelocityModel& velocity_model) :
         model(velocity_model),
@@ -94,27 +110,26 @@ TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& delta_a, con
 template <typename A>
 double f_tilde(double q, double X, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
                const A& omega_tilde, const A& h_tilde) {
-    return X_tilde(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum() - X;
+    return nansum(X_tilde(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde)) - X;
 }
 
 // eq. B3
 template <typename A>
 double f_tilde_prime(double q, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
                      const A& omega_tilde, const A& h_tilde) {
-    return X_tilde_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum();
+    return nansum(X_tilde_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde));
 }
 
 // eq. B4
 template <typename A>
 double f_tilde_double_prime(double q, const A& delta_a, const A& mu_tilde, const A& epsilon_tilde,
                             const A& omega_tilde, const A& h_tilde) {
-    return X_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde).sum();
+    return nansum(X_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde));
 }
 
 template <typename AA>
 double next_q(double q, double X, const AA& delta_a, const AA& mu_tilde, const AA& epsilon_tilde,
               const AA& omega_tilde, const AA& h_tilde) {
-    msg(q);
     double A =
         0.5 * f_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
     double B = f_tilde_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde);
@@ -124,8 +139,6 @@ double next_q(double q, double X, const AA& delta_a, const AA& mu_tilde, const A
     // both q plus and q minus are 0D tensors, get their value out to pass to function
     double q_plus = (q + delta_q_plus);
     double q_minus = (q + delta_q_minus);
-    msg(q_plus);
-    msg(q_minus);
     // use all to convert 0D array of bool to bool explicitly
     if (std::abs(f_tilde(q_plus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde)) <
         std::abs(f_tilde(q_minus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde))) {
@@ -177,18 +190,6 @@ double q_to_p(double q, double vM) {
 TwoPointRayTracing::array_t delta(const TwoPointRayTracing::array_t& in) {
     return in.apply([](double d) -> double { return d != 0 ? 1 : 0; });
 }
-
-TwoPointRayTracing::array_t::value_type nansum(const TwoPointRayTracing::array_t& in) {
-    TwoPointRayTracing::array_t::value_type sum{0};
-    for (auto e : in) {
-        if (std::isnan(e)) {
-            break;
-        }
-        sum += e;
-    }
-    return sum;
-}
-
 
 slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
                                      __attribute__((unused)) double accuracy) {
