@@ -1,3 +1,4 @@
+#include "testing_utils.hpp"
 #include "utils.hpp"
 #include "gtest/gtest.h"
 #include <cmath>
@@ -271,4 +272,23 @@ TEST(TestFormatter, TestToOStream) {
     std::stringstream os;
     os << (impl::Formatter() << "Hallo Welt");
     EXPECT_EQ(os.str(), "Hallo Welt");
+}
+
+TEST(TestSlowness3D, TestIfVelocityRelationIsFullfilled) {
+    // slowness is defined as p = 1/v, so velocity should be recovered by v = 1/p
+    auto [px, py, pz] = seismo::slowness_3D(math::radians(20), math::radians(10), 1000);
+    EXPECT_DOUBLE_EQ(1000., 1 / math::length(px, py, pz));
+}
+
+TEST(TestSlowness3D, TestUpgoingSlownessShouldBeNegative) {
+    auto [px, py, pz] = seismo::slowness_3D(math::radians(170), 0, 1000);
+    ASSERT_LT(pz, 0);
+}
+
+TEST(TestSlowness3D, HorizontalRayShouldHaveZeroAsVerticalSlowness) {
+    auto [px, py, pz] = seismo::slowness_3D(math::radians(90), math::radians(10), 1000);
+    EXPECT_TRUE(AlmostEqual(pz, 0., 17));
+    EXPECT_NE(px, py);
+    EXPECT_NE(px, 0);
+    EXPECT_NE(py, 0);
 }
