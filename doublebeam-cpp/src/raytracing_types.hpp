@@ -3,8 +3,8 @@
 
 #include <array>
 #include <complex>
-#include <tuple>
 #include <cstddef>
+#include <tuple>
 
 
 using state_type = std::array<double, 7>;
@@ -36,9 +36,23 @@ namespace Index {
  * of wave types), which specify the behaviour of a ray during it's travel through the velocity
  * model.
  */
-enum class WaveType {
-    Transmitted,
-    Reflected
-};
+enum class WaveType : char { Transmitted = 'T', Reflected = 'R' };
+
+inline WaveType to_wavetype(char c) {
+    if (c == static_cast<char>(WaveType::Transmitted)) {
+        return WaveType::Transmitted;
+    } else if (c == static_cast<char>(WaveType::Reflected)) {
+        return WaveType::Reflected;
+    } else {
+        std::stringstream ss;
+        ss << "Wave type specifier " << c
+           << " is not valid. Valid are: T (transmitted), R (reflected).";
+        throw std::runtime_error(ss.str());
+    }
+}
+
+inline char to_char(WaveType wave_type) {
+    return static_cast<char>(wave_type);
+}
 
 #endif // DOUBLEBEAM_CPP_RAYTRACING_TYPES_HPP

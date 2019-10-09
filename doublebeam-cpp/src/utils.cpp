@@ -51,13 +51,7 @@ namespace seismo {
     std::vector<WaveType> make_ray_code(const std::string s) {
         std::vector<WaveType> ray_code;
         for (char c : s) {
-            if (c == 'T') {
-                ray_code.push_back(WaveType::Transmitted);
-            } else if (c == 'R') {
-                ray_code.push_back(WaveType::Reflected);
-            } else {
-                throw std::invalid_argument("Invalid char " + std::string(1, c) + " in ray code.");
-            }
+            ray_code.push_back(to_wavetype(c));
         }
         return ray_code;
     }

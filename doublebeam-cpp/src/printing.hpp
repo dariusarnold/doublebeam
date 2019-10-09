@@ -1,6 +1,7 @@
 #ifndef DOUBLEBEAM_CPP_PRINTING_HPP
 #define DOUBLEBEAM_CPP_PRINTING_HPP
 
+#include "raytracing_types.hpp"
 #include <cstddef>
 #include <ostream>
 #include <array>
@@ -18,6 +19,10 @@ std::ostream& operator<<(std::ostream& os, std::array<T, N> a) {
     return os;
 }
 
+/**
+ * Print wavetypes without separating spaces.
+ */
+std::ostream& operator<<(std::ostream& os, std::vector<WaveType> v);
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, std::vector<T> v) {
@@ -51,5 +56,6 @@ std::ostream& operator<<(std::ostream& os, const std::valarray<T>& a) {
     return os;
 }
 
+std::ostream& operator<<(std::ostream& is, const WaveType& wave_type);
 
 #endif // DOUBLEBEAM_CPP_PRINTING_HPP
