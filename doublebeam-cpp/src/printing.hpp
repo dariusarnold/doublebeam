@@ -41,5 +41,15 @@ std::ostream& operator<<(std::ostream& os, const std::tuple<T, T, T>& t) {
     return os;
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::valarray<T>& a) {
+    // print last element without separator
+    for (auto i = std::begin(a); i != std::end(a) - 1; ++i) {
+        os << *i << ", ";
+    }
+    os << *(std::end(a) - 1);
+    return os;
+}
+
 
 #endif // DOUBLEBEAM_CPP_PRINTING_HPP
