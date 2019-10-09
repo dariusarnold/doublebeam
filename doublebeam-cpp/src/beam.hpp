@@ -55,4 +55,11 @@ private:
  */
 slowness_t last_slowness(const Beam& beam);
 
+/**
+ * Return last position of a beam.
+ * @param beam 
+ * @return 
+ */
+position_t last_point(const Beam& beam);
+
 #endif // DOUBLEBEAM_CPP_BEAM_HPP
