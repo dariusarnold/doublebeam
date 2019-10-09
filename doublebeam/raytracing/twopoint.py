@@ -37,8 +37,8 @@ class TwoPointRayTracing:
         :return: Highest velocity (m/s) between source and receiver for a direct
         ray
         """
-        receiver_index = self._model.layer_index(receiver_position)
-        source_index = self._model.layer_index(source_position)
+        receiver_index = int(self._model.layer_index(receiver_position[Index.Z]))
+        source_index = int(self._model.layer_index(source_position[Index.Z]))
         if source_index == receiver_index:
             return max(self._model.eval_at(source_position),
                        self._model.eval_at(receiver_position))
@@ -61,8 +61,8 @@ class TwoPointRayTracing:
         # +1 last index to include top velocity of the bottom most layer
         velocities_top = self._model.velocities_top[index_low+1:index_high+1]
         # second, also get velocity at the end points (source and receiver)
-        v = max(self._model.eval_at(source_position),
-                self._model.eval_at(receiver_position))
+        v = max(self._model.eval_at(source_position[Index.Z]),
+                self._model.eval_at(receiver_position[Index.Z]))
         return max(np.max(velocities_bottom), np.max(velocities_top), v)
 
     # TODO fix twopoint algorithm to not throw warnings
@@ -129,6 +129,9 @@ class TwoPointRayTracing:
                 return q_plus
             else:
                 return q_minus
+
+        source = np.asarray(source)
+        receiver = np.asarray(receiver)
 
         top, bottom = self._model.vertical_boundaries()
         if not top <= source[Index.Z] <= bottom:
