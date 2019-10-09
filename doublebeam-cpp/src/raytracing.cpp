@@ -189,6 +189,9 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
             current_layer = model[layer_index];
         }
+        if (layer_index < 0 or layer_index > model.size()) {
+            throw std::runtime_error(impl::Formatter() << "Ray left model at top or bottom.");
+        }
         auto [v_above, v_below] = model.interface_velocities(z);
         auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
