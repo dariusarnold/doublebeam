@@ -173,7 +173,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
     if (not segment) {
         // early exit when ray left model horizontally
-        return {Status::OutOfHorizontalBounds, {}};
+        return {Status::OutOfBounds, {}};
     }
     if (ray_code.empty()) {
         // only trace one layer for empty ray code
@@ -189,7 +189,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
             layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
             current_layer = model[layer_index];
         }
-        if (layer_index < 0 or layer_index > model.size()) {
+        if (layer_index < 0 or layer_index >= model.size()) {
             throw std::runtime_error(impl::Formatter() << "Ray left model at top or bottom.");
         }
         auto [v_above, v_below] = model.interface_velocities(z);
@@ -198,7 +198,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
         segment = trace_layer(new_initial_state, current_layer,
                               ray.segments.back().arclength.back(), step_size, max_step);
         if (not segment) {
-            return {Status::OutOfHorizontalBounds, {}};
+            return {Status::OutOfBounds, {}};
         }
         ray.segments.push_back(segment.value());
     }
@@ -401,79 +401,46 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
                                              double beam_frequency,
                                              const std::vector<WaveType>& ray_code,
                                              double step_size, double max_step) {
-    if (not model.in_model(initial_state[Index::X], initial_state[Index::Y],
-                           initial_state[Index::Z])) {
-        throw std::domain_error(impl::Formatter()
-                                << "Point "
-                                << point_to_str(initial_state[Index::X], initial_state[Index::Y],
-                                                initial_state[Index::Z])
-                                << " not in model " << model);
+    // first trace ray kinematically
+    auto ray = trace_ray(initial_state, ray_code, step_size, max_step);
+    if (not ray.result) {
+        // ray tracing failed
+        return {ray.status, {}};
     }
-    auto current_layer =
-        model.get_layer(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z]);
-    auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
-    if (not segment) {
-        return {Status::OutOfHorizontalBounds, {}};
-    }
+    InterfacePropagator ip;
+    Beam beam(beam_width, beam_frequency);
     // initial values for P, Q
-    auto v0 =
-        model.eval_at(initial_state[Index::X], initial_state[Index::Y], initial_state[Index::Z])
-            .value();
+    auto [x, y, z, px, py, pz, t] = ray.value().segments.front().data.front();
+    auto v0 = model.eval_at(x, y, z).value();
     xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
     xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
                                {0, beam_frequency * beam_width * beam_width / v0}};
-    // evaluate velocity at all points of the ray
-    // TODO this was already done during ray tracing itself, maybe we can reuse the results. Could
-    //  be problematic since the ODE solving code evaluates the function multiple times at different
-    //  points, not only the ones kept later.
-    std::vector<double> v;
-    std::transform(
-        segment.value().data.begin(), segment.value().data.end(), std::back_inserter(v),
-        [&](const state_type& state) {
-            return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
-        });
-    auto sigma_ = math::cumtrapz(v, segment.value().arclength, 0.);
-    auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
-    xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
-    xt::xtensor<complex, 3> Q = Q0 + sigma * P0;
-    Beam beam{beam_width, beam_frequency, {segment.value(), P, Q}};
-    if (ray_code.empty()) {
-        return {Status::Success, beam};
-    }
-    // dont include start index since first layer was already done above
-    auto layer_indices = seismo::ray_code_to_layer_indices(
-        ray_code, initial_state[Index::PZ], model.layer_index(initial_state[Index::Z]).value());
-    InterfacePropagator ip;
-    for (auto i = 0UL; i < ray_code.size(); ++i) {
-        auto index = layer_indices[i];
-        auto new_index = layer_indices[i + 1];
-        auto wave_type = ray_code[i];
-        current_layer = model[new_index];
-        // transform kinematic ray tracing across interface using snells law
-        auto old_state = beam.segments.back().ray_segment.data.back();
-        auto new_initial_state = snells_law(old_state, model, wave_type);
-        // do kinematic ray tracing for new segment
-        segment = trace_layer(new_initial_state, current_layer, segment.value().arclength.back(),
-                              step_size, max_step);
-        if (not segment) {
-            return {Status::OutOfHorizontalBounds, {}};
-        }
-        // transform dynamic ray tracing across interface using snells law
-        auto [P0_new, Q0_new] = ip.transform(xt::squeeze(xt::view(P, xt::keep(-1))),
-                                             xt::squeeze(xt::view(Q, xt::keep(-1))), wave_type,
-                                             old_state, new_initial_state, index, model);
-        // do dynamic ray tracing for new segment
-        v.clear();
+    std::ptrdiff_t segment_index = 0;
+    for (const auto& segment : ray.value()) {
+        auto [x, y, z, px, py, pz, t] = segment.data.front();
+        auto layer_index = model.layer_index(x, y, z).value();
+        // evaluate velocity at all points of the ray
+        std::vector<double> v;
         std::transform(
-            segment.value().data.begin(), segment.value().data.end(), std::back_inserter(v),
+            segment.data.begin(), segment.data.end(), std::back_inserter(v),
             [&](const state_type& state) {
                 return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
             });
-        sigma_ = math::cumtrapz(v, segment.value().arclength, 0.);
-        sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
-        P = xt::broadcast(P0_new, {sigma_.size(), 2UL, 2UL});
-        Q = Q0_new + sigma * P0_new;
-        beam.segments.emplace_back(segment.value(), P, Q);
+        auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
+        auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
+        xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
+        xt::xtensor<complex, 3> Q = Q0 + sigma * P0;
+        beam.segments.emplace_back(segment, P, Q);
+        if (segment_index < (ray.value().size() - 1)) {
+            // if we are not at the last segment of the ray, transform dynamic ray tracing across
+            // interface (calculate new P0, Q0)
+            auto wave_type = ray_code[segment_index];
+            auto new_initial_state = ray.value()[segment_index + 1].data.front();
+            std::tie(P0, Q0) = ip.transform(
+                xt::squeeze(xt::view(P, xt::keep(-1))), xt::squeeze(xt::view(Q, xt::keep(-1))),
+                wave_type, segment.data.back(), new_initial_state, layer_index, model);
+        }
+        ++segment_index;
     }
     return {Status::Success, beam};
 }

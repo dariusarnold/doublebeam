@@ -68,7 +68,7 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
-            if (source_beam.status == Status::OutOfHorizontalBounds) {
+            if (source_beam.status == Status::OutOfBounds) {
                 break;
             }
             auto last_p = last_slowness(source_beam.value());
@@ -89,7 +89,7 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto duration =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     std::cout << duration << "\n";
-                    if (receiver_beam.status == Status::OutOfHorizontalBounds) {
+                    if (receiver_beam.status == Status::OutOfBounds) {
                         // beam didn't reach surface, skip
                         std::cout << "Left model" << std::endl;
                         break;

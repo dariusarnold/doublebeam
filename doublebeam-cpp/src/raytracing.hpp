@@ -55,7 +55,7 @@ enum class Status {
     // Ray tracing finished successfully
     Success,
     // Ray left velocity model
-    OutOfHorizontalBounds
+    OutOfBounds
 };
 
 

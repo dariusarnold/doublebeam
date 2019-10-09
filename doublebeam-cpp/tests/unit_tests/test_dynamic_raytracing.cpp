@@ -164,5 +164,5 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
 TEST_F(DynamicRaytracingBase, TestIfFailingCaseWorks) {
     auto initial_state = make_state(10, 10, 450, -3.8270212473354787e-20, -0.00062500000000000001,
                                     -0.00055555555555555556);
-    EXPECT_EQ(rt.trace_beam(initial_state, 10, 45, "TTTT").status, Status::OutOfHorizontalBounds);
+    EXPECT_EQ(rt.trace_beam(initial_state, 10, 45, "TTTT").status, Status::OutOfBounds);
 }
