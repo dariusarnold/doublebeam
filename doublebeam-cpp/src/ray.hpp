@@ -23,7 +23,7 @@ public:
     /**
      * Return number of ray segments.
      */
-    size_t size() const;
+    std::ptrdiff_t size() const;
 
     /**
      * Return const reference to a ray segment.
