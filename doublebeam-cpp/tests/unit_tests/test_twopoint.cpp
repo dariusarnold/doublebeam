@@ -90,6 +90,13 @@ TEST_F(TestTwopointRayTracingBase, TestStraightDown) {
     EXPECT_DOUBLE_EQ(pz, 0.00055555555555555556);
 }
 
+TEST_F(TestTwopointRayTracingBase, TestStraightDownWithXYCoordinates) {
+    auto [px, py, pz] = twopoint.trace({100, 100, 450}, {100, 100, 0});
+    EXPECT_EQ(px, 0);
+    EXPECT_EQ(py, 0);
+    EXPECT_EQ(pz, -1. / model.eval_at(100, 100, 450).value());
+}
+
 TEST_F(TestTwopointRayTracingBase, TestNanReturn) {
     // This test fails due to a Nan which has to be summed using Nansum. Check if code handles
     // this case correctly.
