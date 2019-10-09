@@ -118,7 +118,7 @@ public:
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
-    RayTracingResult<struct Beam> trace_beam(state_type initial_state, double beam_width,
+    RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
                                              double beam_frequency, const std::string& ray_code,
                                              double step_size = 1., double max_step = 1.1);
 
