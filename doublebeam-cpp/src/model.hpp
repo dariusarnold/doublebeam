@@ -84,7 +84,7 @@ public:
      * @return Index of layer in velocity model, 0 indexed.
      * @throw std::domain_error is thrown when depth is out of model range
      */
-    std::optional<size_t> layer_index(double z) const;
+    std::optional<std::ptrdiff_t> layer_index(double z) const;
 
     /**
      * Evaluate model at a certain position.
@@ -185,7 +185,7 @@ public:
      * Return number of layers in model.
      * @return
      */
-    size_t size() const;
+    std::ptrdiff_t size() const;
 
     const std::vector<double>& interface_depths() const;
 

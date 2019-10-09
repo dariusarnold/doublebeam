@@ -120,7 +120,7 @@ std::optional<size_t> VelocityModel::layer_index(double x, double y, double z) c
 }
 
 
-std::optional<size_t> VelocityModel::layer_index(double z) const {
+std::optional<std::ptrdiff_t> VelocityModel::layer_index(double z) const {
     return layer_index(x0_, y0_, z);
 }
 
@@ -178,7 +178,7 @@ std::vector<Layer>::const_iterator VelocityModel::end() const {
     return layers.end();
 }
 
-size_t VelocityModel::size() const {
+std::ptrdiff_t VelocityModel::size() const {
     return layers.size();
 }
 
