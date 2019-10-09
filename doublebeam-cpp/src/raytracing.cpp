@@ -176,6 +176,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
         return {Status::OutOfHorizontalBounds, {}};
     }
     if (ray_code.empty()) {
+        // only trace one layer for empty ray code
         return {Status::Success, {{{segment.value()}}}};
     }
     Ray ray{{segment.value()}};
@@ -459,14 +460,14 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
                                              xt::squeeze(xt::view(Q, xt::keep(-1))), wave_type,
                                              old_state, new_initial_state, index, model);
         // do dynamic ray tracing for new segment
-        std::vector<double> v;
+        v.clear();
         std::transform(
             segment.value().data.begin(), segment.value().data.end(), std::back_inserter(v),
             [&](const state_type& state) {
                 return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
             });
-        auto sigma_ = math::cumtrapz(v, segment.value().arclength, 0.);
-        auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
+        sigma_ = math::cumtrapz(v, segment.value().arclength, 0.);
+        sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
         P = xt::broadcast(P0_new, {sigma_.size(), 2UL, 2UL});
         Q = Q0_new + sigma * P0_new;
         beam.segments.emplace_back(segment.value(), P, Q);
