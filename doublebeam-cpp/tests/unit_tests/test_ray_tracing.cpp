@@ -57,7 +57,7 @@ test_data_t test_data = {{{0.000166674323178, 0., 0.0005299638150872}, 469},
 INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn(test_data));
 
 
-TEST(TestRayTracing, TestTurningRay) {
+TEST(TestRayTracingFunctionality, TestTurningRay) {
     VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}}, 10000, 10000);
     RayTracer rt(vm);
     auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
