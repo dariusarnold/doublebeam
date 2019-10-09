@@ -17,3 +17,19 @@ RaySegment& Ray::operator[](size_t index) {
 const RaySegment& Ray::operator[](size_t index) const {
     return segments[index];
 }
+
+slowness_t last_slowness(const Ray& ray) {
+    if (ray.size() == 0) {
+        throw std::length_error("Accessing empty ray.");
+    }
+    auto last_segment = ray.segments.back().data.back();
+    return {last_segment[Index::PX], last_segment[Index::PY], last_segment[Index::PZ]};
+}
+
+position_t last_point(const Ray& ray) {
+    if (ray.size() == 0) {
+        throw std::length_error("Acessing empty ray.");
+    }
+    auto last_segment = ray.segments.back().data.back();
+    return {last_segment[Index::X], last_segment[Index::Y], last_segment[Index::Z]};
+}

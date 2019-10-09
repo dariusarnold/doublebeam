@@ -36,4 +36,8 @@ public:
     RaySegment& operator[](size_t index);
 };
 
+slowness_t last_slowness(const Ray& ray);
+
+position_t last_point(const Ray& ray);
+
 #endif // DOUBLEBEAM_CPP_RAY_HPP
