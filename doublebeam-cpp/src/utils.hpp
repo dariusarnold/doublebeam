@@ -52,6 +52,7 @@ namespace seismo {
      * @param start_index At which layer index the sequence should start.
      * @return
      */
+     // TODO this function doesn't work for turning rays.
     std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
                                                           double pz_initial,
                                                           std::ptrdiff_t start_index = 0,
