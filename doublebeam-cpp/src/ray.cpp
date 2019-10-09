@@ -8,7 +8,7 @@ std::vector<RaySegment>::iterator Ray::begin() {
 std::vector<RaySegment>::iterator Ray::end() {
     return segments.end();
 }
-size_t Ray::size() {
+size_t Ray::size() const {
     return segments.size();
 }
 RaySegment& Ray::operator[](size_t index) {
