@@ -334,7 +334,7 @@ namespace impl {
                 // On first use, only stream t to avoid prepending a separator
                 first_used = true;
                 stream << t;
-            } else{
+            } else {
                 // stream separator and then new value so there is never a trailing separator
                 stream << separator << t;
             }

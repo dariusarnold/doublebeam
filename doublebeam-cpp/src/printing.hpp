@@ -2,11 +2,11 @@
 #define DOUBLEBEAM_CPP_PRINTING_HPP
 
 #include "raytracing_types.hpp"
+#include <array>
 #include <cstddef>
 #include <ostream>
-#include <array>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 
 template <typename T, std::size_t N>

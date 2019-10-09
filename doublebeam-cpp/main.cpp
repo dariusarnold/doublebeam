@@ -1,9 +1,9 @@
+#include "doublebeam.hpp"
 #include "printing.hpp"
 #include "raytracing.hpp"
 #include "timing/timing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
-#include "doublebeam.hpp"
 
 
 std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {

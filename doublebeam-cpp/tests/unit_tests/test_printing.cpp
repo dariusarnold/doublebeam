@@ -2,8 +2,8 @@
 
 #include "printing.hpp"
 
-#include <valarray>
 #include <iostream>
+#include <valarray>
 
 
 TEST(TestValarray, TestIfPrintedCorrectly) {
