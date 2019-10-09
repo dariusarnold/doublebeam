@@ -12,8 +12,6 @@
 #include "raytracing_helpers.hpp"
 #include "utils.hpp"
 
-namespace odeint = boost::numeric::odeint;
-
 std::string point_to_str(double x, double y, double z) {
     return impl::Formatter(",") << x << y << z;
 }
@@ -87,8 +85,9 @@ void ray_tracing_equation(const state_type& state, state_type& dfds, const doubl
 std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& initial_state,
                                                           const Layer& layer, double s_start,
                                                           double ds, double max_ds) {
-    InterfaceCrossed crossing(layer);
+    namespace odeint = boost::numeric::odeint;
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
+    InterfaceCrossed crossing(layer);
     // error values can be lowered to 1e-8 with only minimal loss in precision to improve speed
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
     stepper.initialize(initial_state, s_start, ds);
