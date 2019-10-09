@@ -52,12 +52,15 @@ namespace seismo {
      * @param start_index At which layer index the sequence should start.
      * @return
      */
-    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
-                                               double pz_initial, int start_index = 0,
-                                               bool include_start = true);
+    std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
+                                                          double pz_initial,
+                                                          std::ptrdiff_t start_index = 0,
+                                                          bool include_start = true);
 
-    std::vector<int> ray_code_to_layer_indices(const std::string& code, double pz_initial,
-                                               int start_index = 0, bool include_start = true);
+    std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::string& code,
+                                                          double pz_initial,
+                                                          std::ptrdiff_t start_index = 0,
+                                                          bool include_start = true);
 
     /**
      * Calculate next layer index for a given layer index and state at an interface (state before

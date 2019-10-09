@@ -13,10 +13,11 @@ namespace seismo {
         return {px, py, pz};
     }
 
-    std::vector<int> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
-                                               double pz_initial, int start_index,
-                                               bool include_start) {
-        std::vector<int> indices;
+    std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
+                                                          double pz_initial,
+                                                          std::ptrdiff_t start_index,
+                                                          bool include_start) {
+        std::vector<std::ptrdiff_t> indices;
         if (include_start) {
             indices.push_back(start_index);
         }
@@ -32,8 +33,10 @@ namespace seismo {
         return indices;
     }
 
-    std::vector<int> ray_code_to_layer_indices(const std::string& code, double pz_initial,
-                                               int start_index, bool include_start) {
+    std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::string& code,
+                                                          double pz_initial,
+                                                          std::ptrdiff_t start_index,
+                                                          bool include_start) {
         return ray_code_to_layer_indices(make_ray_code(code), pz_initial, start_index,
                                          include_start);
     }
