@@ -85,9 +85,6 @@ namespace math {
     template <typename T>
     constexpr double radians(T degrees) {
         constexpr double factor = M_PI / 180.;
-        if constexpr (std::is_integral<T>::value) {
-            degrees = static_cast<double>(degrees);
-        }
         return degrees * factor;
     }
 
