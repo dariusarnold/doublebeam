@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "testing_utils.hpp"
+#include <gtest/gtest.h>
 
 #include <xtensor/xio.hpp>
 #include <xtensor/xnpy.hpp>
@@ -16,7 +16,6 @@ protected:
     RayTracer rt{model};
 };
 
-// currently this tests throws in init state not the beam tracing
 TEST_F(DynamicRaytracingBase, TestThrowWhenStartingOutOfModel) {
     auto [top, bottom] = model.get_top_bottom();
     auto above = init_state(0, 0, top, model, 0, 0, 0);
@@ -39,6 +38,14 @@ TEST_F(DynamicRaytracingBase, TestBasicCredibilityOfResult) {
         EXPECT_EQ(beam[i].P.shape()[0], beam[i].Q.shape()[0]) << "Length of P and Q different.";
         EXPECT_EQ(beam[i].P.shape()[0], beam[i].ray_segment.data.size())
             << "Number of points along beam and entries in P/Q should be the same.";
+        EXPECT_EQ(beam[i].v.size(), beam[i].data().size())
+            << "Number of velocities not equal to number of points along beam.";
+        auto [x, y, z] = first_point(beam[i]);
+        EXPECT_EQ(model.eval_at(x, y, z), beam[i].v.front())
+            << "Stored and evaluated velocity differ for first point of beam.";
+        std::tie(x, y, z) = last_point(beam[i]);
+        EXPECT_EQ(model.eval_at(x, y, z), beam[i].v.back())
+            << "Stored and evaluated velocity differ for last point of beam.";
     }
 }
 

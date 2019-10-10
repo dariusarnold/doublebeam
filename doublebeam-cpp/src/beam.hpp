@@ -11,10 +11,12 @@
 
 class BeamSegment {
 public:
-    BeamSegment(RaySegment segment, xt::xtensor<complex, 3> P, xt::xtensor<complex, 3> Q) :
+    BeamSegment(RaySegment segment, xt::xtensor<complex, 3> P, xt::xtensor<complex, 3> Q,
+                std::vector<double> v) :
             ray_segment(segment),
             P(P),
-            Q(Q) {}
+            Q(Q),
+            v(v) {}
     // Return data of ray segment
     std::vector<state_type> data() const;
     // return arclength of ray segment
@@ -23,6 +25,7 @@ public:
     RaySegment ray_segment;
     xt::xtensor<complex, 3> P;
     xt::xtensor<complex, 3> Q;
+    std::vector<double> v;
 };
 
 /**

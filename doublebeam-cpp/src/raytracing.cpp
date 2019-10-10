@@ -430,7 +430,7 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
         auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
         xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
         xt::xtensor<complex, 3> Q = Q0 + sigma * P0;
-        beam.segments.emplace_back(segment, P, Q);
+        beam.segments.emplace_back(segment, P, Q, v);
         if (segment_index < (ray.value().size() - 1)) {
             // if we are not at the last segment of the ray, transform dynamic ray tracing across
             // interface (calculate new P0, Q0)
