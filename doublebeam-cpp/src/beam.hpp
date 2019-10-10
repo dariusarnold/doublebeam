@@ -20,6 +20,18 @@ public:
     xt::xtensor<complex, 3> Q;
 };
 
+/**
+ * Get first point (start point) of beam segment.
+ * @return x, y, z coordinate triple
+ */
+position_t first_point(const BeamSegment& bs);
+
+/**
+ * Get last point (end point) of beam segment.
+ * @return x, y, z coordinate triple
+ */
+position_t last_point(const BeamSegment& bs);
+
 
 class Beam {
 public:
@@ -57,8 +69,8 @@ slowness_t last_slowness(const Beam& beam);
 
 /**
  * Return last position of a beam.
- * @param beam 
- * @return 
+ * @param beam
+ * @return
  */
 position_t last_point(const Beam& beam);
 

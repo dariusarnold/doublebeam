@@ -53,3 +53,13 @@ position_t last_point(const Beam& beam) {
     auto last_segment = beam.segments.back().ray_segment.data.back();
     return {last_segment[Index::X], last_segment[Index::Y], last_segment[Index::Z]};
 }
+
+position_t first_point(const BeamSegment& bs) {
+    auto [x, y, z, px, py, pz, t] = bs.data().front();
+    return {x, y, z};
+}
+
+position_t last_point(const BeamSegment& bs) {
+    auto [x, y, z, px, py, pz, t] = bs.data().back();
+    return {x, y, z};
+}
