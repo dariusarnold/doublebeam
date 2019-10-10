@@ -18,7 +18,7 @@ find_package(LAPACK REQUIRED)
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/raytracing_helpers.hpp src/ray.cpp src/ray.hpp
-        src/beam.cpp src/beam.hpp src/doublebeam.cpp src/doublebeam.hpp)
+        src/beam.cpp src/beam.hpp src/doublebeam.cpp src/doublebeam.hpp src/printing.cpp)
 target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs)
 target_link_libraries(doublebeam_lib PUBLIC xtensor ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 target_include_directories(doublebeam_lib PUBLIC src)

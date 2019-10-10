@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "testing_utils.hpp"
 
 #include <xtensor/xio.hpp>
 #include <xtensor/xnpy.hpp>
@@ -56,15 +57,6 @@ TEST_F(DynamicRaytracingBase, DynamicRayTracingAndKinematicRayTracingShouldResul
     }
 }
 
-/**
- * Get absolute path to directory of current source file.
- * @return If the source file is /foo/bar/baz.cpp, return path(/foo/bar)
- */
-std::filesystem::path current_source_path() {
-    std::filesystem::path p(__FILE__);
-    p = p.parent_path();
-    return p;
-}
 
 template <typename T, typename = void>
 struct is_container : std::false_type {};
@@ -104,9 +96,8 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     // trace beam through single layer and compare with previous result.
     VelocityModel model{{{0, 10, 2000, 1}}, 1000, 1000};
     RayTracer rt{model};
-    auto P_desired = xt::load_npy<complex>(current_source_path() / "data/P_analytic.npy");
-    auto Q_desired = xt::load_npy<complex>(current_source_path() / "data/Q_analytic.npy");
-    // std::cout << P_desired.shape() << std::endl;
+    auto P_desired = xt::load_npy<complex>(current_source_path(__FILE__) / "data/P_analytic.npy");
+    auto Q_desired = xt::load_npy<complex>(current_source_path(__FILE__) / "data/Q_analytic.npy");
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4).value();
     ASSERT_EQ(beam.segments.size(), 1);
@@ -129,9 +120,9 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
     auto beam = rt.trace_beam(initial_state, 10, 40, "TRT").value();
     for (auto i = 0; i < beam.size(); ++i) {
-        auto P_desired = xt::load_npy<complex>(current_source_path() /
+        auto P_desired = xt::load_npy<complex>(current_source_path(__FILE__) /
                                                ("data/P_multilayer" + std::to_string(i) + ".npy"));
-        auto Q_desired = xt::load_npy<complex>(current_source_path() /
+        auto Q_desired = xt::load_npy<complex>(current_source_path(__FILE__) /
                                                ("data/Q_multilayer" + std::to_string(i) + ".npy"));
         // compare dimension instead of shape since different number of points may have been
         // calculated during ray tracing.

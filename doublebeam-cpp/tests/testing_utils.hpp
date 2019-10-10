@@ -2,6 +2,7 @@
 #define DOUBLEBEAM_CPP_TESTING_UTILS_HPP
 
 #include "utils.hpp"
+#include <filesystem>
 #include "gtest/gtest.h"
 
 /**
@@ -43,5 +44,11 @@ template <typename T>
                << actual << " and " << desired << " differ by more than " << places << " digits.";
     }
 }
+
+/**
+ * Get absolute path to directory of current source file.
+ * @return If the source file is /foo/bar/baz.cpp, return path(/foo/bar)
+ */
+std::filesystem::path current_source_path(std::string file);
 
 #endif // DOUBLEBEAM_CPP_TESTING_UTILS_HPP
