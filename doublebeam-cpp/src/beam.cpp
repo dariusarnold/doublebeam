@@ -63,3 +63,11 @@ position_t last_point(const BeamSegment& bs) {
     auto [x, y, z, px, py, pz, t] = bs.data().back();
     return {x, y, z};
 }
+
+std::vector<state_type> BeamSegment::data() const {
+    return ray_segment.data;
+}
+
+std::vector<double> BeamSegment::arclength() const {
+    return ray_segment.arclength;
+}

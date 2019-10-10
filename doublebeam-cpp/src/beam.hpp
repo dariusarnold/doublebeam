@@ -15,6 +15,11 @@ public:
             ray_segment(segment),
             P(P),
             Q(Q) {}
+    // Return data of ray segment
+    std::vector<state_type> data() const;
+    // return arclength of ray segment
+    std::vector<double> arclength() const;
+
     RaySegment ray_segment;
     xt::xtensor<complex, 3> P;
     xt::xtensor<complex, 3> Q;
