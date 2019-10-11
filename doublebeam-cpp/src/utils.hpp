@@ -52,7 +52,7 @@ namespace seismo {
      * @param start_index At which layer index the sequence should start.
      * @return
      */
-     // TODO this function doesn't work for turning rays.
+    // TODO this function doesn't work for turning rays.
     std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
                                                           double pz_initial,
                                                           std::ptrdiff_t start_index = 0,
@@ -144,8 +144,77 @@ namespace math {
 
     /**
      * Dot product of two 3D vectors.
+     * @param x1 X component of first vector.
+     * @param y1 X component of first vector.
+     * @param z1 Z component of first vector.
+     * @param x2 X component of second vector.
+     * @param y2 Y component of second vector.
+     * @param z2 Z component of second vector.
      */
     double dot(double x1, double y1, double z1, double x2, double y2, double z2);
+
+    /**
+     * Cross product of two 3D vectors.
+     * @param x1 X component of first vector.
+     * @param y1 X component of first vector.
+     * @param z1 Z component of first vector.
+     * @param x2 X component of second vector.
+     * @param y2 Y component of second vector.
+     * @param z2 Z component of second vector.
+     * @return
+     */
+    std::tuple<double, double, double> cross(double x1, double y1, double z1, double x2, double y2,
+                                             double z2);
+
+    /**
+     * Normalize vector by making it's length 1 while keeping the direction.
+     * @param x
+     * @param y
+     * @param z
+     * @return
+     */
+    std::tuple<double, double, double> normalize(double x, double y, double z);
+
+    /**
+     * Return determinant of 3x3 matrix
+     *       |a b c|
+     * |A| = |d e f|
+     *       |g h i|
+     */
+    template <typename T>
+    T det(T a, T b, T c, T d, T e, T f, T g, T h, T i) {
+        return a * e * i + b * f * g + c * d * h - g * e * c - h * f * a - i * d * b;
+    }
+
+    /**
+     * Return inverse of 3x3 matrix
+     *         a b c ^-1
+     * A^-1 = (d e f)
+     *         g h i
+     */
+    template <typename T>
+    std::tuple<T, T, T, T, T, T, T, T, T> inv(T a, T b, T c, T d, T e, T f, T g, T h, T i) {
+        auto dd = 1 / det(a, b, c, d, e, f, g, h, i);
+        return {dd * (e * i - f * h), dd * (c * h - b * i), dd * (b * f - c * e),
+                dd * (f * g - d * i), dd * (a * i - c * g), dd * (c * d - a * f),
+                dd * (d * h - e * g), dd * (b * g - a * h), dd * (a * e - b * d)};
+    }
+
+    /**
+     * Right multiply matrix by column vector.
+       // TODO I need a linear algebra library.
+     * @tparam T
+     * @param matrix
+     * @param vector
+     * @return
+     */
+    template <typename T>
+    std::tuple<T, T, T> dot(std::tuple<T, T, T, T, T, T, T, T, T> matrix,
+                            std::tuple<T, T, T> vector) {
+        auto [a, b, c, d, e, f, g, h, i] = matrix;
+        auto [x, y, z] = vector;
+        return {a * x + b * y + c * z, d * x + e * y + f * z, g * x + h * y + i * z};
+    }
 
     /**
      * Round value to given number of digits after the decimal dot.

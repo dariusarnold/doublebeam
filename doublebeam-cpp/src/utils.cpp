@@ -106,6 +106,19 @@ namespace math {
         std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance; });
         return result;
     }
+
+    std::tuple<double, double, double> cross(double x1, double y1, double z1, double x2, double y2,
+                                             double z2) {
+        auto x = y1 * z2 - z1 * y2;
+        auto y = z1 * x2 - y1 * z2;
+        auto z = x1 * y2 - y1 * x2;
+        return {x, y, z};
+    }
+
+    std::tuple<double, double, double> normalize(double x, double y, double z) {
+        auto l = math::length(x, y, z);
+        return {x / l, y / l, z / l};
+    }
 } // namespace math
 
 namespace impl {
