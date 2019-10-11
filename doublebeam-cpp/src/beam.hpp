@@ -76,10 +76,22 @@ private:
 slowness_t last_slowness(const Beam& beam);
 
 /**
+ * Return starting point of beam.
+ * @param beam
+ * @return
+ */
+position_t first_point(const Beam& beam);
+
+/**
  * Return last position of a beam.
  * @param beam
  * @return
  */
 position_t last_point(const Beam& beam);
+
+// TODO maybe rename to total traveltime
+double last_traveltime(const Beam& beam);
+
+double last_arclength(const Beam& beam);
 
 #endif // DOUBLEBEAM_CPP_BEAM_HPP

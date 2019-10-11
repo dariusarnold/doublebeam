@@ -64,6 +64,18 @@ position_t last_point(const BeamSegment& bs) {
     return {x, y, z};
 }
 
+double last_traveltime(const Beam& beam) {
+    return beam.segments.back().data().back()[Index::T];
+}
+
+position_t first_point(const Beam& beam) {
+    return last_point(beam.segments.front());
+}
+
+double last_arclength(const Beam& beam) {
+    return beam.segments.back().arclength().back();
+}
+
 std::vector<state_type> BeamSegment::data() const {
     return ray_segment.data;
 }
