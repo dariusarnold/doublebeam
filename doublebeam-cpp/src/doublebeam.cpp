@@ -1,4 +1,8 @@
 #include "xtensor/xview.hpp"
+#include <xtensor-blas/xlinalg.hpp>
+
+#include <complex>
+#include <numeric>
 
 #include "doublebeam.hpp"
 #include "printing.hpp"
@@ -57,6 +61,69 @@ std::vector<WaveType> direct_ray_code(position_t source, position_t receiver,
 
 DoubleBeam::DoubleBeam(const VelocityModel& model) : model(model), twopoint(model), tracer(model) {}
 
+#define USEDEBUG
+#ifdef USEDEBUG
+#define msg(x) std::cout << #x << ": " << x << std::endl;
+#else
+#define msg(x)
+#endif
+
+using vector_t = std::tuple<double, double, double>;
+struct UnitVectors {
+    vector_t e1, e2;
+};
+
+UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
+    // This is valid for a planar ray, see 4. from 4.1.3 Cerveny2001. We have a planar ray for a
+    // velocity model consisting of horizontal layers, with v = v(z), since nothing changes the
+    // slowness along the x or y axis.
+    // slowness is in ray plane
+    auto [px, py, pz] = last_slowness(beam);
+    // other vector in ray plane (connects start and end point)
+    auto [x0, y0, z0] = first_point(beam);
+    auto [x1, y1, z1] = last_point(beam);
+    auto e2 = std::apply(math::normalize, math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0));
+    auto e1 = std::apply(math::normalize, math::cross(px, py, pz, std::get<0>(e2), std::get<1>(e2),
+                                                      std::get<2>(e2)));
+    return {e1, e2};
+}
+
+std::complex<double> gb_amplitude(const Beam& beam) {
+    // this calculates the amplitude at the end of the beam, assuming thats the point you want since
+    // the beam reached the surface.
+    auto v_s = beam.segments.back().v.back();
+    auto v_s0 = beam.segments.front().v.front();
+    auto det_Q_s0 = xt::linalg::det(xt::squeeze(xt::view(beam.segments.front().Q, xt::keep(0))));
+    auto det_Q_s = xt::linalg::det(xt::squeeze(xt::view(beam.segments.back().Q, xt::keep(-1))));
+    return std::sqrt(v_s * det_Q_s0 / (v_s0 * det_Q_s));
+}
+
+std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
+    xt::xarray<double> q{q1, q2};
+    auto M_s = xt::squeeze(xt::view(beam.segments.back().P, xt::keep(-1))) *
+               xt::linalg::inv(xt::squeeze(xt::view(beam.segments.back().Q, xt::keep(-1))));
+    return std::exp(std::complex<double>{0, 1} * beam.frequency() *
+                    (last_traveltime(beam) + 0.5 * xt::eval(xt::transpose(q) * M_s * q)[0]));
+}
+
+
+std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, double z) {
+    auto [e1, e2] = get_ray_centred_unit_vectors(beam);
+    auto [e1x, e1y, e1z] = e1;
+    auto [e2x, e2y, e2z] = e2;
+    auto e3 = math::cross(e1x, e1y, e1z, e2x, e2y, e2z);
+    auto [e3x, e3y, e3z] = e3;
+    // auto [xx, yy, zz] = last_point(beam);
+    // auto s = last_arclength(beam);
+    auto transformation_matrix = math::inv(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
+    auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
+    std::cout << "Ray centred coordinates: " << (impl::Formatter(" ") << q1 << q2 << q3)
+              << std::endl;
+    std::cout << "A: " << gb_amplitude(beam) << std::endl;
+    std::cout << "exp: " << gb_exp(beam, q1, q2);
+    return gb_amplitude(beam) * gb_exp(beam, q1, q2);
+}
+
 void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                            std::vector<position_t> target_geometry,
                            FractureParameters fracture_info, double beam_width,
@@ -65,10 +132,12 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
         for (const auto& source_beam_center : source_geometry) {
             auto slowness = twopoint.trace(source_beam_center, target);
             auto initial_state = make_state(source_beam_center, slowness, 0);
+            std::cout << initial_state << std::endl;
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
             if (source_beam.status == Status::OutOfBounds) {
+                std::cout << "Source beam left model" << std::endl;
                 break;
             }
             auto last_p = last_slowness(source_beam.value());
@@ -88,14 +157,19 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto b = std::chrono::high_resolution_clock::now();
                     auto duration =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-                    std::cout << duration << "\n";
+                    std::cout << duration << " ns"
+                              << "\n";
                     if (receiver_beam.status == Status::OutOfBounds) {
                         // beam didn't reach surface, skip
-                        std::cout << "Left model" << std::endl;
+                        std::cout << "Receiver beam left model " << std::endl;
                         break;
                     }
+                    eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
+                    // auto total_traveltime = last_traveltime(source_beam.value()) +
+                    //                        last_traveltime(receiver_beam.value());
                 }
             }
         }
     }
+    std::cout << "DONE" << std::endl;
 }
