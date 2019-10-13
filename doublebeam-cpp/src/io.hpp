@@ -13,4 +13,11 @@
  */
 std::vector<position_t> read_receiverfile(std::filesystem::path path);
 
+/**
+ * Return source positions as an array.
+ * @param path
+ * @return
+ */
+std::vector<position_t> read_sourcefile(std::filesystem::path path);
+
 #endif // DOUBLEBEAM_CPP_IO_HPP
