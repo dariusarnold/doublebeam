@@ -141,35 +141,40 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                 break;
             }
             auto last_p = last_slowness(source_beam.value());
+            // calculate scattered slownesses for all fracture spacings/orientations
+            std::vector<std::tuple<double, double>> scattered_slownesses;
+            scattered_slownesses.reserve(fracture_info.spacings.size() *
+                                         fracture_info.orientations.size());
             for (auto spacing : fracture_info.spacings) {
                 for (auto [phi_hat_x, phi_hat_y] : fracture_info.orientations) {
-                    auto a = std::chrono::high_resolution_clock::now();
-                    auto [px, py] =
+                    scattered_slownesses.push_back(
                         scattered_slowness(std::get<0>(last_p), std::get<1>(last_p), phi_hat_x,
-                                           phi_hat_y, spacing, beam_frequency);
-                    // -pz to reflect beam upwards from target
-                    slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
-                    initial_state = make_state(target, new_slowness);
-                    // reuse ray code since beam should pass through the same layers
-                    auto receiver_beam =
-                        tracer.trace_beam(initial_state, beam_width, beam_frequency,
-                                          direct_ray_code(target, source_beam_center, model));
-                    auto b = std::chrono::high_resolution_clock::now();
-                    auto duration =
-                        std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-                    std::cout << duration << " ns"
-                              << "\n";
-                    if (receiver_beam.status == Status::OutOfBounds) {
-                        // beam didn't reach surface, skip
-                        std::cout << "Receiver beam left model " << std::endl;
-                        break;
-                    }
-                    eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
-                    // auto total_traveltime = last_traveltime(source_beam.value()) +
-                    //                        last_traveltime(receiver_beam.value());
+                                           phi_hat_y, spacing, beam_frequency));
                 }
+            }
+            // trace receiver beam in scattered direction
+            for (auto [px, py] : scattered_slownesses) {
+                auto a = std::chrono::high_resolution_clock::now();
+                // -pz to reflect beam upwards from target
+                slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
+                initial_state = make_state(target, new_slowness);
+                // reuse ray code since beam should pass through the same layers
+                auto receiver_beam =
+                    tracer.trace_beam(initial_state, beam_width, beam_frequency,
+                                      direct_ray_code(target, source_beam_center, model));
+                auto b = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+                std::cout << duration << " ns"
+                          << "\n";
+                if (receiver_beam.status == Status::OutOfBounds) {
+                    // beam didn't reach surface, skip
+                    std::cout << "Receiver beam left model " << std::endl;
+                    break;
+                }
+                eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
+                // auto total_traveltime = last_traveltime(source_beam.value()) +
+                //                        last_traveltime(receiver_beam.value());
             }
         }
     }
-    std::cout << "DONE" << std::endl;
 }
