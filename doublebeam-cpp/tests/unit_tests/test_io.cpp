@@ -50,3 +50,35 @@ TEST_F(TestSourceFileReading, TestIfValuesAreReadCorrectly) {
 TEST_F(TestSourceFileReading, TestForThrowWhenFileNotExists) {
     ASSERT_THROW(read_sourcefile("Idonotexist"), std::runtime_error);
 }
+
+
+class TestVectorBinaryIO : public testing::Test {
+protected:
+    std::vector<double> data{0.5, 1 / 3, 42, 0, -10.1};
+    std::filesystem::path p = current_source_path(__FILE__) / "data" / "vector.bin";
+};
+
+TEST_F(TestVectorBinaryIO, TestStoringToDisk) {
+    if (std::filesystem::exists(p)) {
+        // clean up old data
+        std::filesystem::remove(p);
+    }
+    ASSERT_FALSE(std::filesystem::exists(p))
+        << "Failed to clean up for unit test (Failed to delete file " << p << ").";
+    ASSERT_NO_THROW(save_binary(data, p)) << "Failed to save vector to file " << p << ".";
+    ASSERT_TRUE(std::filesystem::exists(p));
+}
+
+TEST_F(TestVectorBinaryIO, TestReadingFromDisk) {
+    if (std::filesystem::exists(p)) {
+        std::filesystem::remove(p);
+    }
+    ASSERT_FALSE(std::filesystem::exists(p))
+        << "Failed to clean up for unit test (Failed to delete file " << p << ").";
+    ASSERT_NO_THROW(save_binary(data, p))
+        << "Failed to set up test environment (Couldn't save vector file " << p << ").";
+    std::vector<double> v;
+    ASSERT_NO_THROW(v = load_binary<double>(p)) << "Couldn't load binary vector from file.";
+    ASSERT_EQ(v.size(), data.size());
+    ASSERT_EQ(v, data);
+}

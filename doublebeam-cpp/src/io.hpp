@@ -1,8 +1,9 @@
 #ifndef DOUBLEBEAM_CPP_IO_HPP
 #define DOUBLEBEAM_CPP_IO_HPP
 
-#include <vector>
 #include <filesystem>
+#include <fstream>
+#include <vector>
 
 #include "raytracing_types.hpp"
 
@@ -19,5 +20,35 @@ std::vector<position_t> read_receiverfile(std::filesystem::path path);
  * @return
  */
 std::vector<position_t> read_sourcefile(std::filesystem::path path);
+
+
+/**
+ * Save vector in binary format.
+ * @tparam T
+ * @param vec
+ * @param path
+ */
+template <typename T>
+void save_binary(const std::vector<T>& vec, std::filesystem::path path) {
+    std::ofstream file{path, std::ios::out | std::ios::binary};
+    file.write((const char*)(&vec[0]), vec.size() * sizeof(T));
+}
+
+/**
+ * Load vector from binary format. Be sure to specify the correct type as a template paramter.
+ * @tparam T Type with which the data was saved.
+ * @param path
+ * @return
+ */
+template <typename T>
+std::vector<T> load_binary(std::filesystem::path path) {
+    std::ifstream file{path, std::ios::in | std::ios::binary};
+    file.seekg(0, file.end);
+    auto N = file.tellg();
+    file.seekg(0, file.beg);
+    std::vector<T> vec(N / sizeof(double));
+    file.read(reinterpret_cast<char*>(&vec[0]), vec.size() * sizeof(double));
+    return vec;
+}
 
 #endif // DOUBLEBEAM_CPP_IO_HPP
