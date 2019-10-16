@@ -13,7 +13,7 @@ std::istream& operator>>(std::istream& is, position_t& pos) {
     return is;
 }
 
-std::vector<position_t> read_receiverfile(std::filesystem::path path) {
+std::vector<Receiver> read_receiverfile(std::filesystem::path path) {
     std::ifstream file{path};
     if (not file) {
         throw std::runtime_error(impl::Formatter() << "Couldn't open receiver  file " << path);
@@ -21,17 +21,19 @@ std::vector<position_t> read_receiverfile(std::filesystem::path path) {
     auto n = 0;
     // read number of receiver positions in file
     file >> n;
-    std::vector<position_t> receiver_positions(n);
-    for (auto i = 0; i < n; ++i) {
-        position_t x;
-        file >> x;
-        receiver_positions[i] = x;
+    size_t index;
+    std::vector<Receiver> receivers;
+    receivers.reserve(n);
+    double x, y, z;
+    for (auto i = n; i > 0; --i) {
+        file >> index >> x >> y >> z;
+        receivers.push_back({x, y, z, index});
     }
-    return receiver_positions;
+    return receivers;
 }
 
 
-std::vector<position_t> read_sourcefile(std::filesystem::path path) {
+std::vector<Source> read_sourcefile(std::filesystem::path path) {
     std::ifstream file{path};
     if (not file) {
         throw std::runtime_error(impl::Formatter() << "Couldn't open source file " << path);
@@ -51,27 +53,29 @@ std::vector<position_t> read_sourcefile(std::filesystem::path path) {
             break;
         }
     }
-    std::vector<position_t> source_positions;
-    source_positions.reserve(nsrc);
+    std::vector<Source> sources;
+    sources.reserve(nsrc);
     double x, y, z;
     // read lines until a full match (x, y and z) is found
     std::string multilines;
+    size_t index = 1;
     while (std::getline(file, line)) {
         multilines += line + "\n";
         if (std::regex_search(multilines, nsources_match, source_regex)) {
             x = std::stod(nsources_match[1]);
             y = std::stod(nsources_match[2]);
             z = std::stod(nsources_match[3]);
-            source_positions.emplace_back(x, y, z);
+            sources.push_back({x, y, z, index});
+            ++index;
             multilines.clear();
         }
     }
-    if (source_positions.size() != nsrc) {
+    if (sources.size() != nsrc) {
         throw std::runtime_error(impl::Formatter()
                                  << "Source file " << path << " malformed. Specified " << nsrc
-                                 << " sources, contains only " << source_positions.size());
+                                 << " sources, contains only " << sources.size());
     }
-    return source_positions;
+    return sources;
 }
 
 std::vector<double> read_column(std::filesystem::path path, int column) {

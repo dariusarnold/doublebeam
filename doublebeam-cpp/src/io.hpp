@@ -5,21 +5,22 @@
 #include <fstream>
 #include <vector>
 
-#include "raytracing_types.hpp"
+#include "seismodata.hpp"
+
 
 /**
  * Return receiver positions as an array.
  * @param path Path to receiver file.
  * @return
  */
-std::vector<position_t> read_receiverfile(std::filesystem::path path);
+std::vector<Receiver> read_receiverfile(std::filesystem::path path);
 
 /**
  * Return source positions as an array.
  * @param path
  * @return
  */
-std::vector<position_t> read_sourcefile(std::filesystem::path path);
+std::vector<Source> read_sourcefile(std::filesystem::path path);
 
 
 /**
