@@ -73,3 +73,41 @@ std::vector<position_t> read_sourcefile(std::filesystem::path path) {
     }
     return source_positions;
 }
+
+std::vector<double> read_column(std::filesystem::path path, int column) {
+    if (column < 0 or column > 1) {
+        throw std::runtime_error(impl::Formatter() << "Invalid column index " << column
+                                                   << ", allowed values are 0, 1.");
+    }
+    std::ifstream file{path};
+    if (not file.is_open()) {
+        throw std::runtime_error(impl::Formatter()
+                                 << "Couldn't open file " << path << " for reading data.");
+    }
+    constexpr const char comment = '#';
+    std::string s;
+    std::vector<double> vec;
+    std::array<double, 2> p;
+    while (std::getline(file, s)) {
+        // read lines until first line not starting with comment character
+        if (s[s.find_first_not_of(' ')] != comment) {
+            // push back this line
+            std::istringstream(s) >> p[0] >> p[1];
+            vec.push_back(p[column]);
+            break;
+        }
+    }
+    // then push back other lines
+    while (file >> p[0] >> p[1]) {
+        vec.push_back(p[column]);
+    }
+    return vec;
+}
+
+std::vector<double> read_amplitude(std::filesystem::path path) {
+    return read_column(path, 1);
+}
+
+std::vector<double> read_timesteps(std::filesystem::path path) {
+    return read_column(path, 0);
+}

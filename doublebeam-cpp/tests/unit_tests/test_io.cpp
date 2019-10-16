@@ -5,6 +5,33 @@
 
 #include "io.hpp"
 
+class TestSeismogramLoading : public testing::Test {
+protected:
+    std::filesystem::path p = current_source_path(__FILE__) / "data" / "receiver_001.txt";
+    std::vector<double> t{0.000, 0.004, 0.008, 0.012, 0.016, 0.020,
+                          0.024, 0.028, 0.032, 0.036, 0.040};
+    std::vector<double> x{-6.086347e-27, 4.000257e-28,  6.390645e-27,  5.060195e-27,
+                          4.030744e-28,  -1.626664e-27, -7.453548e-28, 9.324629e-28,
+                          1.507141e-27,  -1.028619e-27, -5.575252e-27};
+};
+
+TEST_F(TestSeismogramLoading, TestIfTimeIsLoadedCorrectly) {
+    ASSERT_EQ( read_timesteps(p), t);
+}
+
+TEST_F(TestSeismogramLoading, TestIfAmplitudeIsReadCorrectly) {
+    ASSERT_EQ(read_amplitude(p), x);
+}
+
+TEST_F(TestSeismogramLoading, TestNonExistingFileThrows_Amplitude) {
+    ASSERT_THROW(read_timesteps("Idonotexist"), std::runtime_error);
+}
+
+TEST_F(TestSeismogramLoading, TestNonExistingFileThrows_Timesteps) {
+    ASSERT_THROW(read_timesteps("Idonotexist"), std::runtime_error);
+}
+
+
 class TestReceiverFileReading : public testing::Test {
 protected:
     std::filesystem::path p = current_source_path(__FILE__) / "data" / "sample_receiverfile";

@@ -51,4 +51,19 @@ std::vector<T> load_binary(std::filesystem::path path) {
     return vec;
 }
 
+
+/**
+ * Read only amplitude data from seismogram.
+ * @param path
+ * @return
+ */
+std::vector<double> read_amplitude(std::filesystem::path path);
+
+/**
+ * Read only timesteps from seismogram
+ * @param path
+ * @return
+ */
+std::vector<double> read_timesteps(std::filesystem::path path);
+
 #endif // DOUBLEBEAM_CPP_IO_HPP
