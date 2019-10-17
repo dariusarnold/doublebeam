@@ -1,4 +1,5 @@
 #include <fstream>
+#include <optional>
 #include <regex>
 
 #include "io.hpp"
@@ -39,23 +40,28 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
         throw std::runtime_error(impl::Formatter() << "Couldn't open source file " << path);
     }
     std::string int_regex{R"((\d+))"};
-    std::regex nsrc_regex{R"(nsrc\s+=\s+(\d+))"};
     std::string float_regex{R"((\d+(?:\.\d*)?|\.\d+))"};
+    std::regex nsrc_regex{R"(nsrc\s+=\s+(\d+))"};
     std::regex coordinates_regex{R"(xsource\s+=\s+)" + float_regex + R"([\n\s]+ysource\s+=\s+)" +
                                  float_regex + R"([\n\s]+zsource\s+=\s+)" + float_regex};
     std::regex source_regex{R"(source\s+=\s+)" + int_regex};
     // find number of sources in file
     std::string line;
     std::smatch nsources_match;
-    auto nsrc = 0UL;
+    std::optional<int> nsrc = -1;
     while (std::getline(file, line)) {
         if (std::regex_search(line, nsources_match, nsrc_regex)) {
             nsrc = std::stoi(nsources_match[1]);
             break;
         }
     }
+    if (not nsrc) {
+        // did not find nrsc in file (sentinel value is the same)
+        throw std::runtime_error(
+            impl::Formatter() << "Number of sources (nsrc = ...) not specified in file " << path);
+    }
     std::vector<Source> sources;
-    sources.reserve(nsrc);
+    sources.reserve(nsrc.value());
     double x, y, z;
     // read lines until a full match (x, y and z) is found
     std::string multilines;
@@ -75,8 +81,8 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     }
     if (sources.size() != nsrc) {
         throw std::runtime_error(impl::Formatter()
-                                 << "Source file " << path << " malformed. Specified " << nsrc
-                                 << " sources, contains only " << sources.size());
+                                 << "Source file " << path << " malformed. Specified "
+                                 << nsrc.value() << " sources, contains only " << sources.size());
     }
     return sources;
 }
