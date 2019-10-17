@@ -24,9 +24,16 @@ TEST_F(TestProjectLoading, TestCorrectnessOfLoadedProject) {
 
 TEST_F(TestProjectLoading, TestRetrievingSeismograms) {
     SeismoData s(project_dir);
+    // I replaced the first value of every seismogram with an increasing index to test if they are
+    // loaded in the correct order.
+    auto i = 1;
     for (const auto& source : s.sources()) {
         for (const auto& receiver : s.receivers()) {
-            ASSERT_EQ(s(source, receiver).size(), 1000);
+            auto seismogram = s(source, receiver);
+            ASSERT_EQ(seismogram.size(), 1000);
+            EXPECT_EQ(seismogram[0], i) << "Loaded wrong seismogram for source " << source
+                                        << ", receiver " << receiver << ".";
+            ++i;
         }
     }
 }

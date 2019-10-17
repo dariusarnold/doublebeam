@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
 
 std::vector<double>& SeismoData::operator()(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
-    return seismograms.data[(s.index - 1) * seismograms.sources.size() + (r.index - 1)];
+    return seismograms.data[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
 }
 
 const std::vector<Source>& SeismoData::sources() const {
