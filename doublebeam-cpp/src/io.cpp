@@ -41,10 +41,10 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     }
     std::string int_regex{R"((\d+))"};
     std::string float_regex{R"((\d+(?:\.\d*)?|\.\d+))"};
-    std::regex nsrc_regex{R"(nsrc\s+=\s+(\d+))"};
-    std::regex coordinates_regex{R"(xsource\s+=\s+)" + float_regex + R"([\n\s]+ysource\s+=\s+)" +
-                                 float_regex + R"([\n\s]+zsource\s+=\s+)" + float_regex};
-    std::regex source_regex{R"(source\s+=\s+)" + int_regex};
+    std::regex nsrc_regex{R"(\s*nsrc\s*=\s*(\d+))"};
+    std::regex coordinates_regex{R"(\s*xsource\s*=\s*)" + float_regex + R"([\n\s]+ysource\s*=\s*)" +
+                                 float_regex + R"([\n\s]+zsource\s*=\s*)" + float_regex};
+    std::regex source_regex{R"(source\s*=\s*)" + int_regex};
     // find number of sources in file
     std::string line;
     std::smatch nsources_match;
