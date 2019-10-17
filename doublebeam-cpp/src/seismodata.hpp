@@ -1,6 +1,9 @@
 #ifndef DOUBLEBEAM_CPP_SEISMODATA_HPP
 #define DOUBLEBEAM_CPP_SEISMODATA_HPP
 
+#include <cstddef>
+#include <iostream>
+
 struct Source {
     double x, y, z;
     size_t index;
