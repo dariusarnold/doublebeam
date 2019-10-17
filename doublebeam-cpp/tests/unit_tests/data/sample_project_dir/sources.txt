@@ -1,0 +1,10 @@
+nsrc = 2
+source = 1
+xsource = 0.0
+ysource = 5200.0
+zsource = 10.0
+
+source = 2
+xsource = 143.5897435897436
+ysource = 5353.846153846154
+zsource = 10.0
