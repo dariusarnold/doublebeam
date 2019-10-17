@@ -41,8 +41,9 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     std::string int_regex{R"((\d+))"};
     std::regex nsrc_regex{R"(nsrc\s+=\s+(\d+))"};
     std::string float_regex{R"((\d+(?:\.\d*)?|\.\d+))"};
-    std::regex source_regex{R"(xsource\s+=\s+)" + float_regex + R"([\n\s]+ysource\s+=\s+)" +
-                            float_regex + R"([\n\s]+zsource\s+=\s+)" + float_regex};
+    std::regex coordinates_regex{R"(xsource\s+=\s+)" + float_regex + R"([\n\s]+ysource\s+=\s+)" +
+                                 float_regex + R"([\n\s]+zsource\s+=\s+)" + float_regex};
+    std::regex source_regex{R"(source\s+=\s+)" + int_regex};
     // find number of sources in file
     std::string line;
     std::smatch nsources_match;
@@ -59,14 +60,16 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     // read lines until a full match (x, y and z) is found
     std::string multilines;
     size_t index = 1;
+    std::smatch index_match;
     while (std::getline(file, line)) {
         multilines += line + "\n";
-        if (std::regex_search(multilines, nsources_match, source_regex)) {
+        if (std::regex_search(multilines, nsources_match, coordinates_regex) and
+            std::regex_search(multilines, index_match, source_regex)) {
             x = std::stod(nsources_match[1]);
             y = std::stod(nsources_match[2]);
             z = std::stod(nsources_match[3]);
+            index = std::stoll(index_match[1]);
             sources.push_back({x, y, z, index});
-            ++index;
             multilines.clear();
         }
     }
