@@ -6,7 +6,7 @@
 #include "utils.hpp"
 #include <chrono>
 #include <complex>
-#include <fftw3.h>
+#include "fft.hpp"
 #include <io.hpp>
 
 
@@ -39,22 +39,7 @@ int nmain() {
     return 0;
 }
 
-template <typename T>
-struct Allocator {
-    typedef T value_type;
-    Allocator() = default;
-    template <typename U>
-    constexpr Allocator(const Allocator<U>&) noexcept {}
-    T* allocate(std::size_t n) {
-        if (n > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
-            throw std::bad_alloc();
-        }
-        return (T*)(fftw_malloc(n * sizeof(T)));
-    }
-    void deallocate(T* p, std::size_t) noexcept {
-        fftw_free(p);
-    }
-};
+
 
 template <typename T, typename Alloc>
 std::ostream& operator<<(std::ostream& os, const std::vector<T, Alloc>& vec) {
@@ -64,31 +49,17 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T, Alloc>& vec) {
     return os;
 }
 
-struct Plan {
-    ~Plan() {
-        fftw_destroy_plan(p);
-    }
-    void plan(size_t N, double* in, std::complex<double>* out) {
-        p = fftw_plan_dft_r2c_1d(N, in, reinterpret_cast<fftw_complex*>(out), FFTW_MEASURE);
-    }
-    void execute() {
-        fftw_execute(p);
-    }
-
-private:
-    fftw_plan p;
-};
 
 int main() {
-    const int N = 4;
-    std::vector<double> in{0, 1, 2, 3};
-    std::vector<std::complex<double>, Allocator<std::complex<double>>> out2(in.size() / 2 + 1);
-    Plan p;
-    std::cout << in << std::endl;
-    std::cout << std::endl;
-    p.plan(N, in.data(), out2.data());
-    p.execute();
-    std::cout << out2 << std::endl;
+    FFT fft;
+    std::vector<double> in1{0, 1, 2, 3};
+    std::vector<double> in2{0, 1, 2, 3, 4};
+    std::cerr << in1 << std::endl;
+    std::cerr << in2 << std::endl;
+    auto out1 = fft.execute(in1);
+    auto out2 = fft.execute(in2);
+    std::cerr << out1 << std::endl;
+    std::cerr << out2 << std::endl;
     return 0;
 }
 /*

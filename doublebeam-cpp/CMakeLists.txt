@@ -40,20 +40,19 @@ find_package(FFTW REQUIRED)
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/raytracing_helpers.hpp src/ray.cpp src/ray.hpp
-        src/beam.cpp src/beam.hpp src/printing.cpp src/io.cpp src/io.hpp src/seismodata.hpp src/seismodata.cpp)
-target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs)
+        src/beam.cpp src/beam.hpp src/printing.cpp src/io.cpp src/io.hpp src/seismodata.hpp src/seismodata.cpp src/fft.cpp src/fft.hpp)
+target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs fftw3)
 target_link_libraries(doublebeam_lib PUBLIC xtensor ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 target_include_directories(doublebeam_lib PUBLIC src)
+target_include_directories(doublebeam_lib PRIVATE FFTW_INCLUDE_DIRS)
 target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
 add_executable(doublebeam main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
-target_link_libraries(doublebeam PRIVATE fftw3)
 target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS} timing)
 
 add_subdirectory(src/timing)
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing)
-target_include_directories(doublebeam PRIVATE FFTW_INCLUDE_DIRS)
 
 add_subdirectory(tests)
