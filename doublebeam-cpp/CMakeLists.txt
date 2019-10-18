@@ -13,6 +13,28 @@ find_package(xtensor-blas REQUIRED)
 add_definitions(-DHAVE_CBLAS=1)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+# the following is taken from https://github.com/egpbos/findFFTW
+configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
+if(result)
+    message(FATAL_ERROR "CMake step for findFFTW failed: ${result}")
+else()
+    message("CMake step for findFFTW completed (${result}).")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
+if(result)
+    message(FATAL_ERROR "Build step for findFFTW failed: ${result}")
+endif()
+
+set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
+
+find_package(FFTW REQUIRED)
 #find_package(xsimd)
 #add_definitions(-DXTENSOR_ENABLE_XSIMD)
 
@@ -27,10 +49,11 @@ target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 
 add_executable(doublebeam main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
-#target_link_libraries(doublebeam PRIVATE timing)
+target_link_libraries(doublebeam PRIVATE fftw3)
 target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS} timing)
 
 add_subdirectory(src/timing)
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing)
+target_include_directories(doublebeam PRIVATE FFTW_INCLUDE_DIRS)
 
 add_subdirectory(tests)
