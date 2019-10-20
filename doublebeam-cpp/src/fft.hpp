@@ -36,6 +36,10 @@ struct Allocator {
 
 
 struct Plan {
+    // move constructor is required because the fftw_plan frees the memory associated with the
+    // input/output arrays when it is destroyed. The move constructor will invalidate the other
+    // plan, so the arrays don't get double freed when the vector of plans reallocates.
+    Plan(Plan&& other);
     Plan(std::vector<double>& in);
     ~Plan();
     std::vector<std::complex<double>, Allocator<std::complex<double>>>& execute();
@@ -48,27 +52,28 @@ struct Plan {
 
 class PlanCache {
 public:
+    PlanCache(size_t initial_cache_size);
     /**
      * Return a plan from cache.
      * if the requested plan size is not already in the cache, add it.
-     * @param N
+     * @param in
      * @return
      */
     Plan& get_plan(std::vector<double>& in);
 
 private:
-    // since I dont expect to have many different plans,
-    // a vector should be enough and a map is not required.
+    // since I dont expect to have many different plans, a vector should be enough and a map is
+    // not required, even though the vector has only a linear search to find the correct plan size.
     std::vector<Plan> plans;
 };
 
 
 class FFT {
 public:
+    FFT(size_t initial_cache_size = 2) : plans(initial_cache_size) {}
     using cdouble = std::complex<double>;
     using cvector = std::vector<cdouble, Allocator<cdouble>>;
     cvector execute(std::vector<double>& in);
-
 private:
     PlanCache plans;
 };

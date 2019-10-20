@@ -8,9 +8,11 @@ Plan& PlanCache::get_plan(std::vector<double>& in) {
     if (plan != plans.end()) {
         return *plan;
     }
-    Plan p{in};
-    plans.emplace_back(std::move(p));
-    return plans.back();
+    return plans.emplace_back(in);
+}
+
+PlanCache::PlanCache(size_t initial_cache_size) {
+    plans.reserve(initial_cache_size);
 }
 
 Plan::Plan(std::vector<double>& in) : N(in.size()), out(N / 2 + 1) {
@@ -27,7 +29,11 @@ std::vector<std::complex<double>, Allocator<std::complex<double>>>& Plan::execut
     return out;
 }
 
+Plan::Plan(Plan&& other) : N(other.N), out(std::move(other.out)), p(std::move(other.p)) {
+    other.p = nullptr;
+}
+
 FFT::cvector FFT::execute(std::vector<double>& in) {
-    auto plan = plans.get_plan(in);
+    auto& plan = plans.get_plan(in);
     return plan.execute();
 }
