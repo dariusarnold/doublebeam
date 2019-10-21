@@ -4,6 +4,10 @@
 #include "timing/timing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
+#include <chrono>
+#include <complex>
+#include "fft.hpp"
+#include <io.hpp>
 
 
 std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {
@@ -36,6 +40,29 @@ int nmain() {
 }
 
 
+
+template <typename T, typename Alloc>
+std::ostream& operator<<(std::ostream& os, const std::vector<T, Alloc>& vec) {
+    for (const auto& el : vec) {
+        os << el << " ";
+    }
+    return os;
+}
+
+
+int main() {
+    FFT fft;
+    std::vector<double> in1{0, 1, 2, 3};
+    std::vector<double> in2{0, 1, 2, 3, 4};
+    std::cerr << in1 << std::endl;
+    std::cerr << in2 << std::endl;
+    auto out1 = fft.execute(in1);
+    auto out2 = fft.execute(in2);
+    std::cerr << out1 << std::endl;
+    std::cerr << out2 << std::endl;
+    return 0;
+}
+/*
 int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
     auto db = DoubleBeam(vm);
@@ -45,3 +72,4 @@ int main() {
     db.algorithm(sources, targets, fractures, 10, 40, 0.006);
     return 0;
 }
+*/
