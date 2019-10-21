@@ -3,3 +3,4 @@
 *.pyc
 
 *cmake-build-*
+doublebeam-cpp/tests/unit_tests/data/vector.bin
