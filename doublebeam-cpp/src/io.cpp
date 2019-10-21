@@ -34,6 +34,13 @@ std::vector<Receiver> read_receiverfile(std::filesystem::path path) {
 }
 
 
+std::string stream_to_string(std::istream& is) {
+    std::ostringstream buffer;
+    buffer << is.rdbuf();
+    return buffer.str();
+}
+
+
 std::vector<Source> read_sourcefile(std::filesystem::path path) {
     std::ifstream file{path};
     if (not file) {
@@ -41,14 +48,14 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     }
     std::string int_regex{R"((\d+))"};
     std::string float_regex{R"((\d+(?:\.\d*)?|\.\d+))"};
-    std::regex nsrc_regex{R"(\s*nsrc\s*=\s*(\d+))"};
-    std::regex coordinates_regex{R"(\s*xsource\s*=\s*)" + float_regex + R"([\n\s]+ysource\s*=\s*)" +
-                                 float_regex + R"([\n\s]+zsource\s*=\s*)" + float_regex};
-    std::regex source_regex{R"(\bsource\b\s*=\s*)" + int_regex};
+    std::regex nsrc_regex{R"(\s*nsrc\s*=\s*)" + int_regex};
+    std::regex source_regex{R"(\bsource\s*=\s*)" + int_regex + R"([\n\s]+xsource\s*=\s*)" +
+                            float_regex + R"([\n\s]+ysource\s*=\s*)" + float_regex +
+                            R"([\n\s]+zsource\s*=\s*)" + float_regex};
     // find number of sources in file
     std::string line;
     std::smatch nsources_match;
-    std::optional<int> nsrc = -1;
+    std::optional<int> nsrc;
     while (std::getline(file, line)) {
         if (std::regex_search(line, nsources_match, nsrc_regex)) {
             nsrc = std::stoi(nsources_match[1]);
@@ -56,28 +63,23 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
         }
     }
     if (not nsrc) {
-        // did not find nrsc in file (sentinel value is the same)
+        // did not find nrsc in file (optional value is still unset)
         throw std::runtime_error(
             impl::Formatter() << "Number of sources (nsrc = ...) not specified in file " << path);
     }
     std::vector<Source> sources;
     sources.reserve(nsrc.value());
-    double x, y, z;
-    // read lines until a full match (x, y and z) is found
-    std::string multilines;
-    size_t index = 1;
-    std::smatch index_match;
-    while (std::getline(file, line)) {
-        multilines += line + "\n";
-        if (std::regex_search(multilines, nsources_match, coordinates_regex) and
-            std::regex_search(multilines, index_match, source_regex)) {
-            x = std::stod(nsources_match[1]);
-            y = std::stod(nsources_match[2]);
-            z = std::stod(nsources_match[3]);
-            index = std::stoll(index_match[1]);
-            sources.push_back({x, y, z, index});
-            multilines.clear();
-        }
+    auto filecontent = stream_to_string(file);
+    auto sources_begin =
+        std::sregex_iterator(filecontent.begin(), filecontent.end(), source_regex);
+    auto sources_end = std::sregex_iterator();
+    for (auto it = sources_begin; it != sources_end; ++it) {
+        auto match = *it;
+        size_t index = std::stoll(match[1]);
+        double x = std::stod(match[2]);
+        double y = std::stod(match[3]);
+        double z = std::stod(match[4]);
+        sources.push_back({x, y, z, index});
     }
     if (sources.size() != nsrc) {
         throw std::runtime_error(impl::Formatter()

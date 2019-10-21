@@ -81,6 +81,16 @@ TEST_F(TestSourceFileReading, TestForThrowWhenFileNotExists) {
     ASSERT_THROW(read_sourcefile("Idonotexist"), std::runtime_error);
 }
 
+TEST_F(TestSourceFileReading, TestIfMissingNumberOfSourcesThrows) {
+    p.replace_filename("sample_sourcefile_missing_nsrc");
+    ASSERT_THROW(read_sourcefile(p), std::runtime_error);
+}
+
+TEST_F(TestSourceFileReading, TestIfMissingSourceNumbersAreRecognized) {
+    p.replace_filename("sample_sourcefile_missing_sourcenumbers");
+    ASSERT_THROW(read_sourcefile(p), std::runtime_error);
+}
+
 
 class TestVectorBinaryIO : public testing::Test {
 protected:
