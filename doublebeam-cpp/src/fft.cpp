@@ -35,5 +35,6 @@ Plan::Plan(Plan&& other) : N(other.N), out(std::move(other.out)), p(std::move(ot
 
 FFT::cvector FFT::execute(std::vector<double>& in) {
     auto& plan = plans.get_plan(in);
-    return plan.execute();
+    const auto& res = plan.execute();
+    return std::vector(res.begin(), res.end());
 }

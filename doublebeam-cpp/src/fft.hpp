@@ -72,7 +72,7 @@ class FFT {
 public:
     FFT(size_t initial_cache_size = 2) : plans(initial_cache_size) {}
     using cdouble = std::complex<double>;
-    using cvector = std::vector<cdouble, Allocator<cdouble>>;
+    using cvector = std::vector<cdouble>;
     cvector execute(std::vector<double>& in);
 private:
     PlanCache plans;
