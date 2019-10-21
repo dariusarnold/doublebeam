@@ -26,8 +26,7 @@ std::vector<Receiver> read_receiverfile(std::filesystem::path path) {
     std::vector<Receiver> receivers;
     receivers.reserve(n);
     double x, y, z;
-    for (auto i = n; i > 0; --i) {
-        file >> index >> x >> y >> z;
+    while (file >> index >> x >> y >> z) {
         receivers.push_back({x, y, z, index});
     }
     return receivers;
