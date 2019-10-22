@@ -37,3 +37,50 @@ TEST_F(TestProjectLoading, TestRetrievingSeismograms) {
         }
     }
 }
+
+
+struct TestSeismogramCutData {
+    Seismogram in;
+    Seismogram expected;
+    std::vector<double> t;
+    double t0, t1;
+};
+
+class TestSeismogramCut : public ::testing::TestWithParam<TestSeismogramCutData> {
+protected:
+};
+
+TEST_P(TestSeismogramCut, CompareResultWithExpected) {
+    auto [in, expected, t, t0, t1] = GetParam();
+    auto out = cut(in, t, t0, t1);
+    ASSERT_EQ(out.data.size(), expected.data.size()) << "Wrong size for cut seismogram.";
+    EXPECT_EQ(out.data, expected.data);
+}
+
+INSTANTIATE_TEST_SUITE_P(TestEmptySeismogram, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{{}, {}, {}, 0, 1}));
+
+INSTANTIATE_TEST_SUITE_P(
+    TestKeepingFullSeismogram, TestSeismogramCut,
+    testing::Values(TestSeismogramCutData{
+        {{0, 1, 2, 3, 4, 5, 6}}, {{0, 1, 2, 3, 4, 5, 6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 10}));
+
+INSTANTIATE_TEST_SUITE_P(
+    TestKeepingFirstValue, TestSeismogramCut,
+    testing::Values(TestSeismogramCutData{
+        {{0, 1, 2, 3, 4, 5, 6}}, {{0}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 1}));
+
+INSTANTIATE_TEST_SUITE_P(
+    TestKeepingLastValue, TestSeismogramCut,
+    testing::Values(TestSeismogramCutData{
+        {{0, 1, 2, 3, 4, 5, 6}}, {{6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 8.2, 10}));
+
+INSTANTIATE_TEST_SUITE_P(
+    TestInclusivityOfT0, TestSeismogramCut,
+    testing::Values(TestSeismogramCutData{
+        {{0, 1, 2, 3, 4, 5, 6}}, {{1, 2}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 2.5, 3.5}));
+
+INSTANTIATE_TEST_SUITE_P(
+    TestKeepingInclusivityT1, TestSeismogramCut,
+    testing::Values(TestSeismogramCutData{
+        {{0, 1, 2, 3, 4, 5, 6}}, {{3, 4, 5}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 4.5, 8.1}));

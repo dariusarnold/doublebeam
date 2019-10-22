@@ -24,6 +24,27 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
+Seismogram cut(const Seismogram& seismogram, const std::vector<double>& t, double t0, double t1) {
+    if (seismogram.data.size() != t.size()) {
+        throw std::invalid_argument(impl::Formatter()
+                                    << "Got seismogram of size " << seismogram.data.size()
+                                    << " but only " << t.size() << "time steps.");
+    }
+    Seismogram out;
+    // If I could assume that all time samples are evenly spaced, it would be easy to calculate the
+    // index of the start/end cut. Since I can't make this assumption for all input, a binary search
+    // is applied to find the indices of t0 and t1.
+    auto i1 = std::lower_bound(t.begin(), t.end(), t0);
+    // t1 can't be before t0, so decrease search range
+    auto i2 = std::upper_bound(i1, t.end(), t1);
+    auto start_index = std::distance(t.begin(), i1);
+    auto end_index = std::distance(t.begin(), i2);
+    for (auto i = start_index; i < end_index; ++i) {
+        out.data.push_back(seismogram.data[i]);
+    }
+    return out;
+}
+
 Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
     return seismograms.data[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];

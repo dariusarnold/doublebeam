@@ -33,6 +33,20 @@ struct Seismogram {
     std::vector<double> data;
 };
 
+
+/**
+ * Cut seismogram to time samples between time t0 and time t1.
+ * Both t0 and t1 are inclusive.
+ * Seismogram and t have to have the same size.
+ * @param seismogram
+ * @param t
+ * @param t0
+ * @param t1
+ * @return New seismogram containing only the amplitude samples between t0 and t1.
+ */
+Seismogram cut(const Seismogram& seismogram, const std::vector<double>& t, double t0, double t1);
+
+
 struct Seismograms {
     /**
      * Read all seismograms, sources and receivers from folder.
