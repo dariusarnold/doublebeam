@@ -125,7 +125,7 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
 }
 
 void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
-                           std::vector<position_t> target_geometry,
+                           std::vector<position_t> target_geometry, SeismoData data,
                            FractureParameters fracture_info, double beam_width,
                            double beam_frequency, double __attribute__((unused)) window_length) {
     for (const auto& target : target_geometry) {
@@ -174,6 +174,16 @@ void DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                 eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
                 // auto total_traveltime = last_traveltime(source_beam.value()) +
                 //                        last_traveltime(receiver_beam.value());
+                // iteration over sources and receivers
+                for (const auto& source_pos : data.sources()) {
+                    [[maybe_unused]] auto source_beam_val = eval_gauss_beam(
+                        source_beam.value(), source_pos.x, source_pos.y, source_pos.z);
+                    for (const auto& rec_pos : data.receivers()) {
+                        [[maybe_unused]] auto receiver_beam_val =
+                            eval_gauss_beam(source_beam.value(), rec_pos.x, rec_pos.y, rec_pos.z);
+                        auto seismogram = data(source_pos, rec_pos);
+                    }
+                }
             }
         }
     }

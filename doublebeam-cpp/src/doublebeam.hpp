@@ -7,6 +7,7 @@
 
 #include "model.hpp"
 #include "raytracing.hpp"
+#include "seismodata.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
 
@@ -65,8 +66,8 @@ public:
     DoubleBeam(const VelocityModel& model);
 
     void algorithm(std::vector<position_t> source_geometry, std::vector<position_t> target_geometry,
-                   FractureParameters fracture_info, double beam_width, double beam_frequency,
-                   double window_length);
+                   SeismoData data, FractureParameters fracture_info, double beam_width,
+                   double beam_frequency, double __attribute__((unused)) window_length);
 
 private:
     const VelocityModel& model;
