@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # set boost path with BOOST_ROOT if not globally installed
 find_package(Boost REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # if you have installed these libraries using anaconda set CMAKE_PREFIX_PATH to
 # /path/to/your/condaenv/lib/cmake/
 find_package(xtl REQUIRED)
@@ -51,8 +52,7 @@ target_compile_options(doublebeam_lib PRIVATE -Werror -Wall -Wextra)
 add_executable(doublebeam main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE -Werror -Wall -Wextra)
 target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS} timing)
-
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing Eigen3::Eigen)
 add_subdirectory(src/timing)
-target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing)
 
 add_subdirectory(tests)
