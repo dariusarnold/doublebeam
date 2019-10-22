@@ -90,6 +90,12 @@ public:
      */
     const std::vector<Receiver>& receivers() const;
 
+    /**
+     * Get access to common timesteps of all seismograms
+     * @return
+     */
+    const std::vector<double>& timesteps() const;
+
 private:
     Seismograms seismograms;
 };

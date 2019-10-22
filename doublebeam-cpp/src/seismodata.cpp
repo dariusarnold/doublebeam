@@ -58,6 +58,10 @@ const std::vector<Receiver>& SeismoData::receivers() const {
     return seismograms.receivers;
 }
 
+const std::vector<double>& SeismoData::timesteps() const {
+    return seismograms.times;
+}
+
 Seismograms::Seismograms(const std::filesystem::path& project_folder,
                          const std::string& source_file_name,
                          const std::string& receiver_file_name) :
