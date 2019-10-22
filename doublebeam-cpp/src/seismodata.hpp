@@ -7,6 +7,7 @@
 #include <vector>
 
 struct Source {
+    // coordinates of source
     double x, y, z;
     // index of source in source file and project directory.
     size_t index;
@@ -15,7 +16,9 @@ struct Source {
 };
 
 struct Receiver {
+    // coordinates of receiver
     double x, y, z;
+    // index of receiver in directory structure
     size_t index;
     // index of receiver in receiver file and project directory
     bool operator==(const Receiver& other) const;
