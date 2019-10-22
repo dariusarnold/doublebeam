@@ -3,6 +3,7 @@
 
 #include <utility>
 
+#include <Eigen/Dense>
 #include <xtensor/xtensor.hpp>
 
 #include "model.hpp"
@@ -59,15 +60,30 @@ public:
     std::vector<double> spacings;
 };
 
-struct DoubleBeamParameters {};
+struct DoubleBeamResult {
+    /**
+     * Construct stacking amplitude sigma as a matrix with all results for one fixed fracture
+     * spacing in one row and all results for one fixed fracture orientation in one column.
+     * @param num_of_fracture_spacings Used as number of rows in the matrix.
+     * @param num_of_fracture_orientations Used as number of columns in the matrix.
+     */
+    DoubleBeamResult(size_t num_of_fracture_spacings, size_t num_of_fracture_orientations);
+    /**
+     * Result of double beam algorithm: Matrix with stacking amplitude sigma.
+     * TODO explain how fracture spacing/orientation is represented in this, eg. spacing values are
+     * column wise and orientations are row wise.
+     */
+    Eigen::ArrayXXcd data;
+};
 
 class DoubleBeam {
 public:
     DoubleBeam(const VelocityModel& model);
 
-    void algorithm(std::vector<position_t> source_geometry, std::vector<position_t> target_geometry,
-                   SeismoData data, FractureParameters fracture_info, double beam_width,
-                   double beam_frequency, double __attribute__((unused)) window_length);
+    DoubleBeamResult algorithm(std::vector<position_t> source_geometry,
+                               std::vector<position_t> target_geometry, SeismoData data,
+                               FractureParameters fracture_info, double beam_width,
+                               double beam_frequency, double __attribute__((unused)) window_length);
 
 private:
     const VelocityModel& model;
