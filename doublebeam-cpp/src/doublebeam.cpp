@@ -5,6 +5,7 @@
 #include <numeric>
 
 #include "doublebeam.hpp"
+#include "fft.hpp"
 #include "printing.hpp"
 
 /**
@@ -135,10 +136,12 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        FractureParameters fracture_info, double beam_width,
                                        double beam_frequency,
                                        double __attribute__((unused)) window_length) {
+    FFT fft;
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
             auto slowness = twopoint.trace(source_beam_center, target);
+            // TODO add overload so declaring initial state is not required for ray tracing
             auto initial_state = make_state(source_beam_center, slowness, 0);
             std::cout << initial_state << std::endl;
             auto source_beam =
@@ -178,16 +181,25 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         break;
                     }
                     eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
-                    // auto total_traveltime = last_traveltime(source_beam.value()) +
-                    //                        last_traveltime(receiver_beam.value());
+                    auto total_traveltime = last_traveltime(source_beam.value()) +
+                                            last_traveltime(receiver_beam.value());
                     // iteration over sources and receivers
                     for (const auto& source_pos : data.sources()) {
-                        [[maybe_unused]] auto source_beam_val = eval_gauss_beam(
-                            source_beam.value(), source_pos.x, source_pos.y, source_pos.z);
+                        auto source_beam_val = eval_gauss_beam(source_beam.value(), source_pos.x,
+                                                               source_pos.y, source_pos.z);
                         for (const auto& rec_pos : data.receivers()) {
-                            [[maybe_unused]] auto receiver_beam_val = eval_gauss_beam(
-                                source_beam.value(), rec_pos.x, rec_pos.y, rec_pos.z);
-                            auto seismogram = data(source_pos, rec_pos);
+                            auto receiver_beam_val = eval_gauss_beam(source_beam.value(), rec_pos.x,
+                                                                     rec_pos.y, rec_pos.z);
+                            auto seismogram = cut(data(source_pos, rec_pos), data.timesteps(),
+                                                  total_traveltime - window_length / 2,
+                                                  total_traveltime + window_length / 2);
+                            auto seismogram_freq = fft.execute(seismogram.data);
+                            if (seismogram_freq.size() > 1) {
+                                std::cerr << "Got " << seismogram_freq.size()
+                                          << " frequency bins back.\n";
+                            }
+                            result.data(spacing_index, orientations_index) +=
+                                source_beam_val * receiver_beam_val * seismogram_freq[0];
                         }
                     }
                 }
