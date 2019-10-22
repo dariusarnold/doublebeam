@@ -44,6 +44,20 @@ VelocityModel1D file formatting
    depth_top, depth_bottom, p velocity, s velocity, density
  - for a linear layer the order of values in a line is 
    depth top, depth bottom, p velocity top, p velocity bottom, s velocity top, s velocity bottom, density top, density bottom
+
+Project folder structure
+ - Seismological data has to be stored in a certain structure. A project consists of data for a number of sources and receivers,
+all in a common velocity model. 
+ - The following structure is used for project folders:
+   - Top level directory, specifies project name.
+     - sources.txt, source file, specifies positions of sources in model.
+     - receivers.txt, receiver file, specifies positions of receivers in model.
+     - shotdata, directory containing seismograms.
+       - source_0001, directory containing recordings from all seismograms for the shot.
+         - receiver_001.txt, text file, format as given under Waveform data formatting, giving data recorded at this receiver.
+         ...
+       - source_n
+     
    
 ## Literature/References
 
