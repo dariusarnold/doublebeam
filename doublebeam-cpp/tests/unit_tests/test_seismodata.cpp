@@ -30,9 +30,9 @@ TEST_F(TestProjectLoading, TestRetrievingSeismograms) {
     for (const auto& source : s.sources()) {
         for (const auto& receiver : s.receivers()) {
             auto seismogram = s(source, receiver);
-            ASSERT_EQ(seismogram.size(), 1000);
-            EXPECT_EQ(seismogram[0], i) << "Loaded wrong seismogram for source " << source
-                                        << ", receiver " << receiver << ".";
+            ASSERT_EQ(seismogram.data.size(), 1000);
+            EXPECT_EQ(seismogram.data[0], i) << "Loaded wrong seismogram for source " << source
+                                             << ", receiver " << receiver << ".";
             ++i;
         }
     }

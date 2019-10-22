@@ -25,6 +25,14 @@ struct Receiver {
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };
 
+struct Seismogram {
+    Seismogram() = default;
+    Seismogram(std::vector<double>&& d) : data(d) {}
+
+    // amplitude data
+    std::vector<double> data;
+};
+
 struct Seismograms {
     /**
      * Read all seismograms, sources and receivers from folder.
@@ -38,7 +46,7 @@ struct Seismograms {
     std::vector<Receiver> receivers;
     // common time steps of all seismograms
     std::vector<double> times;
-    std::vector<std::vector<double>> data;
+    std::vector<Seismogram> data;
 
 private:
     void read_all_seismograms(const std::filesystem::path& project_folder);
@@ -57,7 +65,7 @@ public:
      * @param r
      * @return
      */
-    std::vector<double>& operator()(const Source& s, const Receiver& r);
+    Seismogram& operator()(const Source& s, const Receiver& r);
     /**
      * Get access to list of sources.
      */

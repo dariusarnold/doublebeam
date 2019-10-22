@@ -24,7 +24,7 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
-std::vector<double>& SeismoData::operator()(const Source& s, const Receiver& r) {
+Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
     return seismograms.data[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
 }
@@ -76,7 +76,7 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
         }
         std::sort(seismo_files.begin(), seismo_files.end());
         for (const auto& seismo_file : seismo_files) {
-            data.push_back(read_amplitude(seismo_file));
+            data.emplace_back(read_amplitude(seismo_file));
         }
     }
 }
