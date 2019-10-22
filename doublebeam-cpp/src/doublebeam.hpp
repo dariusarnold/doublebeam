@@ -25,7 +25,7 @@
  * is the x axis, the second axis is the y axis and the third axis contains the z values.
  */
 std::vector<position_t> grid_coordinates(double x0, double x1, double y0, double y1, double depth,
-                                       int num_x, int num_y);
+                                         int num_x, int num_y);
 
 
 class FractureParameters {
