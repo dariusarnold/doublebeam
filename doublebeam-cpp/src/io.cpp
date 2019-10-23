@@ -125,3 +125,29 @@ std::vector<double> read_amplitude(std::filesystem::path path) {
 std::vector<double> read_timesteps(std::filesystem::path path) {
     return read_column(path, 0);
 }
+
+std::pair<std::vector<double>, std::vector<double>> read_seismogram(std::filesystem::path path) {
+    std::ifstream file{path};
+    if (not file.is_open()) {
+        throw std::runtime_error(impl::Formatter() << " Failed opening file " << path);
+    }
+    std::string s;
+    constexpr char comment = '#';
+    double t, x;
+    std::vector<double> times, amplitdues;
+    while (std::getline(file, s)) {
+        // read lines until first line not starting with comment character
+        if (s[s.find_first_not_of(' ')] != comment) {
+            // push back this line
+            std::istringstream(s) >> t >> x;
+            times.push_back(t);
+            amplitdues.push_back(x);
+            break;
+        }
+    }
+    while (file >> t >> x) {
+        times.push_back(t);
+        amplitdues.push_back(x);
+    }
+    return {times, amplitdues};
+}

@@ -67,4 +67,12 @@ std::vector<double> read_amplitude(std::filesystem::path path);
  */
 std::vector<double> read_timesteps(std::filesystem::path path);
 
+
+/**
+ *
+ * @param path
+ * @return Timesteps as first element, amplitude as second element.
+ */
+std::pair<std::vector<double>, std::vector<double>> read_seismogram(std::filesystem::path path);
+
 #endif // DOUBLEBEAM_CPP_IO_HPP
