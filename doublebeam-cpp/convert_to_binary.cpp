@@ -22,6 +22,7 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
     std::cout << "Converting all files in " << project_dir << "\n";
     for (auto dir_entry : std::filesystem::recursive_directory_iterator(project_dir)) {
         if (dir_entry.is_directory()) {
+            std::cout << "Converting " << dir_entry << "\n";
             continue;
         }
         auto s = read_seismogram(dir_entry);

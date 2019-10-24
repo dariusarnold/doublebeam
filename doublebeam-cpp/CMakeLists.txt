@@ -55,4 +55,7 @@ target_include_directories(doublebeam PRIVATE ${xtensor_blas_INCLUDE_DIRS} timin
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost timing Eigen3::Eigen)
 add_subdirectory(src/timing)
 
+add_executable(convert_to_binary convert_to_binary.cpp)
+target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
+
 add_subdirectory(tests)
