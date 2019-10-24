@@ -1,7 +1,6 @@
 #include "io.hpp"
 #include <algorithm>
 #include <filesystem>
-#include <future>
 #include <iostream>
 
 
@@ -28,10 +27,8 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
             continue;
         }
         // std::cout << dir_entry << "\n";
-        std::async(std::launch::async, [&]() {
-            auto s = read_seismogram(dir_entry);
-            save_as_binary(dir_entry, s);
-        });
+        auto s = read_seismogram(dir_entry);
+        save_as_binary(dir_entry, s);
     }
 }
 
