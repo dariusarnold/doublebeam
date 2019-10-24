@@ -44,9 +44,7 @@ void save_binary(const std::vector<T>& vec, std::filesystem::path path) {
 template <typename T>
 std::vector<T> load_binary(std::filesystem::path path) {
     std::ifstream file{path, std::ios::in | std::ios::binary};
-    file.seekg(0, file.end);
-    auto N = file.tellg();
-    file.seekg(0, file.beg);
+    auto N = std::filesystem::file_size(path);
     std::vector<T> vec(N / sizeof(double));
     file.read(reinterpret_cast<char*>(&vec[0]), vec.size() * sizeof(double));
     return vec;
