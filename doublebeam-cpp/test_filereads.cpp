@@ -13,16 +13,13 @@ void save_as_binary(std::filesystem::path path, const SeismogramFileContent& sei
 
 
 void convert_all_to_binary(const std::filesystem::path& project_dir) {
+    if (not std::filesystem::exists(project_dir)) {
+        throw std::invalid_argument("Could not find shotdata folder " + project_dir.string() + ".");
+    }
     if (not std::filesystem::is_directory(project_dir)) {
         throw std::invalid_argument(project_dir.string() + " is not a directory.");
     }
-    auto shotdata_folder = project_dir / "shotdata";
-    if (not std::filesystem::exists(shotdata_folder) or
-        not std::filesystem::is_directory(shotdata_folder)) {
-        throw std::invalid_argument("Could not find shotdata folder in directory " +
-                                    project_dir.string() + ".");
-    }
-    for (auto dir_entry : std::filesystem::recursive_directory_iterator(shotdata_folder)) {
+    for (auto dir_entry : std::filesystem::recursive_directory_iterator(project_dir)) {
         if (dir_entry.is_directory()) {
             continue;
         }
@@ -35,7 +32,7 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        std::cerr << "Specify path to project folder as command line argument.";
+        std::cerr << "Specify path to shotdata folder as command line argument.";
         exit(-1);
     }
     if (argc > 2) {
