@@ -151,3 +151,30 @@ std::pair<std::vector<double>, std::vector<double>> read_seismogram(std::filesys
     }
     return {times, amplitdues};
 }
+
+void save_binary_seismograms(
+    const std::vector<std::pair<std::vector<double>, std::vector<double>>>& seismograms,
+    const std::filesystem::path& path) {
+    std::ofstream file{path, std::ios::binary};
+    for (const auto& seismogram : seismograms) {
+        file.write((const char*)(seismogram.first.data()),
+                   seismogram.first.size() * sizeof(double));
+        file.write((const char*)(seismogram.second.data()),
+                   seismogram.second.size() * sizeof(double));
+    }
+}
+
+std::vector<std::pair<std::vector<double>, std::vector<double>>>
+load_binary_seismograms(size_t N, const std::filesystem::path& path) {
+    std::vector<std::pair<std::vector<double>, std::vector<double>>> seismograms;
+    std::ifstream file{path, std::ios::binary};
+    // number of entries in the times/amplitudes vector of a single seismogram
+    auto size_seismogram = std::filesystem::file_size(path) / N / 2 / sizeof(double);
+    std::vector<double> t(size_seismogram), x(size_seismogram);
+    for (auto i = 0U; i < N; ++i) {
+        file.read(reinterpret_cast<char*>(t.data()), size_seismogram * sizeof(double));
+        file.read(reinterpret_cast<char*>(x.data()), size_seismogram * sizeof(double));
+        seismograms.emplace_back(t, x);
+    }
+    return seismograms;
+}

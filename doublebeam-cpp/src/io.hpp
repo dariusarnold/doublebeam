@@ -35,6 +35,27 @@ void save_binary(const std::vector<T>& vec, std::filesystem::path path) {
     file.write((const char*)(&vec[0]), vec.size() * sizeof(T));
 }
 
+
+/**
+ * Save all seismograms in one binary file.
+ * For every seismogram save timesteps, amplitudes.
+ * @param seismograms Vector of seismograms.
+ * @param path Filepath under which the seismograms should be stored.
+ */
+void save_binary_seismograms(
+    const std::vector<std::pair<std::vector<double>, std::vector<double>>>& seismograms,
+    const std::filesystem::path& path);
+
+/**
+ *
+ * @param N Number of seismograms in file.
+ * @param path
+ * @return
+ */
+std::vector<std::pair<std::vector<double>, std::vector<double>>>
+load_binary_seismograms(size_t N, const std::filesystem::path& path);
+
+
 /**
  * Load vector from binary format. Be sure to specify the correct type as a template paramter.
  * @tparam T Type with which the data was saved.

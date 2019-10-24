@@ -4,11 +4,37 @@
 #include <iostream>
 
 
+namespace fs = std::filesystem;
+
 using SeismogramFileContent = std::pair<std::vector<double>, std::vector<double>>;
 
-void save_as_binary(std::filesystem::path path, const SeismogramFileContent& seismogram) {
-    save_binary(seismogram.first, path.replace_extension("t"));
-    save_binary(seismogram.second, path.replace_extension("x"));
+
+std::vector<fs::path> get_all_directories(const fs::path& path) {
+    std::vector<fs::path> paths;
+    std::copy_if(fs::directory_iterator(path), fs::directory_iterator(), std::back_inserter(paths),
+                 [](auto& dir_entry) { return dir_entry.is_directory(); });
+    return paths;
+}
+
+
+std::vector<fs::path> get_all_files(const fs::path& path, const std::string& file_extension = "") {
+    std::vector<fs::path> files;
+    auto filter = [&](auto& dir_entry) {
+        return (dir_entry.is_regular_file() and
+                (file_extension.empty() ? true : dir_entry.path().extension() == file_extension));
+    };
+    std::copy_if(fs::directory_iterator(path), fs::directory_iterator(), std::back_inserter(files),
+                 filter);
+    return files;
+}
+
+
+void convert_content_to_binary(const fs::path& source_dir) {
+    std::vector<SeismogramFileContent> seismograms;
+    auto files = get_all_files(source_dir, ".txt");
+    std::sort(files.begin(), files.end());
+    std::transform(files.begin(), files.end(), std::back_inserter(seismograms), read_seismogram);
+    save_binary_seismograms(seismograms, source_dir / "data.bin");
 }
 
 
@@ -19,25 +45,23 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
     if (not std::filesystem::is_directory(project_dir)) {
         throw std::invalid_argument(project_dir.string() + " is not a directory.");
     }
-    std::cout << "Converting all files in " << project_dir << "\n";
-    for (auto dir_entry : std::filesystem::recursive_directory_iterator(project_dir)) {
-        if (dir_entry.is_directory()) {
-            std::cout << "Converting " << dir_entry << "\n";
-            continue;
-        }
-        auto s = read_seismogram(dir_entry);
-        save_as_binary(dir_entry, s);
+    std::cout << "Converting all files in " << project_dir << std::endl;
+    auto paths = get_all_directories(project_dir);
+    auto i = 0;
+    for (const auto& source_dir : paths) {
+        std::cout << ++i << "/" << paths.size() << ": " << source_dir << std::endl;
+        convert_content_to_binary(source_dir);
     }
 }
 
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        std::cerr << "Specify path to shotdata folder as command line argument.";
+        std::cerr << "Specify path to shotdata folder as command line argument.\n";
         exit(-1);
     }
     if (argc > 2) {
-        std::cerr << "Too many arguments.";
+        std::cerr << "Too many arguments.\n";
         exit(-1);
     }
     std::ios::sync_with_stdio(false);
