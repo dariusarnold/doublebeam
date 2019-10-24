@@ -23,7 +23,6 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
         if (dir_entry.is_directory()) {
             continue;
         }
-        // std::cout << dir_entry << "\n";
         auto s = read_seismogram(dir_entry);
         save_as_binary(dir_entry, s);
     }
@@ -44,5 +43,5 @@ int main(int argc, char* argv[]) {
     auto a = std::chrono::high_resolution_clock::now();
     convert_all_to_binary(p);
     auto b = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::seconds>(b-a).count() << " s\n";
+    std::cout << std::chrono::duration_cast<std::chrono::seconds>(b - a).count() << " s\n";
 }
