@@ -22,7 +22,7 @@ class VelocityModel {
      * Includes interfaces at top and bottom where the model ends.
      * Outside velocities are set to zero
      */
-    std::vector<double> _interface_velocities;
+    std::vector<double> m_interface_velocities;
 
     /**
      * Depth of all interfaces, including the top and the bottom one

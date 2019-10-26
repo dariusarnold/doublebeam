@@ -40,14 +40,14 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers, double x1, double
                   [&](const auto& layer) { m_interface_depths.push_back(layer.bot_depth); });
     // Second get interface velocities with two special cases for first and last layer
     double velocity = 0.;
-    _interface_velocities.push_back(velocity);
+    m_interface_velocities.push_back(velocity);
     for (auto& l : layers) {
         velocity = layer_velocity(l, l.top_depth);
-        _interface_velocities.push_back(velocity);
+        m_interface_velocities.push_back(velocity);
         velocity = layer_velocity(l, l.bot_depth);
-        _interface_velocities.push_back(velocity);
+        m_interface_velocities.push_back(velocity);
     }
-    _interface_velocities.emplace_back(0);
+    m_interface_velocities.emplace_back(0);
 }
 
 VelocityModel read_velocity_file(const fs::path& filepath) {
@@ -141,9 +141,9 @@ std::pair<double, double> VelocityModel::interface_velocities(double z) const {
     // 0 to 2*(n+1)+1 since the first layer has 2 interface velocity pairs and every layer after
     // that adds one interface velocity pair.
     if (z < half_depth) {
-        return {_interface_velocities[2 * index], _interface_velocities[2 * index + 1]};
+        return {m_interface_velocities[2 * index], m_interface_velocities[2 * index + 1]};
     }
-    return {_interface_velocities[2 * (index + 1)], _interface_velocities[2 * (index + 1) + 1]};
+    return {m_interface_velocities[2 * (index + 1)], m_interface_velocities[2 * (index + 1) + 1]};
 }
 
 std::pair<double, double> VelocityModel::get_top_bottom() const {
@@ -166,8 +166,8 @@ VelocityModel::interface_velocities(double z1, double z2) const {
     auto [z_low, z_high] = std::minmax(z1, z2);
     auto index_low = layer_index(z_low).value();
     auto index_high = layer_index(z_high).value();
-    return {_interface_velocities.begin() + 2 * (index_low + 1),
-            _interface_velocities.begin() + 2 * (index_high + 1)};
+    return {m_interface_velocities.begin() + 2 * (index_low + 1),
+            m_interface_velocities.begin() + 2 * (index_high + 1)};
 }
 
 std::vector<Layer>::const_iterator VelocityModel::begin() const {
