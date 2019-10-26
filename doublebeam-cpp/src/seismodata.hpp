@@ -91,6 +91,18 @@ public:
     const std::vector<Receiver>& receivers() const;
 
     /**
+     * Get number of receivers.
+     * @return
+     */
+    size_t num_receivers() const;
+
+    /**
+     * Get number of sources.
+     * @return
+     */
+    size_t num_sources() const;
+
+    /**
      * Get access to common timesteps of all seismograms
      * @return
      */

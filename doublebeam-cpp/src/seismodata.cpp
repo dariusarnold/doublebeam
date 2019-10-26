@@ -109,6 +109,12 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
             }
         }
     }
-    }
 }
+
+size_t SeismoData::num_receivers() const {
+    return seismograms.receivers.size();
+}
+
+size_t SeismoData::num_sources() const {
+    return seismograms.sources.size();
 }
