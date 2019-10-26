@@ -69,8 +69,7 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     std::vector<Source> sources;
     sources.reserve(nsrc.value());
     auto filecontent = stream_to_string(file);
-    auto sources_begin =
-        std::sregex_iterator(filecontent.begin(), filecontent.end(), source_regex);
+    auto sources_begin = std::sregex_iterator(filecontent.begin(), filecontent.end(), source_regex);
     auto sources_end = std::sregex_iterator();
     for (auto it = sources_begin; it != sources_end; ++it) {
         auto match = *it;
