@@ -1,5 +1,8 @@
-#include "seismodata.hpp"
+#include <algorithm>
+#include <iterator>
+
 #include "io.hpp"
+#include "seismodata.hpp"
 #include "utils.hpp"
 
 SeismoData::SeismoData(const std::filesystem::path& project_folder,
@@ -79,29 +82,33 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
         throw std::runtime_error(impl::Formatter()
                                  << "No directory shotdata in " << project_folder);
     }
-    std::vector<fs::path> source_paths;
     // build sorted list of source directories
-    for (auto source_dir : fs::directory_iterator(p)) {
-        if (not fs::is_directory(source_dir)) {
-            // skip normal files without error
-            continue;
-        }
-        source_paths.push_back(source_dir);
-    }
     // sort because the folder names are assumed to be related to the source index, eg source #1
     // will have folder name "source_1" or similar.
+    std::vector<fs::path> source_paths;
+    std::copy_if(fs::directory_iterator(p), fs::directory_iterator(),
+                 std::back_inserter(source_paths),
+                 [](const auto& dir_entry) { return dir_entry.is_directory(); });
     std::sort(source_paths.begin(), source_paths.end());
     // iterate over source directories and read seismograms
     for (const auto& sourcepath : source_paths) {
-        std::vector<fs::path> seismo_files;
-        for (auto seismo_file : fs::directory_iterator(sourcepath)) {
-            if (fs::is_regular_file(seismo_file)) {
-                seismo_files.push_back(seismo_file);
+        // read binary data if it exists, else fall back to text data
+        if (auto binary_file = sourcepath / "data.bin"; fs::exists(binary_file)) {
+            auto seismograms = load_binary_seismograms(receivers.size(), binary_file);
+            for (auto seismogram : seismograms) {
+                data.emplace_back(std::move(seismogram.second));
+            }
+        } else {
+            std::vector<fs::path> seismo_files;
+            std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
+                         std::back_inserter(seismo_files),
+                         [](const auto& dir_entry) { return fs::is_regular_file(dir_entry); });
+            std::sort(seismo_files.begin(), seismo_files.end());
+            for (const auto& seismo_file : seismo_files) {
+                data.emplace_back(read_amplitude(seismo_file));
             }
         }
-        std::sort(seismo_files.begin(), seismo_files.end());
-        for (const auto& seismo_file : seismo_files) {
-            data.emplace_back(read_amplitude(seismo_file));
-        }
     }
+    }
+}
 }

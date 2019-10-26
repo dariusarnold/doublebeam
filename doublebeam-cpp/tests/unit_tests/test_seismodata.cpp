@@ -5,24 +5,23 @@
 
 #include "seismodata.hpp"
 
-class TestProjectLoading : public testing::Test {
+class TestProjectLoading : public testing::TestWithParam<std::string> {
 protected:
-    std::filesystem::path project_dir =
-        current_source_path(__FILE__) / "data" / "sample_project_dir";
+    std::filesystem::path project_dir = current_source_path(__FILE__) / "data" / GetParam();
 };
 
-TEST_F(TestProjectLoading, TestIfLoadsWithoutThrow) {
+TEST_P(TestProjectLoading, TestIfLoadsWithoutThrow) {
     ASSERT_NO_THROW(SeismoData s(project_dir));
 }
 
-TEST_F(TestProjectLoading, TestCorrectnessOfLoadedProject) {
+TEST_P(TestProjectLoading, TestCorrectnessOfLoadedProject) {
     SeismoData s(project_dir);
     ASSERT_EQ(s.receivers().size(), 3);
     ASSERT_EQ(s.sources().size(), 2);
     // loading source and receiver file is already tested.
 }
 
-TEST_F(TestProjectLoading, TestRetrievingSeismograms) {
+TEST_P(TestProjectLoading, TestRetrievingSeismograms) {
     SeismoData s(project_dir);
     // I replaced the first value of every seismogram with an increasing index to test if they are
     // loaded in the correct order.
@@ -37,6 +36,12 @@ TEST_F(TestProjectLoading, TestRetrievingSeismograms) {
         }
     }
 }
+
+INSTANTIATE_TEST_SUITE_P(TestNormalTextFileLoading, TestProjectLoading,
+                         testing::Values("sample_project_dir"));
+
+INSTANTIATE_TEST_SUITE_P(TestBinaryFileLoading, TestProjectLoading,
+                         testing::Values("sample_project_dir_binary"));
 
 
 struct TestSeismogramCutData {
@@ -65,15 +70,13 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(TestSeismogramCutData{
         {{0, 1, 2, 3, 4, 5, 6}}, {{0, 1, 2, 3, 4, 5, 6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 10}));
 
-INSTANTIATE_TEST_SUITE_P(
-    TestKeepingFirstValue, TestSeismogramCut,
-    testing::Values(TestSeismogramCutData{
-        {{0, 1, 2, 3, 4, 5, 6}}, {{0}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 1}));
+INSTANTIATE_TEST_SUITE_P(TestKeepingFirstValue, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{
+                             {{0, 1, 2, 3, 4, 5, 6}}, {{0}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 1}));
 
-INSTANTIATE_TEST_SUITE_P(
-    TestKeepingLastValue, TestSeismogramCut,
-    testing::Values(TestSeismogramCutData{
-        {{0, 1, 2, 3, 4, 5, 6}}, {{6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 8.2, 10}));
+INSTANTIATE_TEST_SUITE_P(TestKeepingLastValue, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{
+                             {{0, 1, 2, 3, 4, 5, 6}}, {{6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 8.2, 10}));
 
 INSTANTIATE_TEST_SUITE_P(
     TestInclusivityOfT0, TestSeismogramCut,
