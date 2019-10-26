@@ -170,6 +170,9 @@ void save_binary_seismograms(
 load_binary_seismograms(size_t N, const std::filesystem::path& path) {
     std::vector<std::pair<std::vector<double>, std::vector<double>>> seismograms;
     std::ifstream file{path, std::ios::binary};
+    if (not file) {
+        throw std::runtime_error("Failed to open file " + path.string());
+    }
     // number of entries in the times/amplitudes vector of a single seismogram
     auto size_seismogram = std::filesystem::file_size(path) / N / 2 / sizeof(double);
     std::vector<double> t(size_seismogram), x(size_seismogram);
