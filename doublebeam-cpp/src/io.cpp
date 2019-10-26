@@ -166,7 +166,7 @@ void save_binary_seismograms(
     }
 }
 
-std::vector<std::pair<std::vector<double>, std::vector<double>>>
+[[nodiscard]] std::vector<std::pair<std::vector<double>, std::vector<double>>>
 load_binary_seismograms(size_t N, const std::filesystem::path& path) {
     std::vector<std::pair<std::vector<double>, std::vector<double>>> seismograms;
     std::ifstream file{path, std::ios::binary};
