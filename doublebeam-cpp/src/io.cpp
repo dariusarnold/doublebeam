@@ -159,9 +159,9 @@ void save_binary_seismograms(
     const std::filesystem::path& path) {
     std::ofstream file{path, std::ios::binary};
     for (const auto& seismogram : seismograms) {
-        file.write((const char*)(seismogram.first.data()),
+        file.write(reinterpret_cast<const char*>(seismogram.first.data()),
                    seismogram.first.size() * sizeof(double));
-        file.write((const char*)(seismogram.second.data()),
+        file.write(reinterpret_cast<const char*>(seismogram.second.data()),
                    seismogram.second.size() * sizeof(double));
     }
 }

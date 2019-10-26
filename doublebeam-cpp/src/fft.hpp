@@ -27,7 +27,7 @@ struct Allocator {
         if (n > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
             throw std::bad_alloc();
         }
-        return (T*)(fftw_malloc(n * sizeof(T)));
+        return reinterpret_cast<T*>(fftw_malloc(n * sizeof(T)));
     }
     void deallocate(T* p, std::size_t) noexcept {
         fftw_free(p);

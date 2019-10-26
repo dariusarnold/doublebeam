@@ -32,7 +32,7 @@ std::vector<Source> read_sourcefile(std::filesystem::path path);
 template <typename T>
 void save_binary(const std::vector<T>& vec, std::filesystem::path path) {
     std::ofstream file{path, std::ios::out | std::ios::binary};
-    file.write((const char*)(&vec[0]), vec.size() * sizeof(T));
+    file.write(reinterpret_cast<const char*>(&vec[0]), vec.size() * sizeof(T));
 }
 
 
