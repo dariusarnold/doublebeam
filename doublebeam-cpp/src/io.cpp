@@ -111,7 +111,10 @@ std::vector<double> read_column(std::filesystem::path path, int column) {
         }
     }
     // then push back other lines
-    while (file >> p[0] >> p[1]) {
+    size_t pos{0};
+    while (std::getline(file, s)) {
+        p[0] = std::stod(s, &pos);
+        p[1] = std::stod(s.substr(pos, s.size()));
         vec.push_back(p[column]);
     }
     return vec;
