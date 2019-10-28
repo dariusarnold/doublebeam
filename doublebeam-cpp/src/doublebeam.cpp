@@ -131,12 +131,33 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
         data(num_of_fracture_spacings, num_of_fracture_orientations) {}
 
 
+std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
+                           const SeismoData& data, double window_length) {
+    std::cout << "Stacking data\n";
+    FFT fft;
+    std::complex<double> stacking_result;
+    auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
+    for (const auto& source_pos : data.sources()) {
+        auto source_beam_val =
+            eval_gauss_beam(source_beam, source_pos.x, source_pos.y, source_pos.z);
+        for (const auto& rec_pos : data.receivers()) {
+            auto receiver_beam_val = eval_gauss_beam(source_beam, rec_pos.x, rec_pos.y, rec_pos.z);
+            auto seismogram = cut(data(source_pos, rec_pos), total_traveltime - window_length / 2,
+                                  total_traveltime + window_length / 2);
+            auto seismogram_freq = fft.execute(seismogram.data);
+            // TODO what to do for two or more resulting frequency bins?
+            stacking_result += source_beam_val * receiver_beam_val * seismogram_freq[0];
+        }
+    }
+    return stacking_result;
+}
+
+
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
                                        FractureParameters fracture_info, double beam_width,
                                        double beam_frequency,
                                        double __attribute__((unused)) window_length) {
-    FFT fft;
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
@@ -171,23 +192,9 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         // beam didn't reach surface, skip
                         break;
                     }
-                    auto total_traveltime = last_traveltime(source_beam.value()) +
-                                            last_traveltime(receiver_beam.value());
                     // iteration over sources and receivers
-                    for (const auto& source_pos : data.sources()) {
-                        auto source_beam_val = eval_gauss_beam(source_beam.value(), source_pos.x,
-                                                               source_pos.y, source_pos.z);
-                        for (const auto& rec_pos : data.receivers()) {
-                            auto receiver_beam_val = eval_gauss_beam(source_beam.value(), rec_pos.x,
-                                                                     rec_pos.y, rec_pos.z);
-                            auto seismogram = cut(data(source_pos, rec_pos),
-                                                  total_traveltime - window_length / 2,
-                                                  total_traveltime + window_length / 2);
-                            auto seismogram_freq = fft.execute(seismogram.data);
-                            result.data(spacing_index, orientations_index) +=
-                                source_beam_val * receiver_beam_val * seismogram_freq[0];
-                        }
-                    }
+                    result.data(spacing_index, orientations_index) +=
+                        stack(source_beam.value(), receiver_beam.value(), data, window_length);
                 }
             }
         }
