@@ -180,7 +180,6 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         std::cout << "Receiver beam left model " << std::endl;
                         break;
                     }
-                    eval_gauss_beam(receiver_beam.value(), 1, 1, 1);
                     auto total_traveltime = last_traveltime(source_beam.value()) +
                                             last_traveltime(receiver_beam.value());
                     // iteration over sources and receivers
