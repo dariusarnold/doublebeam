@@ -82,6 +82,9 @@ public:
      * @return
      */
     Seismogram& operator()(const Source& s, const Receiver& r);
+
+    const Seismogram& operator()(const Source& s, const Receiver& r) const;
+
     /**
      * Get access to list of sources.
      */

@@ -54,6 +54,10 @@ Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
     return seismograms.seismograms[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
 }
 
+const Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) const {
+    return seismograms.seismograms[(s.index - 1) * num_receivers() + (r.index - 1)];
+}
+
 const std::vector<Source>& SeismoData::sources() const {
     return seismograms.sources;
 }
