@@ -17,37 +17,52 @@ double layer_velocity(Layer layer, double depth) {
 }
 
 
+std::vector<double> get_interface_depths(const std::vector<Layer>& layers) {
+    if (layers.empty()) {
+        throw std::invalid_argument("Velocity model has to contain layers.");
+    }
+    std::vector<double> interface_depths;
+    interface_depths.reserve(layers.size() + 1);
+    auto top_layer = layers.front();
+    interface_depths.push_back(top_layer.top_depth);
+    std::for_each(layers.begin(), layers.end(),
+                  [&](const auto& layer) { interface_depths.push_back(layer.bot_depth); });
+    return interface_depths;
+}
+
+std::vector<double> get_interface_velocities(const std::vector<Layer>& layers) {
+    std::vector<double> interface_velocities;
+    interface_velocities.reserve(layers.size() + 2);
+    const double out_of_model_velocity = 0;
+    // get interface velocities with two special cases for first and last layer
+    double velocity = out_of_model_velocity;
+    interface_velocities.push_back(velocity);
+    for (auto& l : layers) {
+        velocity = layer_velocity(l, l.top_depth);
+        interface_velocities.push_back(velocity);
+        velocity = layer_velocity(l, l.bot_depth);
+        interface_velocities.push_back(velocity);
+    }
+    interface_velocities.emplace_back(out_of_model_velocity);
+    return interface_velocities;
+}
+
+
 VelocityModel::VelocityModel(const std::vector<Layer>& layers, double x1, double y1, double x0,
                              double y0) :
+        m_interface_depths(get_interface_depths(layers)),
+        m_interface_velocities(get_interface_velocities(layers)),
         layers(layers),
         x0_(x0),
         x1_(x1),
         y0_(y0),
         y1_(y1) {
-    if (layers.empty()) {
-        throw std::invalid_argument("Velocity model has to contain layers.");
-    }
     if (x_width() != y_width()) {
         throw std::invalid_argument(
             impl::Formatter()
             << "Different model widths along x and y axis not allowed. Widths are: x " << x_width()
             << " y " << y_width());
     }
-    // First get interface depths
-    auto top_layer = layers.front();
-    m_interface_depths.push_back(top_layer.top_depth);
-    std::for_each(layers.begin(), layers.end(),
-                  [&](const auto& layer) { m_interface_depths.push_back(layer.bot_depth); });
-    // Second get interface velocities with two special cases for first and last layer
-    double velocity = 0.;
-    m_interface_velocities.push_back(velocity);
-    for (auto& l : layers) {
-        velocity = layer_velocity(l, l.top_depth);
-        m_interface_velocities.push_back(velocity);
-        velocity = layer_velocity(l, l.bot_depth);
-        m_interface_velocities.push_back(velocity);
-    }
-    m_interface_velocities.emplace_back(0);
 }
 
 VelocityModel read_velocity_file(const fs::path& filepath) {

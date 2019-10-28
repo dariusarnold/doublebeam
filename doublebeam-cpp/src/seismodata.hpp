@@ -30,7 +30,7 @@ struct Seismogram {
     Seismogram(std::vector<double>&& d) : data(d) {}
 
     // amplitude data
-    std::vector<double> data;
+    std::vector<double> data{};
 };
 
 
@@ -59,8 +59,8 @@ struct Seismograms {
     std::vector<Source> sources;
     std::vector<Receiver> receivers;
     // common time steps of all seismograms
-    std::vector<double> times;
-    std::vector<Seismogram> data;
+    std::vector<double> times{};
+    std::vector<Seismogram> data{};
 
 private:
     void read_all_seismograms(const std::filesystem::path& project_folder);

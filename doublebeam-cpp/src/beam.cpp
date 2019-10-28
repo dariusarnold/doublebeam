@@ -15,6 +15,7 @@ Beam::Beam(double beam_width, double beam_frequency, BeamSegment segment) :
         m_frequency(beam_frequency) {}
 
 Beam::Beam(double beam_width, double beam_frequency) :
+        segments(),
         m_width(beam_width),
         m_frequency(beam_frequency) {}
 

@@ -34,7 +34,9 @@ struct Allocator {
     }
 };
 
-
+// Ignore warnings about rule of three for Plan class
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 struct Plan {
     // move constructor is required because the fftw_plan frees the memory associated with the
     // input/output arrays when it is destroyed. The move constructor will invalidate the other
@@ -48,6 +50,7 @@ struct Plan {
     std::vector<std::complex<double>, Allocator<std::complex<double>>> out;
     fftw_plan p;
 };
+#pragma GCC diagnostic pop
 
 
 class PlanCache {

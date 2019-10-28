@@ -127,9 +127,7 @@ namespace impl {
         return stream.str();
     }
 
-    Formatter::Formatter(const std::string& sep) {
-        separator = sep;
-    }
+    Formatter::Formatter(const std::string& sep) : separator(sep) {}
 
     std::ostream& operator<<(std::ostream& os, const Formatter& f) {
         return os << std::string(f);

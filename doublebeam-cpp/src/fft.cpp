@@ -11,14 +11,15 @@ Plan& PlanCache::get_plan(std::vector<double>& in) {
     return plans.emplace_back(in);
 }
 
-PlanCache::PlanCache(size_t initial_cache_size) {
+PlanCache::PlanCache(size_t initial_cache_size) : plans() {
     plans.reserve(initial_cache_size);
 }
 
-Plan::Plan(std::vector<double>& in) : N(in.size()), out(N / 2 + 1) {
-    p = fftw_plan_dft_r2c_1d(N, in.data(), reinterpret_cast<fftw_complex*>(out.data()),
-                             FFTW_MEASURE);
-}
+Plan::Plan(std::vector<double>& in) :
+        N(in.size()),
+        out(N / 2 + 1),
+        p(fftw_plan_dft_r2c_1d(N, in.data(), reinterpret_cast<fftw_complex*>(out.data()),
+                               FFTW_MEASURE)) {}
 
 Plan::~Plan() {
     fftw_destroy_plan(p);

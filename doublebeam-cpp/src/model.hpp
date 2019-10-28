@@ -2,9 +2,9 @@
 #define DOUBLEBEAM_CPP_MODEL_HPP
 
 #include <filesystem>
+#include <optional>
 #include <tuple>
 #include <vector>
-#include <optional>
 
 struct Layer {
     double top_depth;
@@ -18,17 +18,17 @@ bool operator==(const Layer& l1, const Layer& l2);
 
 class VelocityModel {
     /**
+     * Depth of all interfaces, including the top and the bottom one
+     * where the layer ends.
+     */
+    std::vector<double> m_interface_depths;
+
+    /**
      * Sequence of above, below velocity of every interface (in m/s).
      * Includes interfaces at top and bottom where the model ends.
      * Outside velocities are set to zero
      */
     std::vector<double> m_interface_velocities;
-
-    /**
-     * Depth of all interfaces, including the top and the bottom one
-     * where the layer ends.
-     */
-    std::vector<double> m_interface_depths;
 
     /**
      * Array of layers.

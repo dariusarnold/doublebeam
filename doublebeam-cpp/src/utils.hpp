@@ -420,7 +420,7 @@ namespace impl {
 
     private:
         bool first_used = false;
-        std::stringstream stream;
+        std::stringstream stream{};
         std::string separator;
     };
 
