@@ -143,12 +143,10 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             auto slowness = twopoint.trace(source_beam_center, target);
             // TODO add overload so declaring initial state is not required for ray tracing
             auto initial_state = make_state(source_beam_center, slowness, 0);
-            std::cout << initial_state << std::endl;
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
             if (source_beam.status == Status::OutOfBounds) {
-                std::cout << "Source beam left model" << std::endl;
                 break;
             }
             auto last_p = last_slowness(source_beam.value());
@@ -162,7 +160,6 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         std::get<0>(last_p), std::get<1>(last_p), phi_hat_x, phi_hat_y,
                         fracture_info.spacings[spacing_index], beam_frequency);
                     // trace receiver beam in scattered direction
-                    auto a = std::chrono::high_resolution_clock::now();
                     // -pz to reflect beam upwards from target
                     slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
                     initial_state = make_state(target, new_slowness);
@@ -170,14 +167,8 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto receiver_beam =
                         tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                           direct_ray_code(target, source_beam_center, model));
-                    auto b = std::chrono::high_resolution_clock::now();
-                    auto duration =
-                        std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-                    std::cout << duration << " ns"
-                              << "\n";
                     if (receiver_beam.status == Status::OutOfBounds) {
                         // beam didn't reach surface, skip
-                        std::cout << "Receiver beam left model " << std::endl;
                         break;
                     }
                     auto total_traveltime = last_traveltime(source_beam.value()) +
@@ -193,10 +184,6 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                                   total_traveltime - window_length / 2,
                                                   total_traveltime + window_length / 2);
                             auto seismogram_freq = fft.execute(seismogram.data);
-                            if (seismogram_freq.size() > 1) {
-                                std::cerr << "Got " << seismogram_freq.size()
-                                          << " frequency bins back.\n";
-                            }
                             result.data(spacing_index, orientations_index) +=
                                 source_beam_val * receiver_beam_val * seismogram_freq[0];
                         }
