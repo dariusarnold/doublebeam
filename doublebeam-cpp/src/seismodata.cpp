@@ -27,30 +27,31 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
-Seismogram cut(const Seismogram& seismogram, const std::vector<double>& t, double t0, double t1) {
-    if (seismogram.data.size() != t.size()) {
-        throw std::invalid_argument(impl::Formatter()
-                                    << "Got seismogram of size " << seismogram.data.size()
-                                    << " but only " << t.size() << "time steps.");
+Seismogram cut(const Seismogram& seismogram, double t0, double t1) {
+    // TODO test/specify what happens for t0/t1 outside of timesteps range
+    if (seismogram.data.size() != seismogram.timesteps.size()) {
+        throw std::invalid_argument(
+            impl::Formatter() << "Got seismogram of size " << seismogram.data.size() << " but only "
+                              << seismogram.timesteps.size() << " time steps.");
     }
-    Seismogram out;
     // If I could assume that all time samples are evenly spaced, it would be easy to calculate the
     // index of the start/end cut. Since I can't make this assumption for all input, a binary search
     // is applied to find the indices of t0 and t1.
-    auto i1 = std::lower_bound(t.begin(), t.end(), t0);
+    auto i1 = std::lower_bound(seismogram.timesteps.begin(), seismogram.timesteps.end(), t0);
     // t1 can't be before t0, so decrease search range
-    auto i2 = std::upper_bound(i1, t.end(), t1);
-    auto start_index = std::distance(t.begin(), i1);
-    auto end_index = std::distance(t.begin(), i2);
-    for (auto i = start_index; i < end_index; ++i) {
-        out.data.push_back(seismogram.data[i]);
-    }
+    auto i2 = std::upper_bound(i1, seismogram.timesteps.end(), t1);
+    auto start_index = std::distance(seismogram.timesteps.begin(), i1);
+    auto end_index = std::distance(seismogram.timesteps.begin(), i2);
+    Seismogram out{std::vector<double>{seismogram.timesteps.begin() + start_index,
+                                       seismogram.timesteps.begin() + end_index},
+                   std::vector<double>{seismogram.data.begin() + start_index,
+                                       seismogram.data.begin() + end_index}};
     return out;
 }
 
 Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
-    return seismograms.data[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
+    return seismograms.seismograms[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
 }
 
 const std::vector<Source>& SeismoData::sources() const {
@@ -59,10 +60,6 @@ const std::vector<Source>& SeismoData::sources() const {
 
 const std::vector<Receiver>& SeismoData::receivers() const {
     return seismograms.receivers;
-}
-
-const std::vector<double>& SeismoData::timesteps() const {
-    return seismograms.times;
 }
 
 Seismograms::Seismograms(const std::filesystem::path& project_folder,
@@ -94,9 +91,9 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
     for (const auto& sourcepath : source_paths) {
         // read binary data if it exists, else fall back to text data
         if (auto binary_file = sourcepath / "data.bin"; fs::exists(binary_file)) {
-            auto seismograms = load_binary_seismograms(receivers.size(), binary_file);
-            for (auto seismogram : seismograms) {
-                data.emplace_back(std::move(seismogram.second));
+            auto data = load_binary_seismograms(receivers.size(), binary_file);
+            for (auto seismogram : data) {
+                seismograms.emplace_back(std::move(seismogram.first), std::move(seismogram.second));
             }
         } else {
             std::vector<fs::path> seismo_files;
@@ -105,7 +102,8 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
                          [](const auto& dir_entry) { return fs::is_regular_file(dir_entry); });
             std::sort(seismo_files.begin(), seismo_files.end());
             for (const auto& seismo_file : seismo_files) {
-                data.emplace_back(read_amplitude(seismo_file));
+                auto seismogram = read_seismogram(seismo_file);
+                seismograms.emplace_back(std::move(seismogram.first), (seismogram.second));
             }
         }
     }

@@ -26,9 +26,14 @@ struct Receiver {
 };
 
 struct Seismogram {
-    Seismogram() = default;
-    Seismogram(std::vector<double>&& d) : data(d) {}
+    Seismogram() {}
 
+    Seismogram(std::vector<double> t, std::vector<double> d) :
+            timesteps(std::move(t)),
+            data(std::move(d)) {}
+
+    // time data
+    std::vector<double> timesteps{};
     // amplitude data
     std::vector<double> data{};
 };
@@ -39,12 +44,11 @@ struct Seismogram {
  * Both t0 and t1 are inclusive.
  * Seismogram and t have to have the same size.
  * @param seismogram
- * @param t
  * @param t0
  * @param t1
  * @return New seismogram containing only the amplitude samples between t0 and t1.
  */
-Seismogram cut(const Seismogram& seismogram, const std::vector<double>& t, double t0, double t1);
+Seismogram cut(const Seismogram& seismogram, double t0, double t1);
 
 
 struct Seismograms {
@@ -58,9 +62,7 @@ struct Seismograms {
 
     std::vector<Source> sources;
     std::vector<Receiver> receivers;
-    // common time steps of all seismograms
-    std::vector<double> times{};
-    std::vector<Seismogram> data{};
+    std::vector<Seismogram> seismograms{};
 
 private:
     void read_all_seismograms(const std::filesystem::path& project_folder);
@@ -101,12 +103,6 @@ public:
      * @return
      */
     size_t num_sources() const;
-
-    /**
-     * Get access to common timesteps of all seismograms
-     * @return
-     */
-    const std::vector<double>& timesteps() const;
 
 private:
     Seismograms seismograms;

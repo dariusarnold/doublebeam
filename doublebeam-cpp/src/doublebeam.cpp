@@ -189,7 +189,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         for (const auto& rec_pos : data.receivers()) {
                             auto receiver_beam_val = eval_gauss_beam(source_beam.value(), rec_pos.x,
                                                                      rec_pos.y, rec_pos.z);
-                            auto seismogram = cut(data(source_pos, rec_pos), data.timesteps(),
+                            auto seismogram = cut(data(source_pos, rec_pos),
                                                   total_traveltime - window_length / 2,
                                                   total_traveltime + window_length / 2);
                             auto seismogram_freq = fft.execute(seismogram.data);

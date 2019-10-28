@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "seismodata.hpp"
+#include "printing.hpp"
 
 class TestProjectLoading : public testing::TestWithParam<std::string> {
 protected:
@@ -45,45 +46,51 @@ INSTANTIATE_TEST_SUITE_P(TestBinaryFileLoading, TestProjectLoading,
 
 
 struct TestSeismogramCutData {
-    Seismogram in;
     Seismogram expected;
-    std::vector<double> t;
     double t0, t1;
 };
 
+std::ostream& operator<<(std::ostream& os, const Seismogram& seismogram) {
+    os << "Seismogram(t = " << seismogram.timesteps << ", x = " << seismogram.data << ")";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const TestSeismogramCutData& data) {
+    os << "TestSeismogramCutData(expected = " << data.expected << ", t0 = " << data.t0 << ", t1 = " << data.t1
+       << ")";
+    return os;
+}
+
 class TestSeismogramCut : public ::testing::TestWithParam<TestSeismogramCutData> {
 protected:
+    Seismogram in{{0, 1, 2, 3, 4, 5, 6}, {1, 2.5, 3, 5, 7, 8.1, 9}};
 };
 
 TEST_P(TestSeismogramCut, CompareResultWithExpected) {
-    auto [in, expected, t, t0, t1] = GetParam();
-    auto out = cut(in, t, t0, t1);
+    auto [expected, t0, t1] = GetParam();
+    auto out = cut(in, t0, t1);
     ASSERT_EQ(out.data.size(), expected.data.size()) << "Wrong size for cut seismogram.";
     EXPECT_EQ(out.data, expected.data);
 }
 
 INSTANTIATE_TEST_SUITE_P(TestEmptySeismogram, TestSeismogramCut,
-                         testing::Values(TestSeismogramCutData{{}, {}, {}, 0, 1}));
+                         testing::Values(TestSeismogramCutData{{}, 10, 11}));
 
-INSTANTIATE_TEST_SUITE_P(
-    TestKeepingFullSeismogram, TestSeismogramCut,
-    testing::Values(TestSeismogramCutData{
-        {{0, 1, 2, 3, 4, 5, 6}}, {{0, 1, 2, 3, 4, 5, 6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 10}));
+INSTANTIATE_TEST_SUITE_P(TestKeepingFullSeismogram, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{
+                             Seismogram{{0, 1, 2, 3, 4, 5, 6}, {1, 2.5, 3, 5, 7, 8.1, 9}}, -0.5,
+                             10}));
 
 INSTANTIATE_TEST_SUITE_P(TestKeepingFirstValue, TestSeismogramCut,
-                         testing::Values(TestSeismogramCutData{
-                             {{0, 1, 2, 3, 4, 5, 6}}, {{0}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 0.5, 1}));
+                         testing::Values(TestSeismogramCutData{Seismogram{{0}, {1}}, -0.5, 0.5}));
 
 INSTANTIATE_TEST_SUITE_P(TestKeepingLastValue, TestSeismogramCut,
-                         testing::Values(TestSeismogramCutData{
-                             {{0, 1, 2, 3, 4, 5, 6}}, {{6}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 8.2, 10}));
+                         testing::Values(TestSeismogramCutData{Seismogram{{6}, {9}}, 5.9, 10}));
 
-INSTANTIATE_TEST_SUITE_P(
-    TestInclusivityOfT0, TestSeismogramCut,
-    testing::Values(TestSeismogramCutData{
-        {{0, 1, 2, 3, 4, 5, 6}}, {{1, 2}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 2.5, 3.5}));
+INSTANTIATE_TEST_SUITE_P(TestInclusivityOfT0, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{Seismogram{{1, 2}, {2.5, 3}}, 1,
+                                                               2.5}));
 
-INSTANTIATE_TEST_SUITE_P(
-    TestKeepingInclusivityT1, TestSeismogramCut,
-    testing::Values(TestSeismogramCutData{
-        {{0, 1, 2, 3, 4, 5, 6}}, {{3, 4, 5}}, {1, 2.5, 3, 5, 7, 8.1, 9}, 4.5, 8.1}));
+INSTANTIATE_TEST_SUITE_P(TestKeepingInclusivityT1, TestSeismogramCut,
+                         testing::Values(TestSeismogramCutData{Seismogram{{3, 4, 5}, {5, 7, 8.1}},
+                                                               2.5, 5}));
