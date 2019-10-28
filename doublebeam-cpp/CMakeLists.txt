@@ -18,18 +18,18 @@ find_package(LAPACK REQUIRED)
 configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
-if(result)
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download)
+if (result)
     message(FATAL_ERROR "CMake step for findFFTW failed: ${result}")
-else()
+else ()
     message("CMake step for findFFTW completed (${result}).")
-endif()
+endif ()
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
-if(result)
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download)
+if (result)
     message(FATAL_ERROR "Build step for findFFTW failed: ${result}")
-endif()
+endif ()
 
 set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
 
