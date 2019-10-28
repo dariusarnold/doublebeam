@@ -39,7 +39,8 @@ find_package(FFTW REQUIRED)
 #find_package(xsimd)
 #add_definitions(-DXTENSOR_ENABLE_XSIMD)
 
-set(WARNINGS -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast)
+set(WARNINGS -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
+        -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation)
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/raytracing_helpers.hpp src/ray.cpp src/ray.hpp
