@@ -48,6 +48,9 @@ std::ostream& operator<<(std::ostream& os, const std::tuple<T, T, T>& t) {
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::valarray<T>& a) {
+    if (a.size() == 0) {
+        return os;
+    }
     // print last element without separator
     for (auto i = std::begin(a); i != std::end(a) - 1; ++i) {
         os << *i << ", ";
