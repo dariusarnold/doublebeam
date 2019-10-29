@@ -26,9 +26,14 @@ std::ostream& operator<<(std::ostream& os, std::vector<WaveType> v);
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, std::vector<T> v) {
-    for (auto& i : v) {
-        os << i << " ";
+    if (v.empty()) {
+        return os;
     }
+    // print last element without separator
+    for (auto i = v.begin(); i != v.end() - 1; ++i) {
+        os << *i << ", ";
+    }
+    os << *(v.end() - 1);
     return os;
 }
 
