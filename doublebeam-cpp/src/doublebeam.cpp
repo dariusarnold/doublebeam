@@ -74,6 +74,10 @@ struct UnitVectors {
     vector_t e1, e2;
 };
 
+bool same_direction(double x0, double y0, double z0, double x1, double y1, double z1) {
+    return math::angle(x0, y0, z0, x1, y1, z1) < 1E-8;
+}
+
 UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // This is valid for a planar ray, see 4. from 4.1.3 Cerveny2001. We have a planar ray for a
     // velocity model consisting of horizontal layers, with v = v(z), since nothing changes the
@@ -83,7 +87,20 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // other vector in ray plane (connects start and end point)
     auto [x0, y0, z0] = first_point(beam);
     auto [x1, y1, z1] = last_point(beam);
-    auto e2 = std::apply(math::normalize, math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0));
+    auto e2 = [&]() {
+        if (same_direction(px, py, pz, x1 - x0, y1 - y0, z1 - z0)) {
+            // special case: slowness vector and auxiliary in plane vector defined by ray start/end
+            // can't be used to generate a third vector normal to the by the way of cross product.
+            // This can be the case for a purely down going ray in a layered model, where the
+            // slowness and the ray path both point down. find z component of a vector normal to
+            // slowness by setting x, y = 1 and requiring the dot product of (x, y, z), (px, py, pz)
+            // to be zero.
+            double z = (-px - py) / pz;
+            return std::apply(math::normalize, vector_t{1, 1, z});
+        } else {
+            return std::apply(math::normalize, math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0));
+        }
+    }();
     auto e1 = std::apply(math::normalize, math::cross(px, py, pz, std::get<0>(e2), std::get<1>(e2),
                                                       std::get<2>(e2)));
     return {e1, e2};
