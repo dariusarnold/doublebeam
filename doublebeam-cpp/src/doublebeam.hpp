@@ -13,21 +13,6 @@
 #include "utils.hpp"
 
 
-/**
- * Generate coordinates of a evenly spaced grid.
- * @param x0 X start coordinate.
- * @param x1 X end coordinate.
- * @param y0 Y start coordinate.
- * @param y1 Y end coordinate.
- * @param depth Depth of all grid points.
- * @param num_x Number of points along the x axis.
- * @param num_y Number of points along the y axis.
- * @return Container of all grid locations with shape (num_x, num_y, 3) where the first axis
- * is the x axis, the second axis is the y axis and the third axis contains the z values.
- */
-std::vector<position_t> grid_coordinates(double x0, double x1, double y0, double y1, double depth,
-                                         int num_x, int num_y);
-
 
 class FractureParameters {
 public:

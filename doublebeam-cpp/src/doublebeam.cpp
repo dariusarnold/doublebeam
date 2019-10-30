@@ -30,20 +30,6 @@ std::tuple<double, double> scattered_slowness(double px, double py, double phi_h
 }
 
 
-std::vector<position_t> grid_coordinates(double x0, double x1, double y0, double y1, double depth,
-                                         int num_x, int num_y) {
-    double x_stepsize = std::abs(x1 - x0) / (num_x - 1);
-    double y_stepsize = std::abs(y1 - y0) / (num_y - 1);
-    std::vector<position_t> points;
-    for (auto ix = 0; ix < num_x; ++ix) {
-        for (auto iy = 0; iy < num_y; ++iy) {
-            points.emplace_back(x0 + ix * x_stepsize, y0 + iy * y_stepsize, depth);
-        }
-    }
-    return points;
-}
-
-
 FractureParameters::FractureParameters(double depth, double phi_hat_x, double phi_hat_y,
                                        int num_fracture_orientations, double spacing_min,
                                        double spacing_max, int num_fracture_spacings) :

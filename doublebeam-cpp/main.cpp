@@ -30,8 +30,8 @@ std::ostream& operator<<(std::ostream& os, const Ray& ray) {
 int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
     auto db = DoubleBeam(vm);
-    auto source_beam_centres = grid_coordinates(400, 500, 400, 500, 0, 2, 2);
-    auto targets = grid_coordinates(400, 500, 400, 500, 450, 2, 2);
+    auto source_beam_centres = seismo::grid_coordinates(400, 500, 400, 500, 0, 1, 1);
+    auto targets = seismo::grid_coordinates(400, 500, 400, 500, 450, 1, 1);
     FractureParameters fractures(400, 1, 0, 61, 40, 120, 41);
     db.algorithm(source_beam_centres, targets,
                  SeismoData("/home/darius/masterarbeit/output_0degrees"), fractures, 10, 40, 0.006);
