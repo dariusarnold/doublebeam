@@ -1,6 +1,10 @@
 #include "testing_utils.hpp"
 #include "utils.hpp"
 #include "gtest/gtest.h"
+
+#include <boost/container_hash/hash.hpp>
+
+#include <unordered_set>
 #include <cmath>
 
 
@@ -291,4 +295,43 @@ TEST(TestSlowness3D, HorizontalRayShouldHaveZeroAsVerticalSlowness) {
     EXPECT_NE(px, py);
     EXPECT_NE(px, 0);
     EXPECT_NE(py, 0);
+}
+
+TEST(TestGridCoordinates, TestEmptySizes) {
+    auto result = seismo::grid_coordinates(0, 1, 0, 1, 1, 0, 0);
+    ASSERT_EQ(result.size(), 0);
+}
+
+TEST(TestGridCoordinates, TestSizeOneGrid) {
+    auto result = seismo::grid_coordinates(0, 1, 0, 1, 1, 1, 1);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], position_t(0., 0., 1.));
+}
+
+TEST(TestGridCoordinates, TestNormalUseCase) {
+    auto result = seismo::grid_coordinates(0, 3, 4, 6, 1, 4, 3);
+    ASSERT_EQ(result.size(), 4*3);
+    std::unordered_set<position_t, boost::hash<position_t>> coordinates;
+    for (auto x: {0, 1, 2, 3}){
+        for (auto y: {4, 5, 6}) {
+            coordinates.emplace(x, y, 1);
+        }
+    }
+    for (auto pos: result) {
+        EXPECT_EQ(coordinates.count(pos), 1);
+    }
+}
+
+TEST(TestGridCoordinates, TestNormalUseCaseWithReversedGridExtent) {
+    auto result = seismo::grid_coordinates(3, 0, 6, 4, 1, 4, 3);
+    ASSERT_EQ(result.size(), 4*3);
+    std::unordered_set<position_t, boost::hash<position_t>> coordinates;
+    for (auto x: {0, 1, 2, 3}){
+        for (auto y: {4, 5, 6}) {
+            coordinates.emplace(x, y, 1);
+        }
+    }
+    for (auto pos: result) {
+        EXPECT_EQ(coordinates.count(pos), 1);
+    }
 }
