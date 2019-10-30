@@ -32,8 +32,13 @@ int main() {
     auto db = DoubleBeam(vm);
     auto source_beam_centres = seismo::grid_coordinates(400, 500, 400, 500, 0, 1, 1);
     auto targets = seismo::grid_coordinates(400, 500, 400, 500, 450, 1, 1);
-    FractureParameters fractures(400, 1, 0, 61, 40, 120, 41);
-    db.algorithm(source_beam_centres, targets,
-                 SeismoData("/home/darius/masterarbeit/output_0degrees"), fractures, 10, 40, 0.006);
+    FractureParameters fractures(400, 1, 0, 2, 40, 120, 3);
+    auto result = db.algorithm(source_beam_centres, targets,
+                               SeismoData("/home/darius/masterarbeit/output_0degrees"), fractures,
+                               10, 40, 0.006);
+    std::ofstream file{"result.txt"};
+    if (file.is_open()) {
+        file << result.data;
+    }
     return 0;
 }
