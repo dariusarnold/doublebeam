@@ -61,8 +61,8 @@ namespace seismo {
 
     std::vector<position_t> grid_coordinates(double x0, double x1, double y0, double y1,
                                              double depth, size_t num_x, size_t num_y) {
-        double x_stepsize = (x1 - x0) / (num_x - 1);
-        double y_stepsize = (y1 - y0) / (num_y - 1);
+        double x_stepsize = num_x == 1 ? x1 - x0 : (x1 - x0) / (num_x - 1);
+        double y_stepsize = num_y == 1 ? y1 - y0 : (y1 - y0) / (num_y - 1);
         std::vector<position_t> points;
         for (auto ix = 0UL; ix < num_x; ++ix) {
             for (auto iy = 0UL; iy < num_y; ++iy) {
