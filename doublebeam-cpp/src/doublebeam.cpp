@@ -117,14 +117,8 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
     auto [e2x, e2y, e2z] = e2;
     auto e3 = math::cross(e1x, e1y, e1z, e2x, e2y, e2z);
     auto [e3x, e3y, e3z] = e3;
-    // auto [xx, yy, zz] = last_point(beam);
-    // auto s = last_arclength(beam);
     auto transformation_matrix = math::inv(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
     auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
-    std::cout << "Ray centred coordinates: " << (impl::Formatter(" ") << q1 << q2 << q3)
-              << std::endl;
-    std::cout << "A: " << gb_amplitude(beam) << std::endl;
-    std::cout << "exp: " << gb_exp(beam, q1, q2);
     return gb_amplitude(beam) * gb_exp(beam, q1, q2);
 }
 
@@ -136,7 +130,6 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
-    std::cout << "Stacking data\n";
     FFT fft;
     std::complex<double> stacking_result;
     auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
