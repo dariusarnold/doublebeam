@@ -62,3 +62,29 @@ add_executable(convert_to_binary convert_to_binary.cpp)
 target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
 
 add_subdirectory(tests)
+
+
+# Check if all headers are standalone includable.
+# Currently this is only tested when cmake is called, since I haven't found a way to export this as a target.
+include(CheckIncludeFileCXX)
+set(CMAKE_REQUIRED_QUIET ON)
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_SOURCE_DIR}/src)
+set(CMAKE_REQUIRED_DEFINITIONS -DBOOST_ROOT=/opt/boost_1_71/ -DCMAKE_PREFIX_PATH=/home/darius/.anaconda3/lib/cmake/)
+set(CMAKE_REQUIRED_LIBRARIES stdc++fs Boost::boost Eigen3::Eigen fftw3 xtensor ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+file(GLOB HEADERS src/*.hpp)
+message(${CMAKE_BINARY_DIR})
+foreach(HEADER ${HEADERS})
+    get_filename_component(HEADERNAME ${HEADER} NAME)
+    message(STATUS "Standalone compilation of " ${HEADERNAME})
+    check_include_file_cxx(${HEADER} DID_HEADER_BUILD)
+    if (NOT DID_HEADER_BUILD)
+            message(WARNING "Failed to build " ${HEADERNAME} " as a standalone header.\n"
+                    "Check '" ${CMAKE_BINARY_DIR} "/CMakeFiles/CMakeError.log' for a line starting with\n"
+                    "Determining if the include file " ${HEADER})
+    endif()
+    # The result of check_include_file_cxx is saved in a cache variable. If the variable is already defined, for example
+    # after the first loop iteration, the whole check is skipped. Because of that we reset the variable.
+    # see https://gitlab.kitware.com/cmake/cmake/issues/18492
+    # and line 46 in https://gitlab.kitware.com/cmake/cmake/blob/v3.14.6/Modules/CheckIncludeFileCXX.cmake
+    unset(DID_HEADER_BUILD CACHE)
+endforeach()
