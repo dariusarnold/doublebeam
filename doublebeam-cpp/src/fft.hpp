@@ -7,6 +7,7 @@
 #include <limits>
 #include <new>
 #include <vector>
+#include <memory>
 
 #include <fftw3.h>
 
@@ -34,23 +35,21 @@ struct Allocator {
     }
 };
 
-// Ignore warnings about rule of three for Plan class
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
+
 struct Plan {
-    // move constructor is required because the fftw_plan frees the memory associated with the
-    // input/output arrays when it is destroyed. The move constructor will invalidate the other
-    // plan, so the arrays don't get double freed when the vector of plans reallocates.
-    Plan(Plan&& other);
     Plan(std::vector<double>& in);
-    ~Plan();
     std::vector<std::complex<double>, Allocator<std::complex<double>>>& execute();
 
     size_t N;
     std::vector<std::complex<double>, Allocator<std::complex<double>>> out;
-    fftw_plan p;
+
+    struct PlanDeleter {
+        void operator()(fftw_plan p) {
+            fftw_destroy_plan(p);
+        }
+    };
+    std::unique_ptr<fftw_plan_s, PlanDeleter> p;
 };
-#pragma GCC diagnostic pop
 
 
 class PlanCache {

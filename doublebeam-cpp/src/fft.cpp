@@ -21,17 +21,10 @@ Plan::Plan(std::vector<double>& in) :
         p(fftw_plan_dft_r2c_1d(N, in.data(), reinterpret_cast<fftw_complex*>(out.data()),
                                FFTW_MEASURE)) {}
 
-Plan::~Plan() {
-    fftw_destroy_plan(p);
-}
 
 std::vector<std::complex<double>, Allocator<std::complex<double>>>& Plan::execute() {
-    fftw_execute(p);
+    fftw_execute(p.get());
     return out;
-}
-
-Plan::Plan(Plan&& other) : N(other.N), out(std::move(other.out)), p(std::move(other.p)) {
-    other.p = nullptr;
 }
 
 FFT::cvector FFT::execute(std::vector<double>& in) {
