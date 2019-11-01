@@ -2,6 +2,7 @@
 #define DOUBLEBEAM_CPP_BEAM_HPP
 
 #include <complex>
+#include <vector>
 
 #include <xtensor/xtensor.hpp>
 
