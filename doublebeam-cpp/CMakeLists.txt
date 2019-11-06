@@ -44,8 +44,8 @@ set(WARNINGS -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-al
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/raytracing_helpers.hpp src/ray.cpp src/ray.hpp
-        src/beam.cpp src/beam.hpp src/printing.cpp src/io.cpp src/io.hpp src/seismodata.hpp src/seismodata.cpp src/fft.cpp src/fft.hpp)
-target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs fftw3)
+        src/beam.cpp src/beam.hpp src/printing.cpp src/io.cpp src/io.hpp src/seismodata.hpp src/seismodata.cpp src/fft.cpp src/fft.hpp src/eigen_helpers.hpp src/eigen_helpers.cpp)
+target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs fftw3 Eigen3::Eigen)
 target_link_libraries(doublebeam_lib PUBLIC xtensor ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 target_include_directories(doublebeam_lib PUBLIC src)
 target_include_directories(doublebeam_lib PRIVATE FFTW_INCLUDE_DIRS)

@@ -1,12 +1,11 @@
-#include "xtensor/xview.hpp"
-#include <xtensor-blas/xlinalg.hpp>
-
 #include <complex>
 #include <numeric>
 
 #include "doublebeam.hpp"
+#include "eigen_helpers.hpp"
 #include "fft.hpp"
 #include "printing.hpp"
+
 
 /**
  * Calculate horizontal slowness for wave scattered from fractures.
@@ -97,17 +96,18 @@ std::complex<double> gb_amplitude(const Beam& beam) {
     // the beam reached the surface.
     auto v_s = beam.segments.back().v.back();
     auto v_s0 = beam.segments.front().v.front();
-    auto det_Q_s0 = xt::linalg::det(xt::squeeze(xt::view(beam.segments.front().Q, xt::keep(0))));
-    auto det_Q_s = xt::linalg::det(xt::squeeze(xt::view(beam.segments.back().Q, xt::keep(-1))));
+    const auto& Q = beam.segments.front().Q;
+    auto det_Q_s0 = first_element(Q).determinant();
+    auto det_Q_s = last_element(Q).determinant();
     return std::sqrt(v_s * det_Q_s0 / (v_s0 * det_Q_s));
 }
 
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
-    xt::xarray<double> q{q1, q2};
-    auto M_s = xt::squeeze(xt::view(beam.segments.back().P, xt::keep(-1))) *
-               xt::linalg::inv(xt::squeeze(xt::view(beam.segments.back().Q, xt::keep(-1))));
+    Eigen::Vector2d q{q1, q2};
+    auto M_s =
+        last_element(beam.segments.back().P) * last_element(beam.segments.back().Q).inverse();
     return std::exp(std::complex<double>{0, 1} * beam.frequency() *
-                    (last_traveltime(beam) + 0.5 * xt::eval(xt::transpose(q) * M_s * q)[0]));
+                    (last_traveltime(beam) + 0.5 * (q.transpose() * M_s * q)[0]));
 }
 
 

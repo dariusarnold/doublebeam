@@ -1,16 +1,17 @@
 #include "raytracing.hpp"
 
+#include <Eigen/Dense>
 #include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
+#include <unsupported/Eigen/CXX11/Tensor>
 
+#include "eigen_helpers.hpp"
 #include "model.hpp"
 #include "ray.hpp"
 #include "raytracing_helpers.hpp"
 #include "utils.hpp"
+
 
 std::string point_to_str(double x, double y, double z) {
     return impl::Formatter(",") << x << y << z;
@@ -223,9 +224,9 @@ std::optional<RaySegment> RayTracer::trace_layer(const state_type& initial_state
 #define msg(x)
 #endif
 
-class InterfacePropagator {
 
-    using matrix_t = xt::xtensor<complex, 2>;
+class InterfacePropagator {
+    using matrix_t = Eigen::Matrix2cd;
 
 public:
     /**
@@ -240,11 +241,10 @@ public:
      * @param model Velocity model.
      * @return New values for P, Q.
      */
-    std::pair<matrix_t, matrix_t> transform(matrix_t P, matrix_t Q, WaveType wave_type,
-                                            const state_type& old_state,
-                                            const state_type& new_state, int layer_index,
-                                            const VelocityModel& model) {
-        namespace xtl = xt::linalg;
+    std::pair<Eigen::Tensor2cd, Eigen::Tensor2cd>
+    transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
+              const state_type& old_state, const state_type& new_state, int layer_index,
+              const VelocityModel& model) {
         // TODO modify interface unit vector (params x2, y2, z2) for more general velocity model.
         //  Here it is assumed the model consists only of horizontal layers.
         msg(layer_index);
@@ -279,24 +279,26 @@ public:
         auto kappa = 0.;
         auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
         // right equations of (4.4.49) in Cerveny2001
-        matrix_t G_orthogonal{{cos_kappa, -sin_kappa}, {sin_kappa, cos_kappa}};
+        matrix_t G_orthogonal;
+        G_orthogonal << cos_kappa, -sin_kappa, sin_kappa, cos_kappa;
         msg(G_orthogonal);
         auto G_orthogonal_tilde = G_orthogonal;
         // left equations of (4.4.49) in Cerveny2001
-        matrix_t G_parallel{{epsilon * std::cos(i_S), 0}, {0, 1}};
+        matrix_t G_parallel;
+        G_parallel << epsilon * std::cos(i_S), 0, 0, 1;
         msg(G_parallel);
-        matrix_t G_parallel_tilde{
-            {(wave_type == WaveType::Transmitted ? 1 : -1) * epsilon * std::cos(i_R), 0}, {0, 1}};
+        matrix_t G_parallel_tilde;
+        G_parallel_tilde << (wave_type == WaveType::Transmitted ? 1 : -1) * epsilon * std::cos(i_R),
+            0, 0, 1;
         msg(G_parallel_tilde);
         // equation (4.4.48) from Cerveny2001
-        auto G = xtl::dot(G_parallel, G_orthogonal);
+        auto G = G_parallel * G_orthogonal;
         msg(G);
-        auto G_tilde = xtl::dot(G_parallel_tilde, G_orthogonal_tilde);
+        matrix_t G_tilde = G_parallel_tilde * G_orthogonal_tilde;
         msg(G_tilde);
-        auto G_inverted = xtl::inv(G);
+        // Evaluate this since it is used two times and would be reevaluated otherwise
+        matrix_t G_inverted = G.inverse();
         msg(G_inverted);
-        auto G_tilde_inverted = xtl::inv(G_tilde);
-        msg(G_tilde_inverted);
         auto old_gradient = model[layer_index].gradient;
         msg(old_gradient);
         auto next_layer_index =
@@ -313,14 +315,14 @@ public:
         auto D = D_();
         // eq. (4.4.67) Cerveny2001
         msg(D);
-        auto P_tilde = xtl::dot(
-            G_tilde_inverted,
-            xtl::dot(G, P) + xtl::dot(E - E_tilde - u * D, xtl::dot(xt::transpose(G_inverted), Q)));
+        matrix_t P_tilde =
+            G_tilde.inverse() * ((G * P) + (E - E_tilde - u * D) * (G_inverted.transpose() * Q));
         // eq. (4.4.64) from Cerveny2001
         msg(P_tilde);
-        auto Q_tilde = xtl::dot(xt::transpose(G_tilde), xtl::dot(xt::transpose(G_inverted), Q));
+        matrix_t Q_tilde = G_tilde.transpose() * G_inverted.transpose() * Q;
         msg(Q_tilde);
-        return {P_tilde, Q_tilde};
+        return {Eigen::TensorMap<Eigen::Tensor2cd>(P_tilde.data(), {2, 2}),
+                Eigen::TensorMap<Eigen::Tensor2cd>(Q_tilde.data(), {2, 2})};
     }
 
 private:
@@ -343,7 +345,7 @@ private:
                     epsilon * std::cos(i_S) * std::sin(i_S) * dV_dz3);
         auto E12 = -std::sin(i_S) / (V * V) * dV_dz2;
         auto E22 = 0.;
-        return {{E11, E12}, {E12, E22}};
+        return (matrix_t() << E11, E12, E12, E22).finished();
     }
 
     /**
@@ -366,7 +368,7 @@ private:
                     minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
         auto E12 = -std::sin(i_R) / (V_tilde * V_tilde) * dV_tilde_dz2;
         auto E22 = 0.;
-        return {{E11, E12}, {E12, E22}};
+        return (matrix_t() << E11, E12, E12, E22).finished();
     }
 
     /**
@@ -393,7 +395,7 @@ private:
      * in the numerator. Sigma = Sigma(z3) for horizontal interfaces.
      */
     static matrix_t D_() {
-        return xt::zeros<complex>({2, 2});
+        return matrix_t::Zero();
     }
 };
 
@@ -409,36 +411,50 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
     }
     InterfacePropagator ip;
     Beam beam(beam_width, beam_frequency);
-    // initial values for P, Q
     auto [x, y, z, px, py, pz, t] = ray.value().segments.front().data.front();
     auto v0 = model.eval_at(x, y, z).value();
-    xt::xtensor<complex, 2> P0{{1j / v0, 0}, {0, 1j / v0}};
-    xt::xtensor<complex, 2> Q0{{beam_frequency * beam_width * beam_width / v0, 0},
-                               {0, beam_frequency * beam_width * beam_width / v0}};
+    using cdouble = std::complex<double>;
+    // initial values for P, Q
+    Eigen::Tensor3cd P0(1, 2, 2);
+    P0.setValues({{{1j / v0, 0}, {0, 1j / v0}}});
+    Eigen::Tensor3cd Q0(1, 2, 2);
+    Q0.setValues({{{beam_frequency * beam_width * beam_width / v0, 0},
+                   {0, beam_frequency * beam_width * beam_width / v0}}});
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
         auto [x, y, z, px, py, pz, t] = segment.data.front();
         auto layer_index = model.layer_index(x, y, z).value();
         // evaluate velocity at all points of the ray
         std::vector<double> v;
+        v.reserve(segment.data.size());
         std::transform(
             segment.data.begin(), segment.data.end(), std::back_inserter(v),
             [&](const state_type& state) {
                 return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
             });
         auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
-        auto sigma = xt::adapt(sigma_, {sigma_.size(), 1UL, 1UL});
-        xt::xtensor<complex, 3> P = xt::broadcast(P0, {sigma.size(), 2UL, 2UL});
-        xt::xtensor<complex, 3> Q = Q0 + sigma * P0;
+        Eigen::TensorRef<Eigen::Tensor1d> sigma = Eigen::TensorMap<Eigen::Tensor1d>(sigma_.data(), sigma_.size());
+        // TODO this could be optimized since P0 is constant in my use case to store it only once
+        Eigen::Tensor3cd P(sigma_.size(), 2, 2);
+        P = P0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1});
+        Eigen::Tensor3cd Q(sigma_.size(), 2, 2);
+        Q = Q0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1}) +
+            sigma.cast<cdouble>()
+                    .reshape(std::array<size_t, 3>{sigma_.size(), 1, 1})
+                    .broadcast(std::array<int, 3>{1, 2, 2}) *
+                P0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1});
         beam.segments.emplace_back(segment, P, Q, v);
         if (segment_index < (ray.value().size() - 1)) {
             // if we are not at the last segment of the ray, transform dynamic ray tracing across
             // interface (calculate new P0, Q0)
             auto wave_type = ray_code[segment_index];
             auto new_initial_state = ray.value()[segment_index + 1].data.front();
-            std::tie(P0, Q0) = ip.transform(
-                xt::squeeze(xt::view(P, xt::keep(-1))), xt::squeeze(xt::view(Q, xt::keep(-1))),
-                wave_type, segment.data.back(), new_initial_state, layer_index, model);
+            // TODO P0, Q0 have shape Tensor(1, 2, 2), while transform returns Matrix(2, 2)
+            auto [P0_new, Q0_new] =
+                ip.transform(last_element(P), last_element(Q), wave_type, segment.data.back(),
+                             new_initial_state, layer_index, model);
+            P0.reshape(std::array<long, 2>{2, 2}) = P0_new;
+            Q0.reshape(std::array<long, 2>{2, 2}) = Q0_new;
         }
         ++segment_index;
     }

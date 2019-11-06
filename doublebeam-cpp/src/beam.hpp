@@ -4,28 +4,30 @@
 #include <complex>
 #include <vector>
 
-#include <xtensor/xtensor.hpp>
+#include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 
+#include "eigen_helpers.hpp"
 #include "ray.hpp"
 #include "raytracing_types.hpp"
 
 
 class BeamSegment {
 public:
-    BeamSegment(RaySegment segment, xt::xtensor<complex, 3> P, xt::xtensor<complex, 3> Q,
+    BeamSegment(RaySegment segment, const Eigen::Tensor3cd& P, const Eigen::Tensor3cd& Q,
                 std::vector<double> v) :
             ray_segment(segment),
-            P(P),
-            Q(Q),
-            v(v) {}
+            P(std::move(P)),
+            Q(std::move(Q)),
+            v(std::move(v)) {}
     // Return data of ray segment
     std::vector<state_type> data() const;
     // return arclength of ray segment
     std::vector<double> arclength() const;
 
     RaySegment ray_segment;
-    xt::xtensor<complex, 3> P;
-    xt::xtensor<complex, 3> Q;
+    Eigen::Tensor3cd P;
+    Eigen::Tensor3cd Q;
     std::vector<double> v;
 };
 

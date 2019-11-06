@@ -4,7 +4,7 @@
 #include <utility>
 
 #include <Eigen/Dense>
-#include <xtensor/xtensor.hpp>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "model.hpp"
 #include "raytracing.hpp"
