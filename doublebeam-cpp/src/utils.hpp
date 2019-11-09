@@ -284,14 +284,15 @@ namespace math {
             length += 1;
             i += 1;
         }
-        std::vector<content_t> result(length);
+        std::vector<content_t> result;
+        result.reserve(length);
         if (not std::isnan(initial)) {
-            result[0] = initial;
+            result.push_back(initial);
         }
         content_t running_sum = 0.;
         for (auto a = ybegin, b = ybegin + 1; b != yend; ++a, ++b) {
             running_sum += distance * 0.5 * (*a + *b);
-            result[i] = running_sum;
+            result.push_back(running_sum);
             ++i;
         }
         return result;
@@ -343,15 +344,16 @@ namespace math {
             length += 1;
             i += 1;
         }
-        std::vector<content_t> result(length);
+        std::vector<content_t> result;
+        result.reserve(length);
         if (not std::isnan(initial)) {
-            result[0] = initial;
+            result.push_back(initial);
         }
         content_t running_sum = 0.;
         for (auto ya = ybegin, yb = ybegin + 1, xa = xbegin, xb = xbegin + 1; yb != yend;
              ++ya, ++yb, ++xa, ++xb) {
             running_sum += (*xb - *xa) * 0.5 * (*ya + *yb);
-            result[i] = running_sum;
+            result.push_back(running_sum);
             ++i;
         }
         return result;
