@@ -217,9 +217,9 @@ std::optional<RaySegment> RayTracer::trace_layer(const state_type& initial_state
     }
 }
 
-#define USEDEBUG_NO
-#ifdef USEDEBUG
-#define msg(x) std::cout << #x << ": " << x << std::endl;
+#define USEDEBUG false
+#if USEDEBUG
+#define msg(x) std::cerr << #x << ": " << x << std::endl;
 #else
 #define msg(x)
 #endif
