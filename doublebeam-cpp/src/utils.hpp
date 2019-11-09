@@ -7,9 +7,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <xtensor/xtensor.hpp>
-
-#include <raytracing_types.hpp>
+#include "raytracing_types.hpp"
 
 namespace seismo {
 
