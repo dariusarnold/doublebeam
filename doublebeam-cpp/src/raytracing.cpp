@@ -124,33 +124,30 @@ std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& init
 std::optional<RaySegment> RayTracer::trace_layer_const(const state_type& initial_state,
                                                        const Layer& layer, double s_start,
                                                        double ds) {
-    auto [x, y, z, px, py, pz, t] = initial_state;
+    auto [x0, y0, z0, px0, py0, pz0, t0] = initial_state;
     auto c = layer.intercept;
-    auto z_interface = seismo::ray_direction_down(pz) ? layer.bot_depth : layer.top_depth;
-    auto s_end = (z_interface - z) / (c * pz);
+    auto z_interface = seismo::ray_direction_down(pz0) ? layer.bot_depth : layer.top_depth;
+    auto s_end = (z_interface - z0) / (c * pz0);
     size_t num_steps = std::floor(s_end / ds);
     auto s_step = s_end / num_steps;
     // s has to start at 0 because this calculation is done starting from the current point of
     // the ray.
-    auto index = 0;
     // one element more since first step (for s = 0) should also be stored.
-    std::vector<state_type> states_vector(num_steps + 1);
-    std::vector<double> arclengths(num_steps + 1);
-    for (auto& el : states_vector) {
-        auto arclength_in_layer = index * s_step;
-        arclengths[index] = s_start + arclength_in_layer;
-        el[Index::X] = x + arclength_in_layer * c * px;
-        el[Index::Y] = y + arclength_in_layer * c * py;
-        if (not model.in_horizontal_extent(el[Index::X], el[Index::Y])) {
+    std::vector<state_type> states_vector;
+    std::vector<double> arclengths;
+    states_vector.reserve(num_steps + 1);
+    arclengths.reserve(num_steps + 1);
+    for (auto i = 0U; i < num_steps + 1; ++i) {
+        auto arclength_in_layer = i * s_step;
+        arclengths.emplace_back(s_start + arclength_in_layer);
+        auto x = x0 + arclength_in_layer * c * px0;
+        auto y = y0 + arclength_in_layer * c * py0;
+        if (not model.in_horizontal_extent(x, y)) {
             // ray left model to the side and did not reach top/bottom of layer
             return {};
         }
-        el[Index::Z] = z + arclength_in_layer * c * pz;
-        el[Index::PX] = px;
-        el[Index::PY] = py;
-        el[Index::PZ] = pz;
-        el[Index::T] = t + arclength_in_layer / c;
-        ++index;
+        auto z = z0 + arclength_in_layer * c * pz0;
+        states_vector.emplace_back(state_type{x, y, z, px0, py0, pz0, t0 + arclength_in_layer / c});
     }
     return {{states_vector, arclengths}};
 }
