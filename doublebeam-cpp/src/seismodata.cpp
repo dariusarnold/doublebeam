@@ -28,25 +28,19 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
 }
 
 Seismogram cut(const Seismogram& seismogram, double t0, double t1) {
-    // TODO test/specify what happens for t0/t1 outside of timesteps range
-    if (seismogram.data.size() != seismogram.timesteps.size()) {
-        throw std::invalid_argument(
-            impl::Formatter() << "Got seismogram of size " << seismogram.data.size() << " but only "
-                              << seismogram.timesteps.size() << " time steps.");
+    auto timestep = seismogram.timesteps[1] - seismogram.timesteps[0];
+    size_t start_index = std::ceil(t0 / timestep);
+    // shift by half a timestep to make t1 inclusive, meaning if t1 is equal to a time value of the
+    // seismogram, this value will be included in the range.
+    size_t end_index = std::ceil((t1 + timestep * 0.5) / timestep);
+    end_index = std::min(seismogram.timesteps.size(), end_index);
+    if (start_index > seismogram.timesteps.size()) {
+        return {};
     }
-    // If I could assume that all time samples are evenly spaced, it would be easy to calculate the
-    // index of the start/end cut. Since I can't make this assumption for all input, a binary search
-    // is applied to find the indices of t0 and t1.
-    auto i1 = std::lower_bound(seismogram.timesteps.begin(), seismogram.timesteps.end(), t0);
-    // t1 can't be before t0, so decrease search range
-    auto i2 = std::upper_bound(i1, seismogram.timesteps.end(), t1);
-    auto start_index = std::distance(seismogram.timesteps.begin(), i1);
-    auto end_index = std::distance(seismogram.timesteps.begin(), i2);
-    Seismogram out{std::vector<double>{seismogram.timesteps.begin() + start_index,
-                                       seismogram.timesteps.begin() + end_index},
-                   std::vector<double>{seismogram.data.begin() + start_index,
-                                       seismogram.data.begin() + end_index}};
-    return out;
+    return {std::vector<double>{seismogram.timesteps.begin() + start_index,
+                                seismogram.timesteps.begin() + end_index},
+            std::vector<double>{seismogram.data.begin() + start_index,
+                                seismogram.data.begin() + end_index}};
 }
 
 Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
