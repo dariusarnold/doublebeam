@@ -446,7 +446,6 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
             // interface (calculate new P0, Q0)
             auto wave_type = ray_code[segment_index];
             auto new_initial_state = ray.value()[segment_index + 1].data.front();
-            // TODO P0, Q0 have shape Tensor(1, 2, 2), while transform returns Matrix(2, 2)
             auto [P0_new, Q0_new] =
                 ip.transform(last_element(P), last_element(Q), wave_type, segment.data.back(),
                              new_initial_state, layer_index, model);
