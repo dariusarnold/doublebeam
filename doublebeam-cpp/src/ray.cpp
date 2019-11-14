@@ -1,5 +1,8 @@
 #include "ray.hpp"
 
+RaySegment::RaySegment(std::vector<state_type> data, std::vector<double> arclength) :
+        data(std::move(data)), arclength(std::move(arclength)) {}
+
 
 std::vector<RaySegment>::iterator Ray::begin() {
     return segments.begin();

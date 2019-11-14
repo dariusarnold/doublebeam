@@ -7,6 +7,7 @@
 
 class RaySegment {
 public:
+    RaySegment(std::vector<state_type> data, std::vector<double> arclength);
     std::vector<state_type> data;
     std::vector<double> arclength;
 };
