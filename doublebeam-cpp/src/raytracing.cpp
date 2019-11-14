@@ -83,6 +83,10 @@ void ray_tracing_equation(const state_type& state, state_type& dfds, const doubl
     dfds[6] = dTds;
 }
 
+double layer_height(const Layer& layer) {
+    return layer.bot_depth - layer.top_depth;
+}
+
 std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& initial_state,
                                                           const Layer& layer, double s_start,
                                                           double ds, double max_ds) {
@@ -94,6 +98,9 @@ std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& init
     stepper.initialize(initial_state, s_start, ds);
     std::vector<double> arclengths;
     std::vector<state_type> states;
+    auto estimate_steps = 2 * layer_height(layer) / ds;
+    arclengths.reserve(estimate_steps);
+    states.reserve(estimate_steps);
     auto equation = [&](const state_type& state, state_type& dfds, double s) {
         return ray_tracing_equation(state, dfds, s, model, layer);
     };
@@ -115,8 +122,6 @@ std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& init
     // workaround for numerical issues where layer boundaries are overshot
     // do this by clamping the value to the interface depth
     states.back()[Index::Z] = crossing.get_closest_layer_depth(states.back());
-    arclengths.shrink_to_fit();
-    states.shrink_to_fit();
     return {{states, arclengths}};
 }
 
