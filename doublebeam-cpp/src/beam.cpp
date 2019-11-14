@@ -77,6 +77,11 @@ double last_arclength(const Beam& beam) {
     return beam.segments.back().arclength().back();
 }
 
+position_t nth_point(const BeamSegment& bs, size_t n) {
+    auto [x, y, z, px, py, pz, t] = bs.ray_segment.data[n];
+    return {x, y, z};
+}
+
 std::vector<state_type> BeamSegment::data() const {
     return ray_segment.data;
 }

@@ -43,6 +43,13 @@ position_t first_point(const BeamSegment& bs);
  */
 position_t last_point(const BeamSegment& bs);
 
+/**
+ * Get nth point of beam segment.
+ * @param The index n increases in the beam direction and starts at 0. There is no bounds checking.
+ * @return x, y, z coordinate triple
+ */
+position_t nth_point(const BeamSegment& bs, size_t n);
+
 
 class Beam {
 public:
