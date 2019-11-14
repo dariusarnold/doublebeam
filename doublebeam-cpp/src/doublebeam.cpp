@@ -127,6 +127,10 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
                                    size_t num_of_fracture_orientations) :
         data(num_of_fracture_spacings, num_of_fracture_orientations) {}
 
+double cutt = 0.;
+double fftt = 0;
+double evalt = 0;
+double beamt = 0;
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
@@ -134,15 +138,26 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     std::complex<double> stacking_result;
     auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
     for (const auto& source_pos : data.sources()) {
+        auto d = std::chrono::high_resolution_clock::now();
         auto source_beam_val =
             eval_gauss_beam(source_beam, source_pos.x, source_pos.y, source_pos.z);
+        auto e = std::chrono::high_resolution_clock::now();
+        evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
         for (const auto& rec_pos : data.receivers()) {
+            d = std::chrono::high_resolution_clock::now();
             auto receiver_beam_val = eval_gauss_beam(source_beam, rec_pos.x, rec_pos.y, rec_pos.z);
+            e = std::chrono::high_resolution_clock::now();
+            evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
+            auto a = std::chrono::high_resolution_clock::now();
             auto seismogram = cut(data(source_pos, rec_pos), total_traveltime - window_length / 2,
                                   total_traveltime + window_length / 2);
+            auto b = std::chrono::high_resolution_clock::now();
             auto seismogram_freq = fft.execute(seismogram.data);
+            auto c = std::chrono::high_resolution_clock::now();
             // TODO what to do for two or more resulting frequency bins?
             stacking_result += source_beam_val * receiver_beam_val * seismogram_freq[0];
+            cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+            fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
         }
     }
     return stacking_result;
@@ -160,9 +175,12 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             auto slowness = twopoint.trace(source_beam_center, target);
             // TODO add overload so declaring initial state is not required for ray tracing
             auto initial_state = make_state(source_beam_center, slowness, 0);
+            auto a = std::chrono::high_resolution_clock::now();
             auto source_beam =
                 tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                   direct_ray_code(source_beam_center, target, model));
+            auto b = std::chrono::high_resolution_clock::now();
+            beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (source_beam.status == Status::OutOfBounds) {
                 break;
             }
@@ -181,9 +199,12 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
                     initial_state = make_state(target, new_slowness);
                     // reuse ray code since beam should pass through the same layers
+                    a = std::chrono::high_resolution_clock::now();
                     auto receiver_beam =
                         tracer.trace_beam(initial_state, beam_width, beam_frequency,
                                           direct_ray_code(target, source_beam_center, model));
+                    b = std::chrono::high_resolution_clock::now();
+                    beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     if (receiver_beam.status == Status::OutOfBounds) {
                         // beam didn't reach surface, skip
                         break;
@@ -195,5 +216,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             }
         }
     }
+    std::cout << "Beams: " << beamt * 1E-9 << " s\nFFT: " << fftt * 1E-9
+              << " s\nBeam eval: " << evalt * 1E-9 << " s\ncut : " << cutt * 1E-9 << "s\n";
     return result;
 }
