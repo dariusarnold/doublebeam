@@ -74,23 +74,22 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // other vector in ray plane (connects start and end point)
     auto [x0, y0, z0] = first_point(beam);
     auto [x1, y1, z1] = last_point(beam);
-    auto e2 = [&]() {
-        if (same_direction(px, py, pz, x1 - x0, y1 - y0, z1 - z0)) {
-            // special case: slowness vector and auxiliary in plane vector defined by ray start/end
-            // can't be used to generate a third vector normal to the by the way of cross product.
-            // This can be the case for a purely down going ray in a layered model, where the
-            // slowness and the ray path both point down. Find z component of a vector normal to
-            // slowness by setting x, y = 1 and requiring the dot product of (x, y, z), (px, py, pz)
-            // to be zero.
-            return math::normalize(1, 1, (-px - py) / pz);
-        } else {
-            auto [sx, sy, sz] = math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0);
-            return math::normalize(sx, sy, sz);
-        }
-    }();
-    auto e1 = std::apply(math::normalize, math::cross(px, py, pz, std::get<0>(e2), std::get<1>(e2),
-                                                      std::get<2>(e2)));
-    return {e1, e2};
+    std::tuple<double, double, double> e2;
+    if (same_direction(px, py, pz, x1 - x0, y1 - y0, z1 - z0)) {
+        // special case: slowness vector and auxiliary in plane vector defined by ray start/end
+        // can't be used to generate a third vector normal to the by the way of cross product.
+        // This can be the case for a purely down going ray in a layered model, where the
+        // slowness and the ray path both point down. Find z component of a vector normal to
+        // slowness by setting x, y = 1 and requiring the dot product of (x, y, z), (px, py, pz)
+        // to be zero.
+        e2 = math::normalize(1, 1, (-px - py) / pz);
+    } else {
+        auto [sx, sy, sz] = math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0);
+        e2 = math::normalize(sx, sy, sz);
+    }
+    auto [e1x, e1y, e1z] =
+        math::cross(px, py, pz, std::get<0>(e2), std::get<1>(e2), std::get<2>(e2));
+    return {math::normalize(e1x, e1y, e1z), e2};
 }
 
 std::complex<double> gb_amplitude(const Beam& beam) {
