@@ -82,10 +82,10 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
             // slowness and the ray path both point down. Find z component of a vector normal to
             // slowness by setting x, y = 1 and requiring the dot product of (x, y, z), (px, py, pz)
             // to be zero.
-            double z = (-px - py) / pz;
-            return std::apply(math::normalize, vector_t{1, 1, z});
+            return math::normalize(1, 1, (-px - py) / pz);
         } else {
-            return std::apply(math::normalize, math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0));
+            auto [sx, sy, sz] = math::cross(px, py, pz, x1 - x0, y1 - y0, z1 - z0);
+            return math::normalize(sx, sy, sz);
         }
     }();
     auto e1 = std::apply(math::normalize, math::cross(px, py, pz, std::get<0>(e2), std::get<1>(e2),
