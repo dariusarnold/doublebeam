@@ -67,6 +67,8 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // This is valid for a planar ray, see 4. from 4.1.3 Cerveny2001. We have a planar ray for a
     // velocity model consisting of horizontal layers, with v = v(z), since nothing changes the
     // slowness along the x or y axis.
+    // In this simple case we have to choose one vector (e2) perpendicular to the plane at the
+    // initial point of the beam. The vector e2 will then be constant along the ray.
     // slowness is in ray plane
     auto [px, py, pz] = last_slowness(beam);
     // other vector in ray plane (connects start and end point)
@@ -77,7 +79,7 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
             // special case: slowness vector and auxiliary in plane vector defined by ray start/end
             // can't be used to generate a third vector normal to the by the way of cross product.
             // This can be the case for a purely down going ray in a layered model, where the
-            // slowness and the ray path both point down. find z component of a vector normal to
+            // slowness and the ray path both point down. Find z component of a vector normal to
             // slowness by setting x, y = 1 and requiring the dot product of (x, y, z), (px, py, pz)
             // to be zero.
             double z = (-px - py) / pz;
