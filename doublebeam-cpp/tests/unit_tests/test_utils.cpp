@@ -377,6 +377,27 @@ TEST(TestGoertzel, TestDoubleNumbers) {
     }
 }
 
+TEST(TestGoertzel, TestClosestFrequency) {
+    std::vector<double> input{0, 1, 2, 3, 2, 1, 0};
+    using namespace std::complex_literals;
+    //
+    std::vector<std::complex<double>> expected_result{9. + 0i,
+                                                      -4.5489173395223084 + -2.1906431337674093i,
+                                                      0.19202147163009603 + 0.24078730940376419i,
+                                                      -0.14310413210779105 + -0.62698016883135144i,
+                                                      -0.1431041321077906 + 0.62698016883135166i,
+                                                      0.19202147163009556 + -0.24078730940376414i,
+                                                      -4.5489173395223013,
+                                                      2.1906431337674155i};
+    // assuming input is sampled with sampling rate of 0.04 seconds this would give us
+    // 0., 3.57142857, 7.14285714, 10.71428571 as the frequencies of the result.
+    EXPECT_EQ(math::fft_closest_frequency(input, 0., 0.04), expected_result[0]);
+    EXPECT_EQ(math::fft_closest_frequency(input, 1.5, 0.04), expected_result[0]);
+    EXPECT_EQ(math::fft_closest_frequency(input, 2.5, 0.04), expected_result[1]);
+    EXPECT_EQ(math::fft_closest_frequency(input, 5.5, 0.04), expected_result[2]);
+    EXPECT_EQ(math::fft_closest_frequency(input, 11., 0.04), expected_result[3]);
+}
+
 TEST(TestGoertzel, TestComplexFloatNumbers) {
     std::vector<std::complex<float>> input{{0, 1}, {2, 3}, {2, 1}};
     using namespace std::complex_literals;
@@ -411,6 +432,6 @@ TEST(TestGoertzel, TestTwoRealInputValue) {
     std::vector<std::complex<double>> expected_result{{66, 0}, {18, 0}};
     for (auto bin = 0; bin < input.size(); ++bin) {
         EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin]))
-                    << "Different result in bin " << bin << ".";
+            << "Different result in bin " << bin << ".";
     }
 }
