@@ -40,7 +40,7 @@ int main() {
     auto result = db.algorithm(source_beam_centres, targets, data, fractures, 100, 45, 0.06);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count() << " ms"
+              << std::chrono::duration_cast<std::chrono::seconds>(b - a).count() << " s"
               << std::endl;
     std::ofstream file{"result.txt"};
     if (file.is_open()) {
