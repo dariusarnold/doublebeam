@@ -9,6 +9,71 @@
 
 #include "raytracing_types.hpp"
 
+
+// Helper code used for implementation, not for user code
+namespace impl {
+
+    // Use to throw exceptions with customized error message by streaming into a Formatter instance.
+    class Formatter {
+    public:
+        Formatter(const std::string& sep = "");
+
+        template <typename T>
+        Formatter& operator<<(const T& t) {
+            if (not first_used) {
+                // On first use, only stream t to avoid prepending a separator
+                first_used = true;
+                stream << t;
+            } else {
+                // stream separator and then new value so there is never a trailing separator
+                stream << separator << t;
+            }
+            return *this;
+        }
+
+        /**
+         * Alllow streaming Formatter to stream by converting it explicitly to a string.
+         */
+        friend std::ostream& operator<<(std::ostream& os, const Formatter& f);
+
+        operator std::string() const;
+
+    private:
+        bool first_used = false;
+        std::stringstream stream{};
+        std::string separator;
+    };
+
+    // Base case: T is an arithmetic type (a floating point type), so just use T.
+    template <bool B, typename T>
+    struct get_type_helper {
+        using type = T;
+    };
+
+    // Specialized type for the case where T is not an arithmetic type.
+    // This is covers std::complex<T>, which is a class.
+    template <typename T>
+    struct get_type_helper<false, T> {
+        using type = typename T::value_type;
+    };
+
+    // The structs typedef named type will be of type T if T is an arithmetic type. Otherwise it
+    // will be of type T::value_type. The second case handles std::complex numbers.
+    // Motivation:
+    // Goertzel algorithm works with complex and real input data. In both cases, a single complex
+    // value is returned. This struct extracts the std::complex's value type if T is complex or just
+    // uses T as a type if T is a basic floating point type. I had to use this to declare the return
+    // type of the templated Goertzel algorithm, which should be a complex type of the base floating
+    // point type. Not using this would result in a std::complex<std::complex<double>> when passing
+    // in complex data.
+    template <typename T>
+    struct value_type_or_type {
+        using type = typename get_type_helper<std::is_arithmetic_v<T>, T>::type;
+    };
+
+} // namespace impl
+
+
 namespace seismo {
 
     /**
@@ -403,41 +468,54 @@ namespace math {
      */
     std::vector<double> linspace(double start, double stop, size_t num = 50);
 
-} // namespace math
 
-// Helper code used for implementation, not for user code
-namespace impl {
-
-    // Use to throw exceptions with customized error message by streaming into a Formatter instance.
-    class Formatter {
-    public:
-        Formatter(const std::string& sep = "");
-
-        template <typename T>
-        Formatter& operator<<(const T& t) {
-            if (not first_used) {
-                // On first use, only stream t to avoid prepending a separator
-                first_used = true;
-                stream << t;
-            } else {
-                // stream separator and then new value so there is never a trailing separator
-                stream << separator << t;
-            }
-            return *this;
+    /**
+     * Calculate value of a single frequency bin for the discrete Fourier transform.
+     * @tparam T Scalar data type. Can be complex or real.
+     * @param data Input sequence of length N.
+     * @param target_frequency_bin Frequencies are restricted to the frequency bins of the discrete
+     * Fourier transform (DFT). The frequency to be evaluated is given as target_frequency = 2 * pi
+     * * k/N k is an index number going from 0...N-1
+     * @return Value of DFT frequency bin.
+     */
+    template <typename T>
+    std::complex<typename impl::value_type_or_type<T>::type> goertzel(const std::vector<T>& data,
+                                                                      int target_frequency_bin) {
+        if (data.size() == 0) {
+            throw std::invalid_argument("Data for Goertzel algorithm is empty.");
         }
+        if (target_frequency_bin > data.size())
+            throw std::invalid_argument(impl::Formatter()
+                                        << "Invalid input bin " << target_frequency_bin << ".");
+        // This will be a float type
+        using type = typename impl::value_type_or_type<T>::type;
+        auto N_float = static_cast<type>(data.size());
+        const auto pi = static_cast<type>(M_PIl);
+        const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
+        T s_prev_prev = data[0];
+        T s_prev = data[1] + 2 * std::cos(target_frequency) * s_prev_prev;
+        T s = 0;
+        for (auto i = 2U; i < data.size(); ++i) {
+            s = data[i] + static_cast<type>(2.) * std::cos(target_frequency) * s_prev - s_prev_prev;
+            s_prev_prev = s_prev;
+            s_prev = s;
+        }
+        return std::exp(std::complex<type>(0, 2) * pi * (target_frequency_bin / N_float)) * s_prev -
+               s_prev_prev;
+    }
 
-        /**
-         * Alllow streaming Formatter to stream by converting it explicitly to a string.
-         */
-        friend std::ostream& operator<<(std::ostream& os, const Formatter& f);
+    /**
+     * Returns value of closest frequency bin to a given frequency of the discrete Fourier
+     * transform.
+     * @tparam T
+     * @param data
+     * @param frequency Target frequency, closest frequency bin of the DFT result to this frequency
+     * is returned.
+     * @return
+     */
+    //    template <typename T>
+    // std::complex<T> fft_closest_frequency(const std::vector<T>& data, T frequency) {}
 
-        operator std::string() const;
 
-    private:
-        bool first_used = false;
-        std::stringstream stream{};
-        std::string separator;
-    };
-
-} // namespace impl
+} // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

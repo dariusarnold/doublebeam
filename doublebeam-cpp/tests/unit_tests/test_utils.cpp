@@ -4,8 +4,8 @@
 
 #include <boost/container_hash/hash.hpp>
 
-#include <unordered_set>
 #include <cmath>
+#include <unordered_set>
 
 
 TEST(Radians, Equals) {
@@ -310,28 +310,107 @@ TEST(TestGridCoordinates, TestSizeOneGrid) {
 
 TEST(TestGridCoordinates, TestNormalUseCase) {
     auto result = seismo::grid_coordinates(0, 3, 4, 6, 1, 4, 3);
-    ASSERT_EQ(result.size(), 4*3);
+    ASSERT_EQ(result.size(), 4 * 3);
     std::unordered_set<position_t, boost::hash<position_t>> coordinates;
-    for (auto x: {0, 1, 2, 3}){
-        for (auto y: {4, 5, 6}) {
+    for (auto x : {0, 1, 2, 3}) {
+        for (auto y : {4, 5, 6}) {
             coordinates.emplace(x, y, 1);
         }
     }
-    for (auto pos: result) {
+    for (auto pos : result) {
         EXPECT_EQ(coordinates.count(pos), 1);
     }
 }
 
 TEST(TestGridCoordinates, TestNormalUseCaseWithReversedGridExtent) {
     auto result = seismo::grid_coordinates(3, 0, 6, 4, 1, 4, 3);
-    ASSERT_EQ(result.size(), 4*3);
+    ASSERT_EQ(result.size(), 4 * 3);
     std::unordered_set<position_t, boost::hash<position_t>> coordinates;
-    for (auto x: {0, 1, 2, 3}){
-        for (auto y: {4, 5, 6}) {
+    for (auto x : {0, 1, 2, 3}) {
+        for (auto y : {4, 5, 6}) {
             coordinates.emplace(x, y, 1);
         }
     }
-    for (auto pos: result) {
+    for (auto pos : result) {
         EXPECT_EQ(coordinates.count(pos), 1);
+    }
+}
+
+
+TEST(TestGoertzel, TestFloatNumbers) {
+    std::vector<float> input{0, 1, 2, 3, 2, 1, 0};
+    using namespace std::complex_literals;
+    std::vector<std::complex<float>> expected_result{9.f + 0.if,
+                                                     -4.5489173f - 2.190643if,
+                                                     0.19202155f + 0.24078733if,
+                                                     -0.14310412f - 0.6269801if,
+                                                     -0.14310412f + 0.6269801if,
+                                                     0.19202155f - 0.24078733if,
+                                                     -4.5489173f + 2.190643if};
+    for (auto bin = 0; bin < input.size(); ++bin) {
+        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin], {1E-5, 1E-5}))
+            << "Different result in bin " << bin << ".";
+    }
+}
+
+TEST(TestGoertzel, TestEmptyDataThrows) {
+    ASSERT_THROW(math::goertzel(std::vector<double>(), 0), std::invalid_argument);
+}
+
+TEST(TestGoertzel, TestInvalidFrequencyBinThrows) {
+    ASSERT_THROW(math::goertzel(std::vector<double>{1, 2, 3}, 5), std::invalid_argument);
+}
+
+TEST(TestGoertzel, TestDoubleNumbers) {
+    std::vector<double> input{0, 1, 2, 3, 2, 1, 0};
+    using namespace std::complex_literals;
+    std::vector<std::complex<double>> expected_result{9. + 0.i,
+                                                      -4.548917339522305 - 2.1906431337674115i,
+                                                      0.19202147163009653 + 0.24078730940376436i,
+                                                      -0.14310413210778994 - 0.6269801688313521i,
+                                                      -0.14310413210778994 + 0.6269801688313521i,
+                                                      0.19202147163009653 - 0.24078730940376436i,
+                                                      -4.548917339522305 + 2.1906431337674115i};
+    for (auto bin = 0; bin < input.size(); ++bin) {
+        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin]))
+            << "Different result in bin " << bin << ".";
+    }
+}
+
+TEST(TestGoertzel, TestComplexFloatNumbers) {
+    std::vector<std::complex<float>> input{{0, 1}, {2, 3}, {2, 1}};
+    using namespace std::complex_literals;
+    std::vector<std::complex<float>> expected_result{4.f + 5.if, -0.2679491924311228f - 1.if,
+                                                     -3.732050807568877f - 1.if};
+    for (auto bin = 0; bin < input.size(); ++bin) {
+        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin], {2E-7, 2E-7}))
+            << "Different result in bin " << bin << ".";
+    }
+}
+
+TEST(TestGoertzel, TestComplexDoubleNumbers) {
+    std::vector<std::complex<double>> input{{0, 1}, {2, 3}, {2, 1}};
+    using namespace std::complex_literals;
+    std::vector<std::complex<double>> expected_result{4. + 5.i, -0.2679491924311228 - 1.i,
+                                                      -3.732050807568877 - 1.i};
+    for (auto bin = 0; bin < input.size(); ++bin) {
+        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin]))
+            << "Different result in bin " << bin << ".";
+    }
+}
+
+TEST(TestGoertzel, TestSingleRealInputValue) {
+    std::vector<double> input{42};
+    std::complex<double> expected_result{42, 0};
+    auto result = math::goertzel(input, 0);
+    EXPECT_EQ(result, expected_result);
+}
+
+TEST(TestGoertzel, TestTwoRealInputValue) {
+    std::vector<double> input{42, 24};
+    std::vector<std::complex<double>> expected_result{{66, 0}, {18, 0}};
+    for (auto bin = 0; bin < input.size(); ++bin) {
+        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin]))
+                    << "Different result in bin " << bin << ".";
     }
 }
