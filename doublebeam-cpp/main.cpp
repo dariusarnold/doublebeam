@@ -37,7 +37,7 @@ int main() {
     FractureParameters fractures(400, 1, 0, 61, 40, 120, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
-    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 10, 40, 0.006);
+    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 100, 45, 0.06);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count() << " ms"
