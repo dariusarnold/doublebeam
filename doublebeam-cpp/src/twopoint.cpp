@@ -191,8 +191,7 @@ TwoPointRayTracing::array_t delta(const TwoPointRayTracing::array_t& in) {
     return in.apply([](double d) -> double { return d != 0 ? 1 : 0; });
 }
 
-slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver,
-                                     __attribute__((unused)) double accuracy) {
+slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, double accuracy) {
     auto [source_x, source_y, source_z] = source;
     auto [receiver_x, receiver_y, receiver_z] = receiver;
     if (not model.in_model(source_x, source_y, source_z)) {
