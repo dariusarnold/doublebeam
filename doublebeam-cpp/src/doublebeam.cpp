@@ -104,10 +104,11 @@ std::complex<double> gb_amplitude(const Beam& beam) {
 }
 
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
+    using namespace std::complex_literals;
     Eigen::Vector2d q{q1, q2};
     auto M_s =
         last_element(beam.segments.back().P) * last_element(beam.segments.back().Q).inverse();
-    return std::exp(std::complex<double>{0, 1} * beam.frequency() *
+    return std::exp(1i * beam.frequency() *
                     (last_traveltime(beam) + 0.5 * (q.transpose() * M_s * q)[0]));
 }
 
