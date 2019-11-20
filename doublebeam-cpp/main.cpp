@@ -31,9 +31,9 @@ int main() {
     std::ios_base::sync_with_stdio(false);
     auto vm = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
     auto db = DoubleBeam(vm);
-    auto source_beam_centres = seismo::grid_coordinates(450, 500, 450, 500, 0, 1, 1);
+    auto source_beam_centres = seismo::grid_coordinates(5000, 4500, 5000, 4500, 0, 1, 1);
     // TODO integration doesnt stop exactly at depth, only at layers
-    auto targets = seismo::grid_coordinates(420, 500, 410, 500, 450, 1, 1);
+    auto targets = seismo::grid_coordinates(6200, 6500, 6200, 6500, 450, 1, 1);
     FractureParameters fractures(400, 1, 0, 61, 40, 120, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
