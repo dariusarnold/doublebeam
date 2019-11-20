@@ -20,7 +20,7 @@ TwoPointRayTracing::array_t::value_type nansum(const TwoPointRayTracing::array_t
     TwoPointRayTracing::array_t::value_type sum{0};
     for (auto e : in) {
         if (std::isnan(e)) {
-            break;
+            continue;
         }
         sum += e;
     }
