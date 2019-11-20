@@ -217,7 +217,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     for (size_t k = 1; k <= num_layers; k++) {
         epsilon[k] = std::pow(a[k] * z[k - 1] + b[k], 2);
     }
-    epsilon[0] = std::pow(a[source_index] * z[source_index - 1] + b[source_index], 2);
+    epsilon[0] = std::pow(a[source_index] * z[source_index - 1] + b[0], 2);
 
     // eq. A6
     auto omega = array_t(num_layers + 1);
