@@ -220,7 +220,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     epsilon[0] = std::pow(a[source_index] * z[source_index - 1] + b[source_index], 2);
 
     // eq. A6
-    // TODO decide if kept as loop or as xtensor view initialization as for epsilon
     auto omega = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
         omega[k] = std::pow(a[k] * z[k] + b[k], 2);
