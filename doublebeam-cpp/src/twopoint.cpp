@@ -2,7 +2,18 @@
 #include "utils.hpp"
 #include <cmath>
 #include <iostream>
+#include <iterator>
 #include <valarray>
+
+
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::valarray<T>& array) {
+    os << "(";
+    std::copy(std::begin(array), std::end(array) - 1, std::ostream_iterator<T>(os, " "));
+    os << std::end(array) - 1 << ")";
+    return os;
+}
 
 #define USEDEBUG false
 #if USEDEBUG
@@ -207,10 +218,13 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     if (source_index > num_layers) {
         source_index = num_layers;
     }
+    msg(source_index);
     // insert source layer properties in first place
     a[0] = a[source_index];
     b[0] = b[source_index];
-
+    msg(a);
+    msg(b);
+    msg(z);
     // eq. A5
     // TODO move instantiation to constructor so they can be reused.
     auto epsilon = array_t(num_layers + 1);
@@ -218,14 +232,14 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
         epsilon[k] = std::pow(a[k] * z[k - 1] + b[k], 2);
     }
     epsilon[0] = std::pow(a[source_index] * z[source_index - 1] + b[0], 2);
-
+    msg(epsilon);
     // eq. A6
     auto omega = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
         omega[k] = std::pow(a[k] * z[k] + b[k], 2);
     }
     omega[0] = std::pow(a[source_index] * source_z + b[source_index], 2);
-
+    msg(omega);
     // eq. A7
     auto h = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
@@ -233,17 +247,17 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     }
     h[0] = (a[source_index] * z[source_index - 1] + b[source_index]) *
            (source_z - z[source_index - 1]);
-
+    msg(h);
     bool source_below_receiver = source_z > receiver_z;
     auto mu = array_t(num_layers + 1);
     for (size_t k = 0; k <= num_layers; k++) {
         mu[k] = mu_k(k, source_index, num_layers, source_below_receiver);
     }
-
+    msg(mu);
     msg("Initialized");
 
     double vM = highest_velocity_between(source_z, receiver_z, model);
-
+    msg(vM);
     // eq. A10
     array_t mu_tilde = mu * vM / a;
     for (size_t i = 0; i < mu_tilde.size(); ++i) {
@@ -251,43 +265,43 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
             mu_tilde[i] = 0;
         }
     }
-
+    msg(mu_tilde);
     // eq. A11
     array_t h_tilde = mu * h / vM;
-
+    msg(h_tilde);
 
     // eq. A12
     array_t epsilon_tilde = 1 - epsilon / (vM * vM);
-
+    msg(epsilon_tilde);
 
     // eq. A13
     array_t omega_tilde = 1 - omega / (vM * vM);
-
+    msg(omega_tilde);
 
     // eq. A9
     array_t delta_a = delta(a);
-
+    msg(delta_a);
 
     // eq. C13
     auto d1 =
         nansum(delta_a * 0.5 * mu_tilde * (epsilon_tilde - omega_tilde) + (1. - delta_a) * h_tilde);
-
+    msg(d1);
     // eq. C18
     array_t delta_epsilon = delta(epsilon_tilde);
-
+    msg(delta_epsilon);
     // eq. C19
     array_t delta_omega = delta(omega_tilde);
-
+    msg(delta_omega);
     // eq. C14
     auto c0 = nansum(
         delta_a * mu_tilde *
             (delta_epsilon * std::sqrt(epsilon_tilde) - delta_omega * std::sqrt(omega_tilde)) +
         (1. - delta_a) * delta_epsilon * h_tilde / std::sqrt(epsilon_tilde));
-
+    msg(c0);
 
     // eq. C16
     auto cminus1 = nansum(delta_a * (delta_omega - delta_epsilon) * mu_tilde);
-
+    msg(cminus1);
 
     // eq. C17
     auto cminus2 =
@@ -295,7 +309,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
                    (guard(delta_epsilon / std::sqrt(epsilon_tilde), delta_epsilon) -
                     guard(delta_omega / std::sqrt(omega_tilde), delta_omega)) -
                (1. - delta_a) * delta_epsilon * h_tilde * 0.5 / std::pow(epsilon_tilde, 1.5));
-
+    msg(cminus2);
     // horizontal distance between source and receiver
     auto X = std::sqrt(std::pow(source_x - receiver_x, 2) + std::pow(source_y - receiver_y, 2));
     msg(X);
