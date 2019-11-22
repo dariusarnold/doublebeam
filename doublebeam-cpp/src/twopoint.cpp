@@ -138,6 +138,7 @@ double f_tilde_double_prime(double q, const A& delta_a, const A& mu_tilde, const
     return nansum(X_tilde_double_prime(q, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde));
 }
 
+// Solve quadratic equation (7) using eq. (11) only for q instead of p.
 template <typename AA>
 double next_q(double q, double X, const AA& delta_a, const AA& mu_tilde, const AA& epsilon_tilde,
               const AA& omega_tilde, const AA& h_tilde) {
@@ -150,7 +151,6 @@ double next_q(double q, double X, const AA& delta_a, const AA& mu_tilde, const A
     // both q plus and q minus are 0D tensors, get their value out to pass to function
     double q_plus = (q + delta_q_plus);
     double q_minus = (q + delta_q_minus);
-    // use all to convert 0D array of bool to bool explicitly
     if (std::abs(f_tilde(q_plus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde)) <
         std::abs(f_tilde(q_minus, X, delta_a, mu_tilde, epsilon_tilde, omega_tilde, h_tilde))) {
         return q_plus;
