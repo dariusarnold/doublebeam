@@ -5,9 +5,9 @@
 #include "gtest/gtest.h"
 
 
-class TestRayTracing : public ::testing::TestWithParam<std::pair<std::array<double, 3>, double>> {
-protected:
-    TestRayTracing() :
+class TestRayTracingBase : public ::testing::Test {
+public:
+    TestRayTracingBase() :
             vm{{{0, 100, 1800, 4},
                 {100, 200, 2400, 0},
                 {200, 300, 2400, 1},
@@ -20,6 +20,10 @@ protected:
     VelocityModel vm;
     RayTracer krt;
 };
+
+class TestRayTracing
+        : public TestRayTracingBase,
+          public ::testing::WithParamInterface<std::pair<std::array<double, 3>, double>> {};
 
 TEST_P(TestRayTracing, TestCorrectEndpoint) {
     auto [slowness, endpoint] = GetParam();
