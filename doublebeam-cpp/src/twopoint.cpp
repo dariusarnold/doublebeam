@@ -192,9 +192,57 @@ TwoPointRayTracing::array_t guard(const TwoPointRayTracing::array_t& e,
     return out;
 }
 
-
+// Transformed version of eq. (15) for p
 double q_to_p(double q, double vM) {
     return std::sqrt(q * q / (vM * vM + vM * vM * q * q));
+}
+
+
+template <typename T>
+T Heaviside(T x) {
+    return x < 0 ? T{0.} : T{1};
+}
+
+
+// Calculate starting value for q using either C1 or C6 depending on value of c1
+double initial_q(double X, double d1, double c0, double c1, double cminus1, double cminus2) {
+    auto alpha1 = d1;
+    msg(alpha1);
+    auto alpha2 = c0 * (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
+    if (c0 * (c0 * c0 + d1 * cminus1) == 0) {
+        alpha2 = 0;
+    }
+    msg(alpha2);
+    auto beta1 = (c0 * cminus1 + d1 * cminus2) / (c0 * cminus2 - cminus1 * cminus1);
+    if ((c0 * cminus1 + d1 * cminus2) == 0) beta1 = 0;
+    msg(beta1);
+    auto beta2 = (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
+    if ((c0 * c0 + d1 * cminus1) == 0) {
+        beta2 = 0;
+    }
+    msg(beta2);
+
+    if (c1 == 0) {
+        // Use equation C1 to estimate initial value for q
+        auto numerator = (beta1 * X - alpha1 +
+                          sqrt((beta1 * beta1 - 4 * beta2) * X * X +
+                               2 * (2 * alpha2 - alpha1 * beta1) * X + alpha1 * alpha1));
+        msg(numerator);
+        auto denominator = 2 * (alpha2 - beta2 * X);
+        msg(denominator);
+        double q = numerator / denominator;
+        if (numerator == 0) {
+            q = 0;
+        }
+        return q;
+    } else {
+        // This uses equation C6 to estimate initial value for q. The paper mistakenly states this
+        // equation should be used when c_1 = 0, but it should be used when c1 != 0. This was
+        // confirmed by email from the corresponding author.
+        auto q = X / alpha1 +
+                 (X / c1 - X / alpha1 - c0 / c1) * Heaviside(X - (alpha1 * c0) / (alpha1 - c1));
+        return q;
+    }
 }
 
 
@@ -313,22 +361,14 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     // horizontal distance between source and receiver
     auto X = std::sqrt(std::pow(source_x - receiver_x, 2) + std::pow(source_y - receiver_y, 2));
     msg(X);
-    auto alpha1 = d1;
-    msg(alpha1);
-    auto alpha2 = c0 * (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
-    msg(alpha2);
-    auto beta1 = (c0 * cminus1 + d1 * cminus2) / (c0 * cminus2 - cminus1 * cminus1);
-    msg(beta1);
-    auto beta2 = (c0 * c0 + d1 * cminus1) / (cminus1 * cminus1 - c0 * cminus2);
-    msg(beta2);
-    auto numerator = (beta1 * X - alpha1 +
-                      sqrt((beta1 * beta1 - 4 * beta2) * X * X +
-                           2 * (2 * alpha2 - alpha1 * beta1) * X + alpha1 * alpha1));
-    msg(numerator);
-    auto denominator = 2 * (alpha2 - beta2 * X);
-    msg(denominator);
-    double q = numerator / denominator;
+
+    // eq. C15
+    auto c1 = nansum((1 - delta_a) * (1 - delta_epsilon) * h_tilde);
+    msg(c1);
+
+    auto q = initial_q(X, d1, c0, c1, cminus1, cminus2);
     msg(q);
+
     double q_next;
     msg("Before loop");
     while (std::isfinite(q) and q != 0) {
