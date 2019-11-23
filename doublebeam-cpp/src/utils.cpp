@@ -130,6 +130,14 @@ namespace math {
         auto l = math::length(x, y, z);
         return {x / l, y / l, z / l};
     }
+
+    bool between(double a, double x, double b) {
+        if (a < b) {
+            return a <= x and x <= b;
+        } else{
+            return b <= x and x <= b;
+        }
+    }
 } // namespace math
 
 namespace impl {

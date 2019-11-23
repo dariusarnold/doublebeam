@@ -522,6 +522,10 @@ namespace math {
         return goertzel(data, bin);
     }
 
+    /**
+     * Return true if x is between a and b (inclusive).
+     */
+    bool between(double a, double x, double b);
 
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

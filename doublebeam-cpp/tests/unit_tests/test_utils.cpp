@@ -435,3 +435,34 @@ TEST(TestGoertzel, TestTwoRealInputValue) {
             << "Different result in bin " << bin << ".";
     }
 }
+
+
+TEST(TestBetween, TestInclusivityLeft) {
+    bool result = math::between(0, 0, 1);
+    EXPECT_TRUE(result);
+}
+
+TEST(TestBetween, TestInclusivityRight) {
+    bool result = math::between(0, 1, 1);
+    EXPECT_TRUE(result);
+}
+
+TEST(TestBetween, TestNormalValueInside) {
+    bool result = math::between(0, 0.96, 1);
+    EXPECT_TRUE(result);
+}
+
+TEST(TestBetween, TestNormalValueOutsideRight) {
+    bool result = math::between(0, 1.01, 1);
+    EXPECT_FALSE(result);
+}
+
+TEST(TestBetween, TestNormalValueOutsideLeft) {
+    bool result = math::between(0, -0.01, 1);
+    EXPECT_FALSE(result);
+}
+
+TEST(TestBetween, TestNormalInclusivityBothSides) {
+    bool result = math::between(4.2, 4.2, 4.2);
+    EXPECT_TRUE(result);
+}
