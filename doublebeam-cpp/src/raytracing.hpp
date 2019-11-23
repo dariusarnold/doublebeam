@@ -82,6 +82,7 @@ public:
      * @param initial_state Initial state of the ray.
      * @param ray_code Sequence of characters that decide the ray type to take at an interface.
      * Use 'R' for reflected and 'T' for transmitted.
+     * @param stop_depth Depth at which ray tracing is stopped.
      * @param step_size Initial step size along the ray.
      * @param max_step Maximum step size along the ray.
      * @return Traced ray.
@@ -89,14 +90,16 @@ public:
     // TODO take initial state by const ref for ray and beam
     RayTracingResult<Ray> trace_ray(state_type initial_state,
                                     const std::vector<WaveType>& ray_code = {},
-                                    double step_size = 1., double max_step = 1.1);
+                                    std::optional<double> stop_depth = {}, double step_size = 1.,
+                                    double max_step = 1.1);
 
     /**
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
     RayTracingResult<Ray> trace_ray(state_type initial_state, const std::string& ray_code,
-                                    double step_size = 1., double max_step = 1.1);
+                                    std::optional<double> stop_depth = {}, double step_size = 1.,
+                                    double max_step = 1.1);
 
     /**
      * Do dynamic ray tracing and return gaussian beam.
@@ -105,6 +108,7 @@ public:
      * @param beam_frequency Central frequency of beam.
      * @param ray_code Target ray code specifying the ray type to take at an interface.
      * Use 'R' for reflected and 'T' for transmitted.
+     * @param stop_depth Depth at which ray tracing is stopped.
      * @param step_size Initial step size along the ray.
      * @param max_step Maximum step size along the ray.
      * @return Traced beam.
@@ -112,15 +116,17 @@ public:
     RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
                                       double beam_frequency,
                                       const std::vector<WaveType>& ray_code = {},
-                                      double step_size = 1., double max_step = 1.1);
+                                      std::optional<double> stop_depth = {}, double step_size = 1.,
+                                      double max_step = 1.1);
 
     /**
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
     RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
-                                             double beam_frequency, const std::string& ray_code,
-                                             double step_size = 1., double max_step = 1.1);
+                                      double beam_frequency, const std::string& ray_code,
+                                      std::optional<double> stop_depth = {}, double step_size = 1.,
+                                      double max_step = 1.1);
 
 private:
     /**
@@ -163,6 +169,8 @@ private:
     std::optional<RaySegment> trace_layer(const state_type& initial_state, const Layer& layer,
                                           double s_start, double ds, double max_ds);
     VelocityModel model;
+
+    std::optional<double> stop_depth_m{};
 };
 
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HPP

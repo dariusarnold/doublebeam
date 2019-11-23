@@ -1,5 +1,6 @@
 #include "model.hpp"
 #include "printing.hpp"
+#include "ray.hpp"
 #include "raytracing.hpp"
 #include "testing_utils.hpp"
 #include "gtest/gtest.h"
@@ -20,6 +21,28 @@ public:
     VelocityModel vm;
     RayTracer krt;
 };
+
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerDownwards) {
+    // This ray ends in a linear velocity gradient layer and travels downwards
+    auto initial_state = init_state(0, 0, 100, vm, 0, 0);
+    auto ray = krt.trace_ray(initial_state, "", 150).value();
+    auto [x, y, z] = last_point(ray);
+    EXPECT_EQ(x, 0);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 150);
+}
+
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerUpwards) {
+    double p = -1 / vm.eval_at(0, 0, 199).value();
+    // This ray ends in a linear velocity gradient layer
+    auto initial_state = make_state(0, 0, 199, 0, 0, p);
+    auto ray = krt.trace_ray(initial_state, "", 150).value();
+    auto [x, y, z] = last_point(ray);
+    // px is very small due to numerical inaccuracies calc
+    EXPECT_DOUBLE_EQ(x, 0);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 150);
+}
 
 class TestRayTracing
         : public TestRayTracingBase,

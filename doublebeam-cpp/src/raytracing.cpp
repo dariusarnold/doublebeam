@@ -131,7 +131,15 @@ std::optional<RaySegment> RayTracer::trace_layer_const(const state_type& initial
                                                        double ds) {
     auto [x0, y0, z0, px0, py0, pz0, t0] = initial_state;
     auto c = layer.intercept;
-    auto z_interface = seismo::ray_direction_down(pz0) ? layer.bot_depth : layer.top_depth;
+    double z_interface = [&]() {
+        // check if stop depth exists and we are in the layer where we have to stop
+        if (stop_depth_m and
+            math::between(layer.top_depth, stop_depth_m.value(), layer.bot_depth)) {
+            return stop_depth_m.value();
+        } else {
+            return seismo::ray_direction_down(pz0) ? layer.bot_depth : layer.top_depth;
+        }
+    }();
     auto s_end = (z_interface - z0) / (c * pz0);
     size_t num_steps = std::floor(s_end / ds);
     auto s_step = s_end / num_steps;
@@ -161,7 +169,8 @@ std::optional<RaySegment> RayTracer::trace_layer_const(const state_type& initial
 RayTracer::RayTracer(const VelocityModel& velocity_model) : model(std::move(velocity_model)) {}
 
 RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
-                                           const std::vector<WaveType>& ray_code, double step_size,
+                                           const std::vector<WaveType>& ray_code,
+                                           std::optional<double> stop_depth, double step_size,
                                            double max_step) {
     if (not model.in_model(initial_state[Index::X], initial_state[Index::Y],
                            initial_state[Index::Z])) {
@@ -171,6 +180,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
                                                 initial_state[Index::Z])
                                 << " not in model " << model);
     }
+    stop_depth_m = stop_depth;
     auto layer_index = model.layer_index(initial_state[Index::Z]).value();
     auto current_layer = model[layer_index];
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
@@ -404,9 +414,10 @@ private:
 RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double beam_width,
                                              double beam_frequency,
                                              const std::vector<WaveType>& ray_code,
-                                             double step_size, double max_step) {
+                                             std::optional<double> stop_depth, double step_size,
+                                             double max_step) {
     // first trace ray kinematically
-    auto ray = trace_ray(initial_state, ray_code, step_size, max_step);
+    auto ray = trace_ray(initial_state, ray_code, stop_depth, step_size, max_step);
     if (not ray.result) {
         // ray tracing failed
         return {ray.status, {}};
@@ -463,13 +474,16 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
 }
 
 RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
-                                           double step_size, double max_step) {
-    return trace_ray(initial_state, seismo::make_ray_code(ray_code), step_size, max_step);
+                                           std::optional<double> stop_depth, double step_size,
+                                           double max_step) {
+    return trace_ray(initial_state, seismo::make_ray_code(ray_code), stop_depth, step_size,
+                     max_step);
 }
 
 RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double beam_width,
                                              double beam_frequency, const std::string& ray_code,
-                                             double step_size, double max_step) {
+                                             std::optional<double> stop_depth, double step_size,
+                                             double max_step) {
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
-                      step_size, max_step);
+                      stop_depth, step_size, max_step);
 }
