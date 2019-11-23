@@ -67,3 +67,15 @@ double InterfaceCrossed::get_closest_layer_depth(const state_type& state) const 
                ? top_depth
                : bottom_depth;
 }
+
+
+bool DepthPredicate::operator()(const state_type& state) {
+    double z = std::get<Index::Z>(state);
+    if (previous_z) {
+        bool result = math::between(previous_z.value(), z_stop, z);
+        previous_z = z;
+        return result;
+    }
+    previous_z = z;
+    return false;
+}
