@@ -517,8 +517,8 @@ namespace math {
     template <typename T>
     std::complex<typename impl::value_type_or_type<T>::type>
     fft_closest_frequency(const std::vector<T>& data, T frequency, double sampling_period) {
-        auto sampling_frequency = 1 / sampling_period;
-        auto bin = std::llround(data.size() * frequency / sampling_frequency);
+        auto sampling_frequency_Hz = 1 / sampling_period;
+        auto bin = std::llround(data.size() * frequency / sampling_frequency_Hz);
         return goertzel(data, bin);
     }
 
