@@ -76,30 +76,6 @@ private:
 };
 
 /**
- * Helper struct to stop integration once a certain depth has been reached.
- *
- */
-class DepthPredicate {
-public:
-    /**
-     * @param z Trace until depth z is reached. Last point of returned ray will then have the exact
-     * depth of z.
-     */
-    explicit DepthPredicate(double z) : z_stop(z) {}
-    /**
-     * Check if current state has reached the depth.
-     * @param state Current raytracing state.
-     * @return True if z_stop is between the depths of the previous call and the current call, i.e.
-     * if the ray tracing passed the value of z.
-     */
-    bool operator()(const state_type& state);
-
-private:
-    double z_stop;
-    std::optional<double> previous_z{};
-};
-
-/**
  * Calculate exact state at interface crossing.
  * @tparam Stepper Boost dense output stepper type.
  * @param crossing_function Continuous function of state that has a zero crossing at the interface
