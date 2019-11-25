@@ -55,10 +55,10 @@ std::function<double(const state_type&)>
 InterfaceCrossed::get_zero_crossing_event_function(const state_type& state) const {
     if (state[Index::Z] < top_depth) {
         // top interface was crossed
-        return [&](const state_type& state) { return top_depth - state[Index::Z]; };
+        return [=](const state_type& state) { return top_depth - state[Index::Z]; };
     } else {
         // bottom interface was crossed
-        return [&](const state_type& state) { return bottom_depth - state[Index::Z]; };
+        return [=](const state_type& state) { return bottom_depth - state[Index::Z]; };
     }
 }
 
