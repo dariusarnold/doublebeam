@@ -37,8 +37,8 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
 state_type snells_law(const state_type& old_state, const VelocityModel& model, WaveType wave_type) {
     auto [v_above, v_below] = model.interface_velocities(old_state[Index::Z]);
     auto [x, y, z, px, py, pz, t] = old_state;
-    std::tie(px, py, pz) = snells_law(old_state[Index::PX], old_state[Index::PY], old_state[Index::PZ],
-                                   v_above, v_below, wave_type);
+    std::tie(px, py, pz) = snells_law(old_state[Index::PX], old_state[Index::PY],
+                                      old_state[Index::PZ], v_above, v_below, wave_type);
     return {x, y, z, px, py, pz, t};
 }
 

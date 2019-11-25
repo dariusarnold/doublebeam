@@ -99,7 +99,6 @@ private:
     std::optional<double> previous_z{};
 };
 
-
 /**
  * Calculate exact state at interface crossing.
  * @tparam Stepper Boost dense output stepper type.
@@ -110,7 +109,8 @@ private:
  */
 template <typename Stepper>
 std::pair<state_type, double>
-get_state_at_interface(std::function<double(const state_type&)> crossing_function, Stepper stepper) {
+get_state_at_interface(std::function<double(const state_type&)> crossing_function,
+                       Stepper stepper) {
     // our integration variable is not time t but arclengths s
     double s0 = stepper.previous_time();
     double s1 = stepper.current_time();
@@ -118,8 +118,8 @@ get_state_at_interface(std::function<double(const state_type&)> crossing_functio
     boost::uintmax_t max_calls = 1000;
     auto [s_left, s_right] = boost::math::tools::toms748_solve(
         [&](double t) {
-          stepper.calc_state(t, x_middle);
-          return (crossing_function(x_middle));
+            stepper.calc_state(t, x_middle);
+            return (crossing_function(x_middle));
         },
         s0, s1, boost::math::tools::eps_tolerance<double>(), max_calls);
     // calculate final position of crossing and save state at crossing

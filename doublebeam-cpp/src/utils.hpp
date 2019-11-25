@@ -479,8 +479,8 @@ namespace math {
      * @return Value of DFT frequency bin.
      */
     template <typename T>
-    std::complex<typename impl::value_type_or_type<T>::type> goertzel(const std::vector<T>& data,
-                                                                      unsigned long long target_frequency_bin) {
+    std::complex<typename impl::value_type_or_type<T>::type>
+    goertzel(const std::vector<T>& data, unsigned long long target_frequency_bin) {
         if (data.size() == 0) {
             throw std::invalid_argument("Data for Goertzel algorithm is empty.");
         }

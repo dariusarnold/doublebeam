@@ -470,7 +470,8 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
                 return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
             });
         auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
-        Eigen::TensorRef<Eigen::Tensor1d> sigma = Eigen::TensorMap<Eigen::Tensor1d>(sigma_.data(), sigma_.size());
+        Eigen::TensorRef<Eigen::Tensor1d> sigma =
+            Eigen::TensorMap<Eigen::Tensor1d>(sigma_.data(), sigma_.size());
         // TODO this could be optimized since P0 is constant in my use case to store it only once
         Eigen::Tensor3cd P(sigma_.size(), 2, 2);
         P = P0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1});
