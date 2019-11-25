@@ -466,3 +466,23 @@ TEST(TestBetween, TestNormalInclusivityBothSides) {
     bool result = math::between(4.2, 4.2, 4.2);
     EXPECT_TRUE(result);
 }
+
+TEST(TestMatrixInverse, TestCase1) {
+    auto [i11, i12, i13, i21, i22, i23, i31, i32, i33] =
+        math::inv(1., 2., 0., 3., 0., 7., 0., 6., 5.);
+    auto [e11, e12, e13, e21, e22, e23, e31, e32, e33] =
+        std::make_tuple(0.5833333333333333333, 0.13888888888888888889, -0.19444444444444444443,
+                        0.20833333333333333335, -0.069444444444444444444, 0.097222222222222222216,
+                        -0.25, 0.083333333333333333333, 0.083333333333333333333);
+    // I think this can be done better but I dont know how since get expects a constant expression
+    // index.
+    EXPECT_FLOAT_EQ(i11, e11);
+    EXPECT_FLOAT_EQ(i12, e12);
+    EXPECT_FLOAT_EQ(i13, e13);
+    EXPECT_FLOAT_EQ(i21, e21);
+    EXPECT_FLOAT_EQ(i22, e22);
+    EXPECT_FLOAT_EQ(i23, e23);
+    EXPECT_FLOAT_EQ(i31, e31);
+    EXPECT_FLOAT_EQ(i32, e32);
+    EXPECT_FLOAT_EQ(i33, e33);
+}
