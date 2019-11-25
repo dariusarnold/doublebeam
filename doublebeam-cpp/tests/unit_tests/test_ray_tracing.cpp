@@ -44,6 +44,46 @@ TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerUpwards) {
     EXPECT_EQ(z, 150);
 }
 
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthLinearVelocityLayer) {
+    // This ray ends in a linear velocity gradient layer
+    auto initial_state = init_state(0, 0, 0, vm, 0, 0);
+    double stop_depth = 50;
+    auto ray = krt.trace_ray(initial_state, "", stop_depth).value();
+    auto [x, y, z] = last_point(ray);
+    EXPECT_EQ(x, 0);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, stop_depth);
+}
+
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthOneLayerBottomToTop) {
+    // This ray ends in a linear velocity gradient layer
+    auto initial_state = init_state(1, 1, 99, vm, math::radians(180), 0);
+    auto ray = krt.trace_ray(initial_state, "", 50).value();
+    auto [x, y, z] = last_point(ray);
+    EXPECT_EQ(x, 1);
+    EXPECT_EQ(y, 1);
+    EXPECT_EQ(z, 50);
+}
+
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayer) {
+    // This ray ends in constant velocity layer
+    auto initial_state = init_state(0, 0, 0, vm, 0, 0);
+    auto ray = krt.trace_ray(initial_state, "T", 150).value();
+    auto [x, y, z] = last_point(ray);
+    EXPECT_EQ(x, 0);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 150);
+}
+
+TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayerWithNonVerticalRay) {
+    auto initial_state = init_state(0, 0, 0, vm, math::radians(15), 0);
+    auto ray = krt.trace_ray(initial_state, "T", 150).value();
+    auto [x, y, z] = last_point(ray);
+    EXPECT_NE(x, 0);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 150);
+}
+
 class TestRayTracing
         : public TestRayTracingBase,
           public ::testing::WithParamInterface<std::pair<std::array<double, 3>, double>> {};
@@ -52,9 +92,9 @@ TEST_P(TestRayTracing, TestCorrectEndpoint) {
     auto [slowness, endpoint] = GetParam();
     auto [px, py, pz] = slowness;
     state_type initial_state{0, 0, 0, px, py, pz, 0};
-    auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", 1, 1).value();
+    auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", {}, 1, 1).value();
     auto last_traced_point = ray.segments.back().data.back();
-    EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint));
+    EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint, 1E-6));
 }
 
 TEST_P(TestRayTracing, TestArcLengthIncreasesContinuously) {

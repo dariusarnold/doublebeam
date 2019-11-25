@@ -126,7 +126,7 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     auto Q_desired =
         load_npy<complex, 3>(current_source_path(__FILE__) / "data/Q_analytic_squeeze.npy");
     auto initial_state = init_state(0, 0, 0, model, math::radians(20), 0, 0);
-    auto beam = rt.trace_beam(initial_state, 10, 40, "", 1, 4).value();
+    auto beam = rt.trace_beam(initial_state, 10, 40, "", {},1, 4).value();
     ASSERT_EQ(beam.segments.size(), 1);
     // result loaded from disk has a different number of steps, compare only first and last entry.
     // compare first/last of P

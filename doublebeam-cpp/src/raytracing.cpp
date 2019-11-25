@@ -87,12 +87,25 @@ double layer_height(const Layer& layer) {
     return layer.bot_depth - layer.top_depth;
 }
 
-std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& initial_state,
-                                                          const Layer& layer, double s_start,
-                                                          double ds, double max_ds) {
+RayTracingResult<RaySegment> RayTracer::trace_layer_gradient(const state_type& initial_state,
+                                                             const Layer& layer, double s_start,
+                                                             double ds, double max_ds) {
     namespace odeint = boost::numeric::odeint;
     using stepper_t = odeint::runge_kutta_dopri5<state_type>;
-    InterfaceCrossed crossing(layer);
+    InterfaceCrossed crossing = [&]() {
+        if (stop_depth_m) {
+            // set stop depth as an interface where integration will stop.
+            if (initial_state[Index::Z] > stop_depth_m.value()) {
+                // Integration starts at bottom side of layer
+                return InterfaceCrossed(stop_depth_m.value(), layer.bot_depth);
+            } else {
+                return InterfaceCrossed(layer.top_depth, stop_depth_m.value());
+            }
+        } else {
+            // use layer boundaries as integration borders
+            return InterfaceCrossed(layer.top_depth, layer.bot_depth);
+        }
+    }();
     // error values can be lowered to 1e-8 with only minimal loss in precision to improve speed
     auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
     stepper.initialize(initial_state, s_start, ds);
@@ -108,7 +121,7 @@ std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& init
     do {
         if (not model.in_horizontal_extent(stepper.current_state()[Index::X],
                                            stepper.current_state()[Index::Y])) {
-            return {};
+            return {Status::OutOfBounds, {}};
         }
         states.emplace_back(stepper.current_state());
         arclengths.emplace_back(stepper.current_time());
@@ -122,19 +135,23 @@ std::optional<RaySegment> RayTracer::trace_layer_gradient(const state_type& init
     // workaround for numerical issues where layer boundaries are overshot
     // do this by clamping the value to the interface depth
     states.back()[Index::Z] = crossing.get_closest_layer_depth(states.back());
-    return {{states, arclengths}};
+    bool stop_depth_was_reached = stop_depth_m and states.back()[Index::Z] == stop_depth_m.value();
+    return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
+            RaySegment{states, arclengths}};
 }
 
 
-std::optional<RaySegment> RayTracer::trace_layer_const(const state_type& initial_state,
-                                                       const Layer& layer, double s_start,
-                                                       double ds) {
+RayTracingResult<RaySegment> RayTracer::trace_layer_const(const state_type& initial_state,
+                                                          const Layer& layer, double s_start,
+                                                          double ds) {
     auto [x0, y0, z0, px0, py0, pz0, t0] = initial_state;
     auto c = layer.intercept;
+    bool stop_depth_was_reached = false;
     double z_interface = [&]() {
         // check if stop depth exists and we are in the layer where we have to stop
         if (stop_depth_m and
             math::between(layer.top_depth, stop_depth_m.value(), layer.bot_depth)) {
+            stop_depth_was_reached = true;
             return stop_depth_m.value();
         } else {
             return seismo::ray_direction_down(pz0) ? layer.bot_depth : layer.top_depth;
@@ -157,12 +174,13 @@ std::optional<RaySegment> RayTracer::trace_layer_const(const state_type& initial
         auto y = y0 + arclength_in_layer * c * py0;
         if (not model.in_horizontal_extent(x, y)) {
             // ray left model to the side and did not reach top/bottom of layer
-            return {};
+            return {Status::OutOfBounds, {}};
         }
         auto z = z0 + arclength_in_layer * c * pz0;
         states_vector.emplace_back(state_type{x, y, z, px0, py0, pz0, t0 + arclength_in_layer / c});
     }
-    return {{states_vector, arclengths}};
+    return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
+            RaySegment{states_vector, arclengths}};
 }
 
 
@@ -184,9 +202,12 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
     auto layer_index = model.layer_index(initial_state[Index::Z]).value();
     auto current_layer = model[layer_index];
     auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
-    if (not segment) {
+    if (segment.status == Status::OutOfBounds) {
         // early exit when ray left model horizontally
         return {Status::OutOfBounds, {}};
+    }
+    if (segment.status == Status::StopDepthReached) {
+        return {Status::StopDepthReached, Ray{{segment.value()}}};
     }
     if (ray_code.empty()) {
         // only trace one layer for empty ray code
@@ -210,18 +231,21 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
         state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
         segment = trace_layer(new_initial_state, current_layer,
                               ray.segments.back().arclength.back(), step_size, max_step);
-        if (not segment) {
+        if (segment.status == Status::OutOfBounds) {
             return {Status::OutOfBounds, {}};
         }
         ray.segments.push_back(segment.value());
+        if (segment.status == Status::StopDepthReached) {
+            return {Status::StopDepthReached, ray};
+        }
     }
     return {Status::Success, ray};
 }
 
 
-std::optional<RaySegment> RayTracer::trace_layer(const state_type& initial_state,
-                                                 const Layer& layer, double s_start, double ds,
-                                                 double max_ds) {
+RayTracingResult<RaySegment> RayTracer::trace_layer(const state_type& initial_state,
+                                                    const Layer& layer, double s_start, double ds,
+                                                    double max_ds) {
     if (layer.gradient == 0) {
         return trace_layer_const(initial_state, layer, s_start, ds);
     } else {

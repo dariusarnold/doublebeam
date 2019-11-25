@@ -44,9 +44,10 @@ public:
      * Helper class that acts as an event which is triggered once the layer boundary is crossed
      * during ray tracing. If the event is triggered, integration is stopped and the exact location
      * of the layer boundary is found.
-     * @param layer Layer in which the ray is traced.
+     * @param upper_depth Upper depth above which an event is triggered.
+     * @param lower_depth Lower depth below which an event is triggered.
      */
-    explicit InterfaceCrossed(const Layer& layer);
+    explicit InterfaceCrossed(double upper_depth, double lower_depth);
     /**
      * Check if depth of current state is outside of the layer.
      * @param state Current state.

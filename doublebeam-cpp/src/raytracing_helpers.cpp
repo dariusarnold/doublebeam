@@ -43,9 +43,9 @@ state_type snells_law(const state_type& old_state, const VelocityModel& model, W
 }
 
 
-InterfaceCrossed::InterfaceCrossed(const Layer& layer) :
-        top_depth(layer.top_depth),
-        bottom_depth(layer.bot_depth){};
+InterfaceCrossed::InterfaceCrossed(double upper_depth, double lower_depth) :
+        top_depth(upper_depth),
+        bottom_depth(lower_depth){};
 
 bool InterfaceCrossed::operator()(const state_type& state) const {
     return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;

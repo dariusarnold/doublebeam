@@ -55,7 +55,9 @@ enum class Status {
     // Ray tracing finished successfully
     Success,
     // Ray left velocity model
-    OutOfBounds
+    OutOfBounds,
+    // Ray reached stop depth
+    StopDepthReached
 };
 
 
@@ -141,9 +143,9 @@ private:
      * @param max_ds Maximum time step size.
      * @return
      */
-    std::optional<RaySegment> trace_layer_gradient(const state_type& initial_state,
-                                                   const Layer& layer, double s_start, double ds,
-                                                   double max_ds);
+    RayTracingResult<RaySegment> trace_layer_gradient(const state_type& initial_state,
+                                                      const Layer& layer, double s_start, double ds,
+                                                      double max_ds);
     /**
      * Use analytic ray tracing equation for a constant velocity layer.
      * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system: Introducing
@@ -154,8 +156,8 @@ private:
      * @param ds Step size of arc length.
      * @return RaySegment for this layer.
      */
-    std::optional<RaySegment> trace_layer_const(const state_type& initial_state, const Layer& layer,
-                                                double s_start, double ds);
+    RayTracingResult<RaySegment> trace_layer_const(const state_type& initial_state,
+                                                   const Layer& layer, double s_start, double ds);
     /**
      * Dispatching function that decides to use analytic or numerical ray tracing depending on
      * whether the layer has constant velocity or not.
@@ -166,8 +168,8 @@ private:
      * @param max_ds Maximum time step size.
      * @return RaySegment for this layer.
      */
-    std::optional<RaySegment> trace_layer(const state_type& initial_state, const Layer& layer,
-                                          double s_start, double ds, double max_ds);
+    RayTracingResult<RaySegment> trace_layer(const state_type& initial_state, const Layer& layer,
+                                             double s_start, double ds, double max_ds);
     VelocityModel model;
 
     std::optional<double> stop_depth_m{};
