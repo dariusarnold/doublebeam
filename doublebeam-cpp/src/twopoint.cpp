@@ -102,14 +102,6 @@ TwoPointRayTracing::array_t X_tilde_prime(double q, const A& epsilon_tilde, cons
     return tmp;
 }
 
-// eq. B10
-template <typename A>
-TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& epsilon_tilde,
-                                                 const A& h_tilde) {
-    TwoPointRayTracing::array_t tmp =
-        -3 * h_tilde * epsilon_tilde * q / std::pow(1 + epsilon_tilde * q * q, 2.5);
-    return tmp;
-}
 
 // eq. 16
 template <typename A>
@@ -123,29 +115,14 @@ double f_tilde_prime(double q, const A& epsilon_tilde, const A& h_tilde) {
     return nansum(X_tilde_prime(q, epsilon_tilde, h_tilde));
 }
 
-// eq. B4
-template <typename A>
-double f_tilde_double_prime(double q, const A& epsilon_tilde, const A& h_tilde) {
-    return nansum(X_tilde_double_prime(q, epsilon_tilde, h_tilde));
-}
 
-// Solve quadratic equation (7) using eq. (11) only for q instead of p.
+// Solve nonlinear equation (5) using Newton algorithm.
 template <typename AA>
 double next_q(double q, double X, const AA& epsilon_tilde, const AA& h_tilde) {
-    double A = 0.5 * f_tilde_double_prime(q, epsilon_tilde, h_tilde);
-    double B = f_tilde_prime(q, epsilon_tilde, h_tilde);
-    double C = f_tilde(q, X, epsilon_tilde, h_tilde);
-    double delta_q_plus = (-B + std::sqrt(B * B - 4 * A * C)) / (2 * A);
-    double delta_q_minus = (-B - std::sqrt(B * B - 4 * A * C)) / (2 * A);
-    // both q plus and q minus are 0D tensors, get their value out to pass to function
-    double q_plus = (q + delta_q_plus);
-    double q_minus = (q + delta_q_minus);
-    if (std::abs(f_tilde(q_plus, X, epsilon_tilde, h_tilde)) <
-        std::abs(f_tilde(q_minus, X, epsilon_tilde, h_tilde))) {
-        return q_plus;
-    } else {
-        return q_minus;
-    }
+    double f_prime = f_tilde_prime(q, epsilon_tilde, h_tilde);
+    double f = f_tilde(q, X, epsilon_tilde, h_tilde);
+    auto q_new = q - f / f_prime;
+    return q_new;
 }
 
 // Transformed version of eq. (15) for p
@@ -203,7 +180,16 @@ double horizontal_distance(double x1, double y1, double x2, double y2) {
     return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
 }
 
-slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, double accuracy) {
+/**
+ * This function is not the pure implementation of the algorithm in the paper
+ * "A fast and robust two-point ray tracing method in layered media with constant or linearly
+ * varying layer velocity" from Fang and Chen, 2019 but a specialization for a constant layer
+ * velocity. Furthermore only a first order Newton iteration is applied instead of a second order
+ * using the Taylor series. This might converge slower but lead to a more stable iteration without
+ * errors due to negative values in a sqrt.
+ */
+slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, double accuracy,
+                                     int max_iterations) {
     auto [source_x, source_y, source_z] = source;
     auto [receiver_x, receiver_y, receiver_z] = receiver;
     if (not model.in_model(source_x, source_y, source_z)) {
