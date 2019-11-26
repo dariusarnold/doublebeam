@@ -229,9 +229,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     //  they could be precalculated.
     array_t epsilon = b * b;
     msg(epsilon);
-    // eq. A6
-    array_t omega = b * b;
-    msg(omega);
     // eq. A7
     auto h = array_t(num_layers + 1);
     for (size_t k = 1; k <= num_layers; k++) {
@@ -255,10 +252,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     // eq. A12
     array_t epsilon_tilde = 1 - epsilon / (vM * vM);
     msg(epsilon_tilde);
-
-    // eq. A13
-    array_t omega_tilde = 1 - omega / (vM * vM);
-    msg(omega_tilde);
 
     // eq. C13
     array_t d1_unsummed = h_tilde;
