@@ -292,7 +292,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
 
     double q_next;
     msg("Before loop");
-    while (std::isfinite(q) and q != 0) {
+    for (auto i = 0; i < max_iterations; ++i) {
         q_next = next_q(q, X, epsilon_tilde, h_tilde);
         msg(q_next);
         if (not std::isfinite(q_next)) {
