@@ -48,6 +48,11 @@ TwoPointRayTracing::TwoPointRayTracing(const VelocityModel& velocity_model) :
     // index zero is reserved for property of source layer, will be filled in trace method
     size_t index = 1;
     for (const auto& layer : model) {
+        if (layer.gradient != 0) {
+            throw std::invalid_argument(impl::Formatter()
+                                        << "Can't initialize two point ray tracer for model "
+                                           "containing layer with linear velocity gradient.");
+        }
         b[index] = layer.intercept;
         ++index;
     }
