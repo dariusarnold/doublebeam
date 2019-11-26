@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& os, const std::valarray<T>& array) {
     return os;
 }
 
-#define USEDEBUG true
+#define USEDEBUG false
 #if USEDEBUG
 #define msg(x) std::cout << #x << " = " << x << std::endl;
 #else
