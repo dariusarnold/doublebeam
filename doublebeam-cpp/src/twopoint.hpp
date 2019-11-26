@@ -18,7 +18,6 @@ public:
 private:
     VelocityModel model;
     size_t num_layers = 0;
-    array_t a;
     array_t b;
     array_t z;
 };
