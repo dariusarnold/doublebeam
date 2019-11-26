@@ -91,15 +91,19 @@ double mu_k(size_t k, size_t s, size_t n, bool source_below_receiver) {
 // eq. A3
 template <typename A>
 TwoPointRayTracing::array_t X_tilde(double q, const A& epsilon_tilde, const A& h_tilde) {
-    TwoPointRayTracing::array_t tmp = h_tilde / std::sqrt(1 / (q * q) + epsilon_tilde);
-    return tmp;
+    return h_tilde / std::sqrt(1 / (q * q) + epsilon_tilde);
 }
 
 // eq. B9
 template <typename A>
 TwoPointRayTracing::array_t X_tilde_prime(double q, const A& epsilon_tilde, const A& h_tilde) {
-    TwoPointRayTracing::array_t tmp = h_tilde / std::pow(1 + epsilon_tilde * q * q, 1.5);
-    return tmp;
+    return h_tilde / std::pow(1 + epsilon_tilde * q * q, 1.5);
+}
+
+template <typename A>
+TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& epsilon_tilde,
+                                                 const A& h_tilde) {
+    return -3 * h_tilde * epsilon_tilde * q / std::pow(1 + epsilon_tilde * q * q, 2.5);
 }
 
 
@@ -115,13 +119,21 @@ double f_tilde_prime(double q, const A& epsilon_tilde, const A& h_tilde) {
     return nansum(X_tilde_prime(q, epsilon_tilde, h_tilde));
 }
 
+template <typename A>
+double f_tilde_double_prime(double q, const A& epsilon_tilde, const A& h_tilde) {
+    return nansum(X_tilde_double_prime(q, epsilon_tilde, h_tilde));
+}
 
-// Solve nonlinear equation (5) using Newton algorithm.
+// Solve nonlinear equation (5) using Newton algorithm with cubic iteration.
 template <typename AA>
 double next_q(double q, double X, const AA& epsilon_tilde, const AA& h_tilde) {
+    double f_double_prime = f_tilde_double_prime(q, epsilon_tilde, h_tilde);
     double f_prime = f_tilde_prime(q, epsilon_tilde, h_tilde);
     double f = f_tilde(q, X, epsilon_tilde, h_tilde);
-    auto q_new = q - f / f_prime;
+    // use approximation which is valid for small a.
+    // 1-sqrt(1-a) = a/2 + a^2/8 + O(a^3)
+    // see http://numbers.computation.free.fr/Constants/Algorithms/newton.html
+    auto q_new = q - f / f_prime * (1 + (f * f_double_prime / (2 * f_prime * f_prime)));
     return q_new;
 }
 
