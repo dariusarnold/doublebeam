@@ -12,7 +12,8 @@
 class TestTwopointRayTracingBase : public ::testing::Test {
 protected:
     TestTwopointRayTracingBase() : twopoint(model) {}
-    VelocityModel model = read_velocity_file("/home/darius/git/doublebeam/fang2019model.txt");
+    VelocityModel model =
+        read_velocity_file(current_source_path(__FILE__) / "data" / "twopoint_velocity_model.txt");
     TwoPointRayTracing twopoint;
 };
 
@@ -55,11 +56,14 @@ class TestTwoPointRayTracingWithData
 
 /**
  * Test if two point ray tracing gives the same slowness as calculated from fig. 9 in Fang2019.
+ * The velocity model has all linear velocity layers replaced by a constant velocity layer with the
+ * average velocity. This way results are only slightly inaccurate and can be used as a good first
+ * order test if the method is working.
  */
 TEST_P(TestTwoPointRayTracingWithData, CompareWithGivenResult) {
     auto [source, receiver, px_target] = GetParam();
     auto [px, py, pz] = twopoint.trace(source, receiver);
-    EXPECT_TRUE(AlmostEqual(px, px_target, 6))
+    EXPECT_TRUE(Close(px, px_target, 1e-5, 2e-6))
         << "For source " << source << ", receiver " << receiver;
 }
 
@@ -87,7 +91,7 @@ TEST_F(TestTwopointRayTracingBase, TestStraightDown) {
     auto [px, py, pz] = twopoint.trace({0, 0, 0}, {0, 0, 400});
     EXPECT_EQ(px, 0);
     EXPECT_EQ(py, 0);
-    EXPECT_DOUBLE_EQ(pz, 0.00055555555555555556);
+    EXPECT_DOUBLE_EQ(pz, 1 / model.eval_at(0, 0, 0).value());
 }
 
 TEST_F(TestTwopointRayTracingBase, TestStraightDownWithXYCoordinates) {
@@ -109,72 +113,69 @@ TEST_F(TestTwopointRayTracingBase, TestNanReturn) {
 // This works
 TEST_F(TestTwopointRayTracingBase, Test3DCaseBottomToTop) {
     auto [px, py, pz] = twopoint.trace({25, 50, 450}, {100, 100, 0});
-    std::cerr << px << " " << py << " " << pz << std::endl;
-    EXPECT_FLOAT_EQ(px, 6.56403315e-05);
-    EXPECT_FLOAT_EQ(py, 4.37602210e-05);
-    EXPECT_FLOAT_EQ(pz, -3.32653811e-04);
+    auto px_expected = 6.56403315e-05, py_expected = 4.37602210e-05, pz_expected = -3.32653811e-04;
+    EXPECT_TRUE(Close(px, px_expected, 1e-5, 2e-6));
+    EXPECT_TRUE(Close(py, py_expected, 1e-5, 2e-6));
+    EXPECT_TRUE(Close(pz, pz_expected, 1e-5, 2e-6));
 }
 
 // This works with the workaround but not without
 TEST_F(TestTwopointRayTracingBase, Test3DCaseTopToBottom) {
     auto [px, py, pz] = twopoint.trace({100, 100, 0}, {25, 50, 450});
-    std::cerr << px << " " << py << " " << pz << std::endl;
-    EXPECT_FLOAT_EQ(px, -5.81890528e-05);
-    EXPECT_FLOAT_EQ(py, -3.87927019e-05);
-    EXPECT_FLOAT_EQ(pz, 5.51136222e-04);
+    auto px_expected = -5.81890528e-05, py_expected = -3.87927019e-05, pz_expected = 5.51136222e-04;
+    EXPECT_TRUE(Close(px, px_expected, 1e-5, 6e-5));
+    EXPECT_TRUE(Close(py, py_expected, 1e-5, 6e-5));
+    EXPECT_TRUE(Close(pz, pz_expected, 1e-5, 6e-5));
 }
 
 
-TEST_F(TestTwopointRayTracingBase, DISABLED_TestNaNIsFixedTopToBottom) {
+TEST_F(TestTwopointRayTracingBase, TestNaNIsFixedTopToBottom) {
     // This used to give an error due to omega_k_tilde being negative in a sqrt since omega_k
     // (the velocity at the bottom of a layer) was larger than v_M (the largest velocity
     auto [px, py, pz] = twopoint.trace({5000, 5000, 0}, {6200, 6200, 450});
-    std::cerr << px << " " << py << " " << pz << std::endl;
     EXPECT_FALSE(std::isnan(px));
     EXPECT_FALSE(std::isnan(py));
     EXPECT_FALSE(std::isnan(pz));
+    EXPECT_DOUBLE_EQ(px, py);
     EXPECT_NE(px, 0);
 }
 
-TEST_F(TestTwopointRayTracingBase, DISABLED_TestNaNIsFixedBottomToTop) {
+TEST_F(TestTwopointRayTracingBase, TestNaNIsFixedBottomToTop) {
     // This used to give an error due to omega_k_tilde being negative in a sqrt since omega_k
     // (the velocity at the bottom of a layer) was larger than v_M (the largest velocity
     auto [px, py, pz] = twopoint.trace({6200, 6200, 450}, {5000, 5000, 0});
-    std::cerr << px << " " << py << " " << pz << std::endl;
     EXPECT_FALSE(std::isnan(px));
     EXPECT_FALSE(std::isnan(py));
     EXPECT_FALSE(std::isnan(pz));
+    EXPECT_DOUBLE_EQ(px, py);
     EXPECT_NE(px, 0);
 }
 
-TEST_F(TestTwopointRayTracingBase, DISABLED_TestBottomToTopEquivalencyWith2D) {
+TEST_F(TestTwopointRayTracingBase, TestBottomToTopEquivalencyWith2D) {
     auto [px, py, pz] = twopoint.trace({0, 0, 450}, {1200, 0, 0});
-    std::cerr << px << " " << py << " " << pz << std::endl;
     EXPECT_FALSE(std::isnan(px));
     EXPECT_FALSE(std::isnan(py));
     EXPECT_FALSE(std::isnan(pz));
     // this result was obtained using the Matlab code
-    EXPECT_DOUBLE_EQ(px, 3.3284e-04);
-    EXPECT_EQ(py, 0);
+    EXPECT_TRUE(Close(px, 3.3284e-04, 1e-7, 1e-5));
+    EXPECT_DOUBLE_EQ(py, 0);
 }
 
-TEST_F(TestTwopointRayTracingBase, DISABLED_TestInSingleLayerBottomToTop) {
+TEST_F(TestTwopointRayTracingBase, TestInSingleLayerBottomToTop) {
     auto [px, py, pz] = twopoint.trace({125, 0, 50}, {0, 0, 0});
-    std::cerr << px << " " << py << " " << pz << std::endl;
     EXPECT_FALSE(std::isnan(px));
     EXPECT_FALSE(std::isnan(py));
     EXPECT_FALSE(std::isnan(pz));
     EXPECT_NE(px, 0);
-    EXPECT_EQ(py, 0);
+    EXPECT_TRUE(Close(py, 0., 0., 1e-19));
 }
 
-TEST_F(TestTwopointRayTracingBase, DISABLED_TestInSingleLayerTopToBottom) {
+TEST_F(TestTwopointRayTracingBase, TestInSingleLayerTopToBottom) {
     auto [px, py, pz] = twopoint.trace({0, 0, 0}, {125, 0, 50});
-    std::cerr << px << " " << py << " " << pz << std::endl;
     EXPECT_FALSE(std::isnan(px));
     EXPECT_FALSE(std::isnan(py));
     EXPECT_FALSE(std::isnan(pz));
     EXPECT_NE(px, 0);
-    EXPECT_EQ(py, 0);
+    EXPECT_DOUBLE_EQ(py, 0);
     EXPECT_NE(pz, 0);
 }
