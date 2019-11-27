@@ -157,7 +157,8 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             auto seismogram = cut(data(source_pos, rec_pos), total_traveltime - window_length / 2,
                                   total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
-            auto seismogram_freq = math::fft_closest_frequency(seismogram.data, receiver_beam.frequency(), sampling_rate(seismogram));
+            auto seismogram_freq = math::fft_closest_frequency(
+                seismogram.data, receiver_beam.frequency(), sampling_rate(seismogram));
             auto c = std::chrono::high_resolution_clock::now();
             // TODO what to do for two or more resulting frequency bins?
             stacking_result += source_beam_val * receiver_beam_val * seismogram_freq;
