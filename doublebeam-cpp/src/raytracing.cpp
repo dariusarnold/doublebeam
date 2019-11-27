@@ -448,7 +448,7 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
     }
     InterfacePropagator ip;
     Beam beam(beam_width, beam_frequency);
-    auto [x, y, z, px, py, pz, t] = ray.value().segments.front().data.front();
+    auto [x, y, z, px, py, pz, t] = initial_state;
     auto v0 = model.eval_at(x, y, z).value();
     using cdouble = std::complex<double>;
     // initial values for P, Q
