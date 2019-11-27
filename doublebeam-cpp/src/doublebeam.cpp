@@ -140,7 +140,7 @@ double sampling_rate(const Seismogram& seismogram) {
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
-    std::complex<double> stacking_result;
+    std::complex<double> stacking_result(0, 0);
     auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
     for (const auto& source_pos : data.sources()) {
         auto d = std::chrono::high_resolution_clock::now();
