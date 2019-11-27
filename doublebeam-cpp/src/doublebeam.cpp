@@ -183,8 +183,8 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             // TODO add overload so declaring initial state is not required for ray tracing
             auto initial_state = make_state(source_beam_center, slowness, 0);
             auto a = std::chrono::high_resolution_clock::now();
-            auto source_beam =
-                tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code);
+            auto source_beam = tracer.trace_beam(initial_state, beam_width, beam_frequency,
+                                                 ray_code, std::get<2>(target));
             auto b = std::chrono::high_resolution_clock::now();
             beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (source_beam.status == Status::OutOfBounds) {
