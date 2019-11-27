@@ -187,7 +187,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
             auto b = std::chrono::high_resolution_clock::now();
             beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (source_beam.status == Status::OutOfBounds) {
-                break;
+                continue;
             }
             auto last_p = last_slowness(source_beam.value());
             // calculate scattered slownesses for all fracture spacings/orientations
@@ -212,7 +212,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     if (receiver_beam.status == Status::OutOfBounds) {
                         // beam didn't reach surface, skip
-                        break;
+                        continue;
                     }
                     // iteration over sources and receivers
                     result.data(spacing_index, orientations_index) +=
