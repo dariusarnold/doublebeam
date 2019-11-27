@@ -177,14 +177,16 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        double __attribute__((unused)) window_length) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target_geometry[0], source_geometry[0], model);
+    double step_size = 5, max_step_size = 10;
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
             auto slowness = twopoint.trace(source_beam_center, target);
             // TODO add overload so declaring initial state is not required for ray tracing
             auto initial_state = make_state(source_beam_center, slowness, 0);
             auto a = std::chrono::high_resolution_clock::now();
-            auto source_beam = tracer.trace_beam(initial_state, beam_width, beam_frequency,
-                                                 ray_code, std::get<2>(target));
+            auto source_beam =
+                tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code,
+                                  std::get<2>(target), step_size, max_step_size);
             auto b = std::chrono::high_resolution_clock::now();
             beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (source_beam.status == Status::OutOfBounds) {
@@ -207,7 +209,8 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     // reuse ray code since beam should pass through the same layers
                     a = std::chrono::high_resolution_clock::now();
                     auto receiver_beam =
-                        tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code);
+                        tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {},
+                                          step_size, max_step_size);
                     b = std::chrono::high_resolution_clock::now();
                     beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                     if (receiver_beam.status == Status::OutOfBounds) {
