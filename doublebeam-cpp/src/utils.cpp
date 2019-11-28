@@ -134,7 +134,7 @@ namespace math {
     bool between(double a, double x, double b) {
         if (a < b) {
             return a <= x and x <= b;
-        } else{
+        } else {
             return b <= x and x <= b;
         }
     }
