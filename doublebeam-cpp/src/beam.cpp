@@ -43,16 +43,16 @@ slowness_t last_slowness(const Beam& beam) {
     if (beam.size() == 0) {
         throw std::length_error("Accessing empty beam.");
     }
-    auto last_segment = beam.segments.back().ray_segment.data.back();
-    return {last_segment[Index::PX], last_segment[Index::PY], last_segment[Index::PZ]};
+    const auto& last_state = beam.segments.back().ray_segment.data.back();
+    return {last_state[Index::PX], last_state[Index::PY], last_state[Index::PZ]};
 }
 
 position_t last_point(const Beam& beam) {
     if (beam.size() == 0) {
         throw std::length_error("Acessing empty beam.");
     }
-    auto last_segment = beam.segments.back().ray_segment.data.back();
-    return {last_segment[Index::X], last_segment[Index::Y], last_segment[Index::Z]};
+    const auto& last_state = beam.segments.back().ray_segment.data.back();
+    return {last_state[Index::X], last_state[Index::Y], last_state[Index::Z]};
 }
 
 position_t first_point(const BeamSegment& bs) {
