@@ -204,7 +204,8 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         fracture_info.spacings[spacing_index], beam_frequency);
                     // trace receiver beam in scattered direction
                     // -pz to reflect beam upwards from target
-                    slowness_t new_slowness = {px, py, -std::get<2>(slowness)};
+                    slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
+                                                                 std::apply(math::length, last_p));
                     initial_state = make_state(target, new_slowness);
                     // reuse ray code since beam should pass through the same layers
                     a = std::chrono::high_resolution_clock::now();
