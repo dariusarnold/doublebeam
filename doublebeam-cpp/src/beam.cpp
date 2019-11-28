@@ -70,7 +70,11 @@ double last_traveltime(const Beam& beam) {
 }
 
 position_t first_point(const Beam& beam) {
-    return last_point(beam.segments.front());
+    if (beam.size() == 0) {
+        throw std::length_error("Acessing empty beam.");
+    }
+    const auto& first_state = beam.segments.front().ray_segment.data.front();
+    return {first_state[Index::X], first_state[Index::Y], first_state[Index::Z]};
 }
 
 double last_arclength(const Beam& beam) {
