@@ -487,6 +487,20 @@ TEST(TestMatrixInverse, TestCase1) {
     EXPECT_FLOAT_EQ(i33, e33);
 }
 
+TEST(TestVectorScaling, TestMakingVectorLonger) {
+    auto [x, y, z] = math::scale_vector({1, 0, 0}, 2.5);
+    EXPECT_DOUBLE_EQ(x, 2.5);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 0);
+}
+
+TEST(TestVectorScaling, TestMakingVectorShorter) {
+    auto [x, y, z] = math::scale_vector({1, 0, 0}, .55);
+    EXPECT_DOUBLE_EQ(x, .55);
+    EXPECT_EQ(y, 0);
+    EXPECT_EQ(z, 0);
+}
+
 struct TestCrossProdcutData {
     std::tuple<double, double, double> vector1;
     std::tuple<double, double, double> vector2;

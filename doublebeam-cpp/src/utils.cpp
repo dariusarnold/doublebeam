@@ -138,6 +138,14 @@ namespace math {
             return b <= x and x <= b;
         }
     }
+
+    std::tuple<double, double, double>
+    scale_vector(const std::tuple<double, double, double>& vector, double new_length) {
+        auto [x, y, z] = vector;
+        double length = math::length(x, y, z);
+        return {x * new_length / length, y * new_length / length, z * new_length / length};
+    }
+
 } // namespace math
 
 namespace impl {

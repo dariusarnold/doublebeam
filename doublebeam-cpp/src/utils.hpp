@@ -244,6 +244,16 @@ namespace math {
     std::tuple<double, double, double> cross(double x1, double y1, double z1, double x2, double y2,
                                              double z2);
 
+
+    /**
+     * Scale vector to new length while keeping the direction.
+     * @param vector x,y, z tuple
+     * @param new_length New length of vector.
+     * @return Vector with length new_length and direction of vector.
+     */
+    std::tuple<double, double, double>
+    scale_vector(const std::tuple<double, double, double>& vector, double new_length);
+
     /**
      * Normalize vector by making it's length 1 while keeping the direction.
      * @param x
