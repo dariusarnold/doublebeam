@@ -486,3 +486,28 @@ TEST(TestMatrixInverse, TestCase1) {
     EXPECT_FLOAT_EQ(i32, e32);
     EXPECT_FLOAT_EQ(i33, e33);
 }
+
+struct TestCrossProdcutData {
+    std::tuple<double, double, double> vector1;
+    std::tuple<double, double, double> vector2;
+    std::tuple<double, double, double> result_vector;
+};
+
+class TestCrossProduct : public testing::TestWithParam<TestCrossProdcutData> {};
+
+TEST_P(TestCrossProduct, TestByComparingWithGivenValidResult) {
+    auto data = GetParam();
+    auto [x1, y1, z1] = data.vector1;
+    auto [x2, y2, z2] = data.vector2;
+    auto [result_x, result_y, result_z] = data.result_vector;
+    auto [x, y, z] = math::cross(x1, y1, z1, x2, y2, z2);
+
+    EXPECT_EQ(x, result_x);
+    EXPECT_EQ(y, result_y);
+    EXPECT_EQ(z, result_z);
+}
+
+INSTANTIATE_TEST_SUITE_P(TestUnitVectors, TestCrossProduct,
+                         testing::Values(TestCrossProdcutData{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+                                         TestCrossProdcutData{{0, 1, 0}, {1, 0, 0}, {0, 0, -1}},
+                                         TestCrossProdcutData{{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}));
