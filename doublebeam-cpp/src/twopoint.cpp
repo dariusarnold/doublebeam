@@ -100,6 +100,7 @@ TwoPointRayTracing::array_t X_tilde_prime(double q, const A& epsilon_tilde, cons
     return h_tilde / std::pow(1 + epsilon_tilde * q * q, 1.5);
 }
 
+// eq. B10
 template <typename A>
 TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& epsilon_tilde,
                                                  const A& h_tilde) {
@@ -257,7 +258,6 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     auto d1 = nansum(d1_unsummed);
     msg(d1);
     // eq. C14
-    // TODO fix delta/guards here
     array_t c0_unsummed = h_tilde / std::sqrt(epsilon_tilde);
     // this line simulates multiplication by delta epsilon but deals with the inf that would happen
     c0_unsummed[epsilon_tilde == 0] = 0;
