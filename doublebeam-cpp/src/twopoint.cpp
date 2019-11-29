@@ -183,8 +183,8 @@ double initial_q(double X, double d1, double c0, double c1, double cminus1, doub
         // This uses equation C6 to estimate initial value for q. The paper mistakenly states this
         // equation should be used when c_1 = 0, but it should be used when c1 != 0. This was
         // confirmed by email from the corresponding author.
-        auto q = X / alpha1 +
-                 (X / c1 - X / alpha1 - c0 / c1) * Heaviside(X - (alpha1 * c0) / (alpha1 - c1));
+        auto q = X / alpha1 + (X / c1 - X / alpha1 - c0 / c1) *
+                                  Heaviside(X - safe_divide(alpha1 * c0, alpha1 - c1));
         return q;
     }
 }
