@@ -2,6 +2,7 @@
 #include <testing_utils.hpp>
 
 #include "model.hpp"
+#include "raytracing.hpp"
 #include "twopoint.hpp"
 #include "utils.hpp"
 
@@ -209,4 +210,22 @@ TEST_F(TwopointConstantVelocityModelWithOneLayer, TestLongDistance) {
     EXPECT_NE(py, 0);
     EXPECT_DOUBLE_EQ(px, py);
     EXPECT_TRUE(pz < 0);
+}
+
+TEST_F(TwopointConstantVelocityModelWithOneLayer, TestConstantVelocityLayerWithStopDepth) {
+    double source_x = 5000, source_y = 5000, source_z = 0;
+    double target_x = 6200, target_y = 6200, target_z = 2350;
+    auto [px, py, pz] =
+        twopoint.trace({source_x, source_y, source_z}, {target_x, target_y, target_z});
+    std::cerr << px << " " << py << " " << pz;
+    std::cerr << math::degrees(math::angle(px, py, pz, 0, 0, 1)) << std::endl;
+    EXPECT_DOUBLE_EQ(pz, 1.68897e-4);
+    EXPECT_DOUBLE_EQ(px, 8.624537e-5);
+    EXPECT_DOUBLE_EQ(py, 8.624537e-5);
+    auto tracer = RayTracer(model);
+    auto ray = tracer.trace_ray(make_state(source_x, source_y, source_z, px, py, pz), "", target_z);
+    auto [end_point_x, end_point_y, end_point_z] = last_point(ray.value());
+    EXPECT_TRUE(Close(end_point_x, target_x, 1e-5));
+    EXPECT_TRUE(Close(end_point_y, target_y, 1e-5));
+    EXPECT_DOUBLE_EQ(end_point_z, target_z);
 }
