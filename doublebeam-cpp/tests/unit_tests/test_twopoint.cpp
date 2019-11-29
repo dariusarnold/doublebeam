@@ -182,13 +182,13 @@ TEST_F(TestTwopointRayTracingBase, TestInSingleLayerTopToBottom) {
 
 class TwopointConstantVelocityModelWithOneLayer : public testing::Test {
 protected:
-    double constant_velocity = 1000;
-    VelocityModel model{{Layer{0, 5000, constant_velocity, 0}}, 10000, 10000};
+    double constant_velocity = 4800;
+    VelocityModel model{{Layer{0, 3000, constant_velocity, 0}}, 10000, 10000};
     TwoPointRayTracing twopoint{model};
 };
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestVerticalRayDownwards) {
-    auto [px, py, pz] = twopoint.trace({0, 0, 0}, {0, 0, 4000});
+    auto [px, py, pz] = twopoint.trace({0, 0, 0}, {0, 0, 2500});
     double expected_pz = 1 / constant_velocity;
     EXPECT_DOUBLE_EQ(px, 0);
     EXPECT_DOUBLE_EQ(py, 0);
@@ -196,7 +196,7 @@ TEST_F(TwopointConstantVelocityModelWithOneLayer, TestVerticalRayDownwards) {
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestVerticalRayUpwards) {
-    auto [px, py, pz] = twopoint.trace({0, 0, 4000}, {0, 0, 0});
+    auto [px, py, pz] = twopoint.trace({0, 0, 2500}, {0, 0, 0});
     double expected_pz = -1 / constant_velocity;
     EXPECT_DOUBLE_EQ(px, 0);
     EXPECT_DOUBLE_EQ(py, 0);
@@ -204,7 +204,7 @@ TEST_F(TwopointConstantVelocityModelWithOneLayer, TestVerticalRayUpwards) {
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestLongDistance) {
-    auto [px, py, pz] = twopoint.trace({0, 0, 4000}, {2500, 2500, 0});
+    auto [px, py, pz] = twopoint.trace({0, 0, 3000}, {2500, 2500, 0});
     EXPECT_NE(px, 0);
     EXPECT_NE(py, 0);
     EXPECT_DOUBLE_EQ(px, py);
