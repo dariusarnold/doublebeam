@@ -179,6 +179,8 @@ RayTracingResult<RaySegment> RayTracer::trace_layer_const(const state_type& init
         auto z = z0 + arclength_in_layer * c * pz0;
         states_vector.emplace_back(state_type{x, y, z, px0, py0, pz0, t0 + arclength_in_layer / c});
     }
+    // "fix" numerical inaccuracy
+    states_vector.back()[Index::Z] = z_interface;
     return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
             RaySegment{states_vector, arclengths}};
 }
