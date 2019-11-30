@@ -18,7 +18,7 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     :param max_spacing: max fracture spacing
     :return:
     """
-    fig, ax = plt.subplots(subplot_kw={"polar": True}, figsize=(6, 6), dpi=500)
+    fig, ax = plt.subplots(subplot_kw={"polar": True}, figsize=(6, 6), dpi=210)
     angles = np.radians(np.linspace(0, 180, data.shape[0] + 1))
     # +1 otherwise last column of data will be ignored
     radii = np.linspace(min_spacing, max_spacing, data.shape[1] + 1)
