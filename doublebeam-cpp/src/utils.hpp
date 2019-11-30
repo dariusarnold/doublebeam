@@ -167,6 +167,12 @@ namespace math {
         return degrees * factor;
     }
 
+    template <typename T>
+    constexpr double degrees(T radians) {
+        constexpr double factor = M_PI / 180.;
+        return radians / factor;
+    }
+
 
     /**
      * Check if two numbers have the same sign.
