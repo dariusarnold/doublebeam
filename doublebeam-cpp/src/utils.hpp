@@ -32,7 +32,7 @@ namespace impl {
         }
 
         /**
-         * Alllow streaming Formatter to stream by converting it explicitly to a string.
+         * Allow streaming Formatter to stream by converting it explicitly to a string.
          */
         friend std::ostream& operator<<(std::ostream& os, const Formatter& f);
 

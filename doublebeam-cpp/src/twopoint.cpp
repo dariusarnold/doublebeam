@@ -24,7 +24,7 @@ std::ostream& operator<<(std::ostream& os, const std::valarray<T>& array) {
 #endif
 
 /**
- * Summ values in array treating nan as zero.
+ * Sum values in array treating nan as zero.
  * @param in
  * @return
  */
