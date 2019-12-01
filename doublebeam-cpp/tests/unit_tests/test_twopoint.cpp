@@ -69,17 +69,17 @@ TEST_P(TestTwoPointRayTracingWithData, CompareWithGivenResult) {
 }
 
 std::vector<SourceReceiverSlowness> source_receiver_combinations = {
-    SourceReceiverSlowness{{469 / 2, 0, 500}, {469, 0, 0}, std::sin(math::radians(30)) / 3000},
-    SourceReceiverSlowness{{868 / 2, 0, 500}, {868, 0, 0}, std::sin(math::radians(50)) / 3000},
-    SourceReceiverSlowness{{2159 / 2, 0, 500}, {2159, 0, 0}, std::sin(math::radians(85)) / 3000}};
+    SourceReceiverSlowness{{469. / 2, 0, 500}, {469, 0, 0}, std::sin(math::radians(30)) / 3000},
+    SourceReceiverSlowness{{868. / 2, 0, 500}, {868, 0, 0}, std::sin(math::radians(50)) / 3000},
+    SourceReceiverSlowness{{2159. / 2, 0, 500}, {2159, 0, 0}, std::sin(math::radians(85)) / 3000}};
 
 INSTANTIATE_TEST_SUITE_P(CompareWithFig9FromFang2019, TestTwoPointRayTracingWithData,
                          testing::ValuesIn(source_receiver_combinations));
 
 std::vector<SourceReceiverSlowness> receiver_source_combinations = {
-    SourceReceiverSlowness{{469, 0, 0}, {469 / 2, 0, 500}, -std::sin(math::radians(30)) / 3000},
-    SourceReceiverSlowness{{868, 0, 0}, {868 / 2, 0, 500}, -std::sin(math::radians(50)) / 3000},
-    SourceReceiverSlowness{{2159, 0, 0}, {2159 / 2, 0, 500}, -std::sin(math::radians(85)) / 3000}};
+    SourceReceiverSlowness{{469, 0, 0}, {469. / 2, 0, 500}, -std::sin(math::radians(30)) / 3000},
+    SourceReceiverSlowness{{868, 0, 0}, {868. / 2, 0, 500}, -std::sin(math::radians(50)) / 3000},
+    SourceReceiverSlowness{{2159, 0, 0}, {2159. / 2, 0, 500}, -std::sin(math::radians(85)) / 3000}};
 INSTANTIATE_TEST_SUITE_P(SwapSourceAndReceiver, TestTwoPointRayTracingWithData,
                          testing::ValuesIn(receiver_source_combinations));
 
