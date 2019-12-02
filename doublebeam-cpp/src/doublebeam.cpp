@@ -59,8 +59,9 @@ struct UnitVectors {
     vector_t e1, e2;
 };
 
-bool same_direction(double x0, double y0, double z0, double x1, double y1, double z1) {
-    return math::angle(x0, y0, z0, x1, y1, z1) < 1E-8;
+bool same_direction(double x0, double y0, double z0, double x1, double y1, double z1,
+                    double epsilon = 1e-6) {
+    return math::angle(x0, y0, z0, x1, y1, z1) < epsilon;
 }
 
 UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
