@@ -196,7 +196,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     if (num_layers == 1) {
         h = b * std::abs(source_z - receiver_z);
     } else {
-        for (int i = 0; i < num_layers; ++i) {
+        for (size_t i = 0; i < num_layers; ++i) {
             h[i] = b[i] * (z[i + 1] - z[i]);
         }
     }
