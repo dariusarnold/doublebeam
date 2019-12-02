@@ -53,7 +53,7 @@ def parse_file(filename: Path) -> np.ndarray:
     for line in lines:
         row = [to_complex(x) for x in line.split()]
         data.append(row)
-    return np.array(data).T
+    return np.array(data, dtype=np.complex128).T
 
 
 def main():
