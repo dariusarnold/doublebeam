@@ -42,7 +42,7 @@ Eigen::Matrix<Scalar, 2, 2> nth_matrix(Eigen::Tensor<Scalar, 3>& in,
     // assignment evals the tensor which is required because only evaluated tensors have data()
     // member.
     Eigen::Tensor<Scalar, 2> a = in.chip(n, N_index).reshape(std::array<long, 2>{2, 2});
-    return Eigen::Map<Eigen::Matrix<Scalar, 2, 2>>(a.data(), 2, 2);
+    return Eigen::Map<Eigen::Matrix<Scalar, 2, 2>>(a.data(), 2, 2).transpose();
 }
 
 
@@ -83,7 +83,7 @@ Eigen::Matrix<Scalar, 2, 2> nth_matrix(const Eigen::Tensor<Scalar, 3>& in,
     // assignment evals the tensor which is required because only evaluated tensors have data()
     // member.
     Eigen::Tensor<Scalar, 2> a = in.chip(n, N_index).reshape(std::array<long, 2>{2, 2});
-    return Eigen::Map<Eigen::Matrix<Scalar, 2, 2>>(a.data(), 2, 2);
+    return Eigen::Map<Eigen::Matrix<Scalar, 2, 2>>(a.data(), 2, 2).transpose();
 }
 
 
