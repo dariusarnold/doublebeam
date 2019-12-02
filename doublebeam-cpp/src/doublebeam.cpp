@@ -64,12 +64,19 @@ bool same_direction(double x0, double y0, double z0, double x1, double y1, doubl
     return math::angle(x0, y0, z0, x1, y1, z1) < epsilon;
 }
 
+/**
+ * Return orthogonal ray centred unit vectors e1, e2 at the last point of the beam.
+ * @param beam
+ * @return
+ */
 UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // This is valid for a planar ray, see 4. from 4.1.3 Cerveny2001. We have a planar ray for a
     // velocity model consisting of horizontal layers, with v = v(z), since nothing changes the
     // slowness along the x or y axis.
     // In this simple case we have to choose one vector (e2) perpendicular to the plane at the
     // initial point of the beam. The vector e2 will then be constant along the ray.
+    // The second unit vector perpendicular to the ray can be found by a cross product with e3,
+    // which has the same direction as the slowness.
     // slowness is in ray plane
     auto [px, py, pz] = last_slowness(beam);
     // other vector in ray plane (connects start and end point)
