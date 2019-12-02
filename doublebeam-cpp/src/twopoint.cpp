@@ -157,7 +157,7 @@ TwoPointRayTracing::TwoPointRayTracing(VelocityModel velocity_model) :
 
 
 slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, double accuracy,
-                                           int max_iterations) {
+                                     int max_iterations) {
     auto [source_x, source_y, source_z] = source;
     auto [receiver_x, receiver_y, receiver_z] = receiver;
     auto [min_depth, max_depth] = std::minmax(source_z, receiver_z);
@@ -177,8 +177,8 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     msg(receiver_index);
     msg(num_layers);
     // Only the layers between source and receiver and the layers containing source and receiver
-    // matter. All others are ignored. Furthermore the depth in z will be set to source/receiver depth at the top and
-    // bottom.
+    // matter. All others are ignored. Furthermore the depth in z will be set to source/receiver
+    // depth at the top and bottom.
     array_t z(num_layers + 1);
     array_t b(num_layers);
     z[0] = min_depth;
@@ -221,7 +221,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     auto q = initial_q(X, d1, c0, c1, cn2);
     for (; max_iterations > 0; --max_iterations) {
         double q_next = next_q(q, X, epsilon_tilde, h_tilde);
-        if (std::abs(q-q_next) < accuracy) {
+        if (std::abs(q - q_next) < accuracy) {
             q = q_next;
             break;
         }
