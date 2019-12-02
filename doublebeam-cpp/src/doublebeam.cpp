@@ -158,7 +158,8 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
         evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
         for (const auto& rec_pos : data.receivers()) {
             d = std::chrono::high_resolution_clock::now();
-            auto receiver_beam_val = eval_gauss_beam(receiver_beam, rec_pos.x, rec_pos.y, rec_pos.z);
+            auto receiver_beam_val =
+                eval_gauss_beam(receiver_beam, rec_pos.x, rec_pos.y, rec_pos.z);
             e = std::chrono::high_resolution_clock::now();
             evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
             auto a = std::chrono::high_resolution_clock::now();
