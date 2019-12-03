@@ -537,14 +537,13 @@ namespace math {
      * @param data
      * @param frequency Target frequency, closest frequency bin of the DFT result to this frequency
      * is returned.
-     * @param sampling_period Sampling period (time between two samples) of data in seconds.
+     * @param sampling_frequency_rad Sampling frequency of data in rad/seconds.
      * @return
      */
     template <typename T>
     std::complex<typename impl::value_type_or_type<T>::type>
-    fft_closest_frequency(const std::vector<T>& data, T frequency, double sampling_period) {
-        auto sampling_frequency_Hz = 1 / sampling_period;
-        auto bin = std::llround(data.size() * frequency / sampling_frequency_Hz);
+    fft_closest_frequency(const std::vector<T>& data, T frequency, double sampling_frequency_rad) {
+        auto bin = std::llround(data.size() * frequency / sampling_frequency_rad);
         return goertzel(data, bin);
     }
 
