@@ -536,3 +536,48 @@ INSTANTIATE_TEST_SUITE_P(TestUnitVectors, TestCrossProduct,
                          testing::Values(TestCrossProdcutData{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
                                          TestCrossProdcutData{{0, 1, 0}, {1, 0, 0}, {0, 0, -1}},
                                          TestCrossProdcutData{{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}));
+
+
+TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
+    double central_direction_x = 1, central_direction_y = 1;
+    auto number_of_vectors_to_generate = 3;
+    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction_x,
+                                             central_direction_y);
+    ASSERT_EQ(vectors.size(), number_of_vectors_to_generate);
+    // test left vector
+    EXPECT_DOUBLE_EQ(
+        math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
+        math::radians(270.));
+    // test middle vector
+    EXPECT_TRUE(Close(
+        math::angle(central_direction_x, central_direction_y, 0, vectors[1].x, vectors[1].y, 0),
+        math::radians(0.), 0., 1.5e-8));
+    // test right vector
+    EXPECT_DOUBLE_EQ(
+        math::angle_clockwise(central_direction_x, central_direction_y, vectors[2].x, vectors[2].y),
+        math::radians(90.));
+}
+
+TEST(CreateVectorArc, TestCaseWithMoreVectors) {
+    double central_direction_x = -1, central_direction_y = 1;
+    auto number_of_vectors_to_generate = 12;
+    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction_x,
+                                             central_direction_y);
+    ASSERT_EQ(vectors.size(), number_of_vectors_to_generate);
+    EXPECT_DOUBLE_EQ(
+        math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
+        math::radians(270))
+        << " Leftmost vector is not 90 degrees to central direction.";
+    EXPECT_DOUBLE_EQ(math::angle_clockwise(central_direction_x, central_direction_y,
+                                           vectors.back().x, vectors.back().y),
+                     math::radians(90))
+        << "Rightmost vector is not 90 degrees to central direction.";
+    double expected_angle = 180. / (number_of_vectors_to_generate - 1);
+    for (auto i = 1; i < vectors.size(); ++i) {
+        auto angle =
+            math::angle(vectors[i - 1].x, vectors[i - 1].y, 0, vectors[i].x, vectors[i].y, 0);
+        EXPECT_TRUE(Close(angle, math::radians(expected_angle), 0., 1e-10))
+            << "Vectors with index " << i - 1 << " and " << i << " have angle of "
+            << math::degrees(angle) << ", but it should be " << expected_angle;
+    }
+}
