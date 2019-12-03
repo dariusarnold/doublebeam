@@ -515,16 +515,15 @@ namespace math {
                                         << "Invalid input bin " << target_frequency_bin << ".");
         // This will be a float type
         using type = typename impl::value_type_or_type<T>::type;
-        auto N_float = static_cast<type>(data.size());
-        const auto pi = static_cast<type>(M_PIl);
+        const type N_float(data.size());
+        const type pi{M_PIl};
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
         // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
         // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].
         T s_prev_prev = data[0];
         T s_prev = data[1] + 2 * std::cos(target_frequency) * s_prev_prev;
-        T s = 0;
         for (auto i = 2U; i < data.size(); ++i) {
-            s = data[i] + static_cast<type>(2.) * std::cos(target_frequency) * s_prev - s_prev_prev;
+            T s = data[i] + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
             s_prev_prev = s_prev;
             s_prev = s;
         }
