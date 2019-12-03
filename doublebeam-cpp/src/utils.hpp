@@ -187,7 +187,17 @@ namespace math {
 
     /**
      * Calculate clockwise angle in radians from the first vector to the second vector in the x_y
-     * horizontal plane.
+     * horizontal plane
+     *
+     * The cartesian coordinate system:
+     *  y
+     *  ^
+     *  |
+     *  |
+     *  |
+     * -|------> x
+     *  |
+     *
      * @tparam T floating point type
      * @param x1 x component of first vector.
      * @param y1 y component of first vector.

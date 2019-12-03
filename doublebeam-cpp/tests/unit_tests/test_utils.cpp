@@ -51,6 +51,17 @@ protected:
     double x_axis_y = 0;
 };
 
+/**
+ * The cartesian coordinate system:
+ *  y
+ *  ^
+ *  |
+ *  |
+ *  |
+ * -|------> x
+ *  |
+ */
+
 TEST_P(TestClockWiseAngle, TestNormal) {
     // Test if function calculates angle between x axis and given vector correctly by
     // checking against manually computed test data.
