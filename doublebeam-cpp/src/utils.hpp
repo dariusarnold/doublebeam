@@ -518,6 +518,8 @@ namespace math {
         auto N_float = static_cast<type>(data.size());
         const auto pi = static_cast<type>(M_PIl);
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
+        // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
+        // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].
         T s_prev_prev = data[0];
         T s_prev = data[1] + 2 * std::cos(target_frequency) * s_prev_prev;
         T s = 0;
@@ -526,6 +528,7 @@ namespace math {
             s_prev_prev = s_prev;
             s_prev = s;
         }
+        // calculate last term of output sequence
         return std::exp(std::complex<type>(0, 2) * pi * (target_frequency_bin / N_float)) * s_prev -
                s_prev_prev;
     }
