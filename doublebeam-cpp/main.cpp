@@ -31,13 +31,13 @@ int main() {
     std::ios_base::sync_with_stdio(false);
     auto vm = read_velocity_file("/home/darius/git/doublebeam/doublebeam-cpp/velocity_model.txt");
     auto db = DoubleBeam(vm);
-    auto source_beam_centres = seismo::grid_coordinates(5000, 4500, 5000, 4500, 0, 1, 1);
-    auto targets = seismo::grid_coordinates(6200, 6500, 6200, 6500, 2350, 1, 1);
+    auto source_beam_centres = seismo::grid_coordinates(4500, 8500, 4500, 8500, 0, 4, 4);
+    auto targets = seismo::grid_coordinates(6500, 6500, 6500, 6500, 2400, 1, 1);
     // TODO fracture depth is unused
-    FractureParameters fractures(2400, 1, 0, 61, 40, 120, 41);
+    FractureParameters fractures(2400, 0, 1, 61, 100, 300, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
-    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 100, 45, 0.06);
+    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 244, 40, 0.06);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
