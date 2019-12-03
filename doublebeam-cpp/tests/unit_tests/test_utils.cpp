@@ -1,5 +1,7 @@
-#include "testing_utils.hpp"
+#include "units.hpp"
 #include "utils.hpp"
+
+#include "testing_utils.hpp"
 #include "gtest/gtest.h"
 
 #include <boost/container_hash/hash.hpp>
@@ -400,13 +402,24 @@ TEST(TestGoertzel, TestClosestFrequency) {
                                                       0.19202147163009556 + -0.24078730940376414i,
                                                       -4.5489173395223013,
                                                       2.1906431337674155i};
+    double sample_rate_s = 0.04;
+    AngularFrequency sampling_frequency(2 * M_PI / sample_rate_s);
     // assuming input is sampled with sampling rate of 0.04 seconds this would give us
-    // 0., 3.57142857, 7.14285714, 10.71428571 as the frequencies of the result.
-    EXPECT_EQ(math::fft_closest_frequency(input, 0., 0.04), expected_result[0]);
-    EXPECT_EQ(math::fft_closest_frequency(input, 1.5, 0.04), expected_result[0]);
-    EXPECT_EQ(math::fft_closest_frequency(input, 2.5, 0.04), expected_result[1]);
-    EXPECT_EQ(math::fft_closest_frequency(input, 5.5, 0.04), expected_result[2]);
-    EXPECT_EQ(math::fft_closest_frequency(input, 11., 0.04), expected_result[3]);
+    // 0., 3.57142857, 7.14285714, 10.71428571 as the frequency bins (Hz) of the result.
+    EXPECT_EQ(math::fft_closest_frequency(input, 0._rad_per_sec, sampling_frequency),
+              expected_result[0]);
+    EXPECT_EQ(
+        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 1.5), sampling_frequency),
+        expected_result[0]);
+    EXPECT_EQ(
+        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 2.5), sampling_frequency),
+        expected_result[1]);
+    EXPECT_EQ(
+        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 5.5), sampling_frequency),
+        expected_result[2]);
+    EXPECT_EQ(
+        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 11.), sampling_frequency),
+        expected_result[3]);
 }
 
 TEST(TestGoertzel, TestComplexFloatNumbers) {

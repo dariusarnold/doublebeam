@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "raytracing_types.hpp"
+#include "units.hpp"
 
 
 // Helper code used for implementation, not for user code
@@ -544,8 +545,9 @@ namespace math {
      */
     template <typename T>
     std::complex<typename impl::value_type_or_type<T>::type>
-    fft_closest_frequency(const std::vector<T>& data, T frequency, double sampling_frequency_rad) {
-        auto bin = std::llround(data.size() * frequency / sampling_frequency_rad);
+    fft_closest_frequency(const std::vector<T>& data, AngularFrequency frequency,
+                          AngularFrequency sampling_frequency) {
+        auto bin = std::llround(data.size() * frequency.get() / sampling_frequency.get());
         return goertzel(data, bin);
     }
 
