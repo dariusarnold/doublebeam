@@ -48,10 +48,10 @@ private:
  * @param Suffix Suffix to use for user defined literal.
  */
 #define DEFINE_TYPE_LITERAL(NameOfType, Suffix)                                                    \
-    NameOfType operator""##Suffix(long double param) {                                             \
+    inline NameOfType operator""##Suffix(long double param) {                                      \
         return NameOfType(param);                                                                  \
     }                                                                                              \
-    NameOfType operator""##Suffix(unsigned long long param) {                                      \
+    inline NameOfType operator""##Suffix(unsigned long long param) {                               \
         return NameOfType(param);                                                                  \
     }
 
@@ -63,10 +63,10 @@ private:
  * @param Factor The value of the literal will be multiplied by this constant.
  */
 #define DEFINE_TYPE_LITERAL_WITH_FACTOR(NameOfType, Suffix, Factor)                                \
-    NameOfType operator""##Suffix(long double param) {                                             \
+    inline NameOfType operator""##Suffix(long double param) {                                      \
         return NameOfType(param * Factor);                                                         \
     }                                                                                              \
-    NameOfType operator""##Suffix(unsigned long long param) {                                      \
+    inline NameOfType operator""##Suffix(unsigned long long param) {                               \
         return NameOfType(param * Factor);                                                         \
     }
 
