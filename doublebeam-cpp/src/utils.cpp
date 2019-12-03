@@ -94,7 +94,7 @@ namespace math {
                                              double central_direction_y) {
         auto angle_against_xaxis =
             math::angle_clockwise(1., 0., central_direction_x, central_direction_y);
-        auto angles = math::linspace(angle_against_xaxis - radians(90),
+        auto angles = math::linspace(angle_against_xaxis - math::radians(90),
                                      angle_against_xaxis + math::radians(90), num_values);
         std::vector<Vector2> v(num_values);
         std::transform(angles.begin(), angles.end(), v.begin(), [](double angle) {
