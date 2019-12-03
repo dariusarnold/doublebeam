@@ -7,6 +7,7 @@
 #include "printing.hpp"
 #include "raytracing.hpp"
 #include "twopoint.hpp"
+#include "units.hpp"
 #include "utils.hpp"
 
 
@@ -37,7 +38,8 @@ int main() {
     FractureParameters fractures(2400, 0, 1, 61, 100, 300, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
-    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 244, 2 * M_PI * 40, 0.06);
+    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 244_meter,
+                               40_angular_from_hertz, 0.06);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;

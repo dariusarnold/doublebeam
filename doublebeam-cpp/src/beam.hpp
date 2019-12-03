@@ -10,6 +10,7 @@
 #include "eigen_helpers.hpp"
 #include "ray.hpp"
 #include "raytracing_types.hpp"
+#include "units.hpp"
 
 
 class BeamSegment {
@@ -53,8 +54,8 @@ position_t nth_point(const BeamSegment& bs, size_t n);
 
 class Beam {
 public:
-    Beam(double beam_width, double beam_frequency, BeamSegment segment);
-    Beam(double beam_width, double beam_frequency);
+    Beam(Meter beam_width, AngularFrequency beam_frequency, BeamSegment segment);
+    Beam(Meter beam_width, AngularFrequency beam_frequency);
 
     std::vector<BeamSegment>::iterator begin();
     std::vector<BeamSegment>::iterator end();
@@ -70,12 +71,12 @@ public:
 
     size_t size() const;
 
-    double width() const;
-    double frequency() const;
+    Meter width() const;
+    AngularFrequency frequency() const;
 
 private:
-    double m_width;
-    double m_frequency;
+    Meter m_width;
+    AngularFrequency m_frequency;
 };
 
 /**

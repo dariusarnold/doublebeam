@@ -437,8 +437,8 @@ private:
     }
 };
 
-RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double beam_width,
-                                             double beam_frequency,
+RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter beam_width,
+                                             AngularFrequency beam_frequency,
                                              const std::vector<WaveType>& ray_code,
                                              std::optional<double> stop_depth, double step_size,
                                              double max_step) {
@@ -457,8 +457,8 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double be
     Eigen::Tensor3cd P0(1, 2, 2);
     P0.setValues({{{1j / v0, 0}, {0, 1j / v0}}});
     Eigen::Tensor3cd Q0(1, 2, 2);
-    Q0.setValues({{{beam_frequency * beam_width * beam_width / v0, 0},
-                   {0, beam_frequency * beam_width * beam_width / v0}}});
+    Q0.setValues({{{beam_frequency.get() * beam_width.get() * beam_width.get() / v0, 0},
+                   {0, beam_frequency.get() * beam_width.get() * beam_width.get() / v0}}});
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
         auto [x, y, z, px, py, pz, t] = segment.data.front();
@@ -507,8 +507,8 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state, const std::
                      max_step);
 }
 
-RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, double beam_width,
-                                             double beam_frequency, const std::string& ray_code,
+RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter beam_width,
+                                             AngularFrequency beam_frequency, const std::string& ray_code,
                                              std::optional<double> stop_depth, double step_size,
                                              double max_step) {
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),

@@ -67,8 +67,8 @@ public:
 
     DoubleBeamResult algorithm(std::vector<position_t> source_geometry,
                                std::vector<position_t> target_geometry, SeismoData data,
-                               FractureParameters fracture_info, double beam_width,
-                               double beam_frequency, double __attribute__((unused)) window_length);
+                               FractureParameters fracture_info, Meter beam_width,
+                               AngularFrequency beam_frequency, double __attribute__((unused)) window_length);
 
 private:
     const VelocityModel& model;

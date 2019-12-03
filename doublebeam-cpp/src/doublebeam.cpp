@@ -19,12 +19,12 @@
  */
 std::tuple<double, double> scattered_slowness(double px, double py, double phi_hat_x,
                                               double phi_hat_y, double fracture_spacing,
-                                              double frequency) {
+                                              Frequency frequency) {
     // pass 0 as pz and phi_hat_z since formula only transforms horizontal slownesses and is only
     // valid for vertical fracture planes.
     auto sign = std::copysign(1., math::dot(px, py, 0, phi_hat_x, phi_hat_y, 0));
-    auto px_new = px - sign * phi_hat_x / (fracture_spacing * frequency);
-    auto py_new = py - sign * phi_hat_y / (fracture_spacing * frequency);
+    auto px_new = px - sign * phi_hat_x / (fracture_spacing * frequency.get());
+    auto py_new = py - sign * phi_hat_y / (fracture_spacing * frequency.get());
     return {px_new, py_new};
 }
 
@@ -166,9 +166,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             auto seismogram = cut(data(source_pos, rec_pos), total_traveltime - window_length / 2,
                                   total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
-            double sampling_frequency_rad = 2 * M_PI / sampling_rate(seismogram);
+            AngularFrequency sampling_frequency(2 * M_PI / sampling_rate(seismogram));
             auto seismogram_freq = math::fft_closest_frequency(
-                seismogram.data, receiver_beam.frequency(), sampling_frequency_rad);
+                seismogram.data, receiver_beam.frequency(), sampling_frequency);
             auto c = std::chrono::high_resolution_clock::now();
             // TODO what to do for two or more resulting frequency bins?
             stacking_result += source_beam_val * receiver_beam_val * seismogram_freq;
@@ -182,8 +182,8 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
 
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
-                                       FractureParameters fracture_info, double beam_width,
-                                       double beam_frequency,
+                                       FractureParameters fracture_info, Meter beam_width,
+                                       AngularFrequency beam_frequency,
                                        double __attribute__((unused)) window_length) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target_geometry[0], source_geometry[0], model);
@@ -211,7 +211,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     auto [phi_hat_x, phi_hat_y] = fracture_info.orientations[orientations_index];
                     auto [px, py] = scattered_slowness(
                         std::get<0>(last_p), std::get<1>(last_p), phi_hat_x, phi_hat_y,
-                        fracture_info.spacings[spacing_index], beam_frequency);
+                        fracture_info.spacings[spacing_index], angular_to_hertz(beam_frequency));
                     // trace receiver beam in scattered direction
                     // -pz to reflect beam upwards from target
                     slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},

@@ -115,8 +115,8 @@ public:
      * @param max_step Maximum step size along the ray.
      * @return Traced beam.
      */
-    RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
-                                      double beam_frequency,
+    RayTracingResult<Beam> trace_beam(state_type initial_state, Meter beam_width,
+                                      AngularFrequency beam_frequency,
                                       const std::vector<WaveType>& ray_code = {},
                                       std::optional<double> stop_depth = {}, double step_size = 1.,
                                       double max_step = 1.1);
@@ -125,8 +125,8 @@ public:
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
-    RayTracingResult<Beam> trace_beam(state_type initial_state, double beam_width,
-                                      double beam_frequency, const std::string& ray_code,
+    RayTracingResult<Beam> trace_beam(state_type initial_state, Meter beam_width,
+                                      AngularFrequency beam_frequency, const std::string& ray_code,
                                       std::optional<double> stop_depth = {}, double step_size = 1.,
                                       double max_step = 1.1);
 

@@ -31,5 +31,14 @@ DEFINE_TYPE_LITERAL(Frequency , _hertz);
 
 DEFINE_STRONG_TYPE(AngularFrequency, double);
 DEFINE_TYPE_LITERAL(AngularFrequency, _rad_per_sec);
+DEFINE_TYPE_LITERAL_WITH_FACTOR(AngularFrequency, _angular_from_hertz, 2*M_PIl);
+
+// Those conversion functions here are not beautiful, it would be better if they were members.
+inline AngularFrequency hertz_to_angular(Frequency freq) {
+    return AngularFrequency(2 * M_PI * freq.get());
+}
+inline Frequency angular_to_hertz(AngularFrequency ang) {
+    return Frequency(ang.get() / (2 * M_PI));
+}
 
 #endif // DOUBLEBEAM_CPP_UNITS_HPP
