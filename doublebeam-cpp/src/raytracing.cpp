@@ -167,15 +167,18 @@ RayTracingResult<RaySegment> RayTracer::trace_layer_const(const state_type& init
     std::vector<double> arclengths;
     states_vector.reserve(num_steps + 1);
     arclengths.reserve(num_steps + 1);
+    const auto x_end = x0 + s_end * c * px0;
+    const auto y_end = y0 + s_end * c * py0;
+    if (not model.in_horizontal_extent(x_end, y_end)){
+        // ray left model to the side and did not reach top/bottom of layer
+
+        return {Status::OutOfBounds, {}};
+    }
     for (auto i = 0U; i < num_steps + 1; ++i) {
         auto arclength_in_layer = i * s_step;
         arclengths.emplace_back(s_start + arclength_in_layer);
         auto x = x0 + arclength_in_layer * c * px0;
         auto y = y0 + arclength_in_layer * c * py0;
-        if (not model.in_horizontal_extent(x, y)) {
-            // ray left model to the side and did not reach top/bottom of layer
-            return {Status::OutOfBounds, {}};
-        }
         auto z = z0 + arclength_in_layer * c * pz0;
         states_vector.emplace_back(state_type{x, y, z, px0, py0, pz0, t0 + arclength_in_layer / c});
     }
