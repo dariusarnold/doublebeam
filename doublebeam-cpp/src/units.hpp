@@ -24,16 +24,16 @@ DEFINE_TYPE_LITERAL(Radian, _rad);
 
 
 DEFINE_STRONG_TYPE(Degree, double);
-DEFINE_TYPE_LITERAL(Degree , _deg);
+DEFINE_TYPE_LITERAL(Degree, _deg);
 
 
 DEFINE_STRONG_TYPE(Frequency, double);
-DEFINE_TYPE_LITERAL(Frequency , _hertz);
+DEFINE_TYPE_LITERAL(Frequency, _hertz);
 
 
 DEFINE_STRONG_TYPE(AngularFrequency, double);
 DEFINE_TYPE_LITERAL(AngularFrequency, _rad_per_sec);
-DEFINE_TYPE_LITERAL_WITH_FACTOR(AngularFrequency, _angular_from_hertz, 2*M_PIl);
+DEFINE_TYPE_LITERAL_WITH_FACTOR(AngularFrequency, _angular_from_hertz, 2 * M_PIl);
 
 // Those conversion functions here are not beautiful, it would be better if they were members.
 inline AngularFrequency hertz_to_angular(Frequency freq) {
