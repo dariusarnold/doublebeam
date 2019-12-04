@@ -169,7 +169,7 @@ RayTracingResult<RaySegment> RayTracer::trace_layer_const(const state_type& init
     arclengths.reserve(num_steps + 1);
     const auto x_end = x0 + s_end * c * px0;
     const auto y_end = y0 + s_end * c * py0;
-    if (not model.in_horizontal_extent(x_end, y_end)){
+    if (not model.in_horizontal_extent(x_end, y_end)) {
         // ray left model to the side and did not reach top/bottom of layer
 
         return {Status::OutOfBounds, {}};
@@ -511,7 +511,8 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state, const std::
 }
 
 RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter beam_width,
-                                             AngularFrequency beam_frequency, const std::string& ray_code,
+                                             AngularFrequency beam_frequency,
+                                             const std::string& ray_code,
                                              std::optional<double> stop_depth, double step_size,
                                              double max_step) {
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
