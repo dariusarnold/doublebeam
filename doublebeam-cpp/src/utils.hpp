@@ -309,8 +309,11 @@ namespace math {
      * Right multiply matrix by column vector.
        // TODO I need a linear algebra library.
      * @tparam T
-     * @param matrix
-     * @param vector
+     * @param matrix 3x3 matrix with row major ordering
+     * a b c
+     * d e f
+     * g h i
+     * @param vector 3D vector (x, y, z)
      * @return
      */
     template <typename T>
