@@ -1,6 +1,8 @@
 #ifndef DOUBLEBEAM_CPP_UNITS_HPP
 #define DOUBLEBEAM_CPP_UNITS_HPP
 
+#include <cmath>
+
 #include "strong_types.hpp"
 
 
