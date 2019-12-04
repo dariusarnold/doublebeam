@@ -115,7 +115,7 @@ std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
     Eigen::Vector2d q{q1, q2};
     auto M_s =
         last_element(beam.segments.back().P) * last_element(beam.segments.back().Q).inverse();
-    return std::exp(1i * beam.frequency() *
+    return std::exp(1i * beam.frequency().get() *
                     (last_traveltime(beam) + 0.5 * (q.transpose() * M_s * q)[0]));
 }
 
