@@ -30,6 +30,10 @@ public:
         return os << quantity.value;
     }
 
+    bool operator==(const NamedType& quantity) const{
+        return value == quantity.value;
+    }
+
 private:
     T value;
 };

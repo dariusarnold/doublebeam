@@ -137,12 +137,14 @@ TEST_F(TestRayTracing, LeaveTopOfModel) {
     initial_state = make_state(0, 0, 0, 0, 0, -0.005);
     EXPECT_THROW(krt.trace_ray(initial_state, "TRT"), std::runtime_error)
         << "Kinematic ray tracing not throwing when ray leaves top of model.";
-    EXPECT_THROW(krt.trace_beam(initial_state, 1, 1, "TRT"), std::runtime_error)
+    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TRT"),
+                 std::runtime_error)
         << "Dynamic ray tracing not throwing when beam leaves top of model";
 }
 
 TEST_F(TestRayTracing, LeaveBottomOfModel) {
     auto initial_state = init_state(0, 0, 0, vm, math::radians(10), 0);
     EXPECT_THROW(krt.trace_ray(initial_state, "TTTTTT"), std::runtime_error);
-    EXPECT_THROW(krt.trace_beam(initial_state, 1, 1, "TTTTTT"), std::runtime_error);
+    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TTTTTT"),
+                 std::runtime_error);
 }
