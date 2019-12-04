@@ -190,32 +190,35 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
     double step_size = 5, max_step_size = 10;
     for (const auto& target : target_geometry) {
         for (const auto& source_beam_center : source_geometry) {
-            auto slowness = twopoint.trace(source_beam_center, target);
+            auto slowness = twopoint.trace(target, source_beam_center);
             // TODO add overload so declaring initial state is not required for ray tracing
-            auto initial_state = make_state(source_beam_center, slowness, 0);
+            auto initial_state = make_state(target, slowness, 0);
             auto a = std::chrono::high_resolution_clock::now();
-            auto source_beam =
-                tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code,
-                                  std::get<2>(target), step_size, max_step_size);
+            auto source_beam = tracer.trace_beam(initial_state, beam_width, beam_frequency,
+                                                 ray_code, {}, step_size, max_step_size);
             auto b = std::chrono::high_resolution_clock::now();
             beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (source_beam.status == Status::OutOfBounds) {
                 continue;
             }
-            auto last_p = last_slowness(source_beam.value());
-            // calculate scattered slownesses for all fracture spacings/orientations
+            // Since we traced the beam from the target upwards to the surface, we will have to flip
+            // the direction of the slowness to be able to treat it as the incoming direction of the
+            // beam at the fractures and then scatter.
+            std::get<0>(slowness) *= -1;
+            std::get<1>(slowness) *= -1;
+            std::get<2>(slowness) *= -1;
             for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
                  ++spacing_index) {
                 for (auto orientations_index = 0U;
                      orientations_index < fracture_info.orientations.size(); ++orientations_index) {
                     auto [phi_hat_x, phi_hat_y] = fracture_info.orientations[orientations_index];
                     auto [px, py] = scattered_slowness(
-                        std::get<0>(last_p), std::get<1>(last_p), phi_hat_x, phi_hat_y,
+                        std::get<0>(slowness), std::get<1>(slowness), phi_hat_x, phi_hat_y,
                         fracture_info.spacings[spacing_index], angular_to_hertz(beam_frequency));
                     // trace receiver beam in scattered direction
                     // -pz to reflect beam upwards from target
-                    slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
-                                                                 std::apply(math::length, last_p));
+                    slowness_t new_slowness = math::scale_vector(
+                        {px, py, -std::get<2>(slowness)}, std::apply(math::length, slowness));
                     initial_state = make_state(target, new_slowness);
                     // reuse ray code since beam should pass through the same layers
                     a = std::chrono::high_resolution_clock::now();
