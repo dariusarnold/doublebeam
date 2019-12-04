@@ -38,7 +38,7 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15, format="%.1E")
     cbar.set_label(r"$|\sigma|$")
     ticks = list(cbar.get_ticks())
-    cbar.set_ticks([np.min(data), np.max(data)] + ticks)
+    # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
     title = ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
     title.set_position((.5, .85))
     plt.show()
