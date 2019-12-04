@@ -62,7 +62,7 @@ def main():
     if len(sys.argv) == 1:
         sys.exit("Give path to result file as positional argument.")
     data = parse_file(sys.argv[1])
-    plot_scattering_coefficient(np.real(data), 40, 120, 0, 0, 0)
+    plot_scattering_coefficient(np.abs(data), 40, 120, 0, 0, 0)
 
 
 if __name__ == '__main__':
