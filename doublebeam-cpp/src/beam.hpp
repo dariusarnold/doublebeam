@@ -87,6 +87,13 @@ private:
 slowness_t last_slowness(const Beam& beam);
 
 /**
+ * Return first slowness value of a beam.
+ * @param beam
+ * @return
+ */
+slowness_t first_slowness(const Beam& beam);
+
+/**
  * Return starting point of beam.
  * @param beam
  * @return

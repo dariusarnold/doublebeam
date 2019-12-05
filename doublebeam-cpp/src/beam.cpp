@@ -86,6 +86,14 @@ position_t nth_point(const BeamSegment& bs, size_t n) {
     return {x, y, z};
 }
 
+slowness_t first_slowness(const Beam& beam) {
+    if (beam.size() == 0) {
+        throw std::length_error("Accessing empty beam.");
+    }
+    const auto& first_state = beam.segments.front().data().front();
+    return {first_state[Index::PX], first_state[Index::PY], first_state[Index::PZ]};
+}
+
 std::vector<state_type> BeamSegment::data() const {
     return ray_segment.data;
 }
