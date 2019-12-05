@@ -180,8 +180,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
                                        FractureParameters fracture_info, Meter beam_width,
-                                       AngularFrequency beam_frequency,
-                                       double window_length) {
+                                       AngularFrequency beam_frequency, double window_length) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target_geometry[0], source_geometry[0], model);
     double step_size = 5, max_step_size = 10;

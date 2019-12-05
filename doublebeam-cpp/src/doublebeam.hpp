@@ -56,7 +56,7 @@ struct DoubleBeamResult {
     /**
      * Result of double beam algorithm: Matrix with stacking amplitude sigma.
      * TODO explain how fracture spacing/orientation is represented in this, eg. spacing values are
-     * column wise and orientations are row wise.
+     *  column wise and orientations are row wise.
      */
     Eigen::ArrayXXcd data;
 };

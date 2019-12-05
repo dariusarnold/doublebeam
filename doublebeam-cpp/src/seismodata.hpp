@@ -31,8 +31,7 @@ struct Seismogram {
     Seismogram() {}
 
     Seismogram(std::vector<double> t, std::vector<double> d) :
-            timesteps(std::move(t)),
-            data(std::move(d)) {}
+            timesteps(std::move(t)), data(std::move(d)) {}
 
     // time data
     std::vector<double> timesteps{};
