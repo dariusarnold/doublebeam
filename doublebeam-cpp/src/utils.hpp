@@ -302,6 +302,19 @@ namespace math {
     T det(T a, T b, T c, T d) {
         return a * d - b * c;
     }
+
+    /**
+     * Matrix is given in row major format:
+     * a b
+     * c d
+     * @return Inverse of 2x2 matrix.
+     */
+    template <typename T>
+    std::tuple<T, T, T, T> inv(T a, T b, T c, T d) {
+        const auto factor = T{1.} / det(a, b, c, d);
+        return {factor * d, -factor * c, -factor * b, factor * a};
+    }
+
     /**
      * Return inverse of 3x3 matrix
      *         a b c ^-1
