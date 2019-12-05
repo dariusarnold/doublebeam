@@ -422,28 +422,6 @@ TEST(TestGoertzel, TestClosestFrequency) {
         expected_result[3]);
 }
 
-TEST(TestGoertzel, TestComplexFloatNumbers) {
-    std::vector<std::complex<float>> input{{0, 1}, {2, 3}, {2, 1}};
-    using namespace std::complex_literals;
-    std::vector<std::complex<float>> expected_result{4.f + 5.if, -0.2679491924311228f - 1.if,
-                                                     -3.732050807568877f - 1.if};
-    for (auto bin = 0; bin < input.size(); ++bin) {
-        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin], {2E-7, 2E-7}))
-            << "Different result in bin " << bin << ".";
-    }
-}
-
-TEST(TestGoertzel, TestComplexDoubleNumbers) {
-    std::vector<std::complex<double>> input{{0, 1}, {2, 3}, {2, 1}};
-    using namespace std::complex_literals;
-    std::vector<std::complex<double>> expected_result{4. + 5.i, -0.2679491924311228 - 1.i,
-                                                      -3.732050807568877 - 1.i};
-    for (auto bin = 0; bin < input.size(); ++bin) {
-        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin]))
-            << "Different result in bin " << bin << ".";
-    }
-}
-
 TEST(TestGoertzel, TestSingleRealInputValue) {
     std::vector<double> input{42};
     std::complex<double> expected_result{42, 0};
