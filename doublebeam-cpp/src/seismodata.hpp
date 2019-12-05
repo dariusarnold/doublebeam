@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#include "units.hpp"
+
 
 struct PositionWithIndex {
     double x, y, z;
@@ -107,6 +109,12 @@ public:
      * @return
      */
     size_t num_sources() const;
+
+    /**
+     * Return sampling frequency in rad/s.
+     * This assumes all seismograms are sampled with the same timestep.
+     */
+     AngularFrequency sampling_frequency() const;
 
 private:
     Seismograms seismograms;
