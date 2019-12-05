@@ -147,30 +147,36 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
     std::complex<double> stacking_result(0, 0);
     auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
-    for (const auto& source_pos : data.sources()) {
-        auto d = std::chrono::high_resolution_clock::now();
-        auto source_beam_val =
-            eval_gauss_beam(source_beam, source_pos.x, source_pos.y, source_pos.z);
-        auto e = std::chrono::high_resolution_clock::now();
-        evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
-        for (const auto& rec_pos : data.receivers()) {
-            d = std::chrono::high_resolution_clock::now();
-            auto receiver_beam_val =
-                eval_gauss_beam(receiver_beam, rec_pos.x, rec_pos.y, rec_pos.z);
-            e = std::chrono::high_resolution_clock::now();
-            evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
+    auto d = std::chrono::high_resolution_clock::now();
+    std::vector<std::complex<double>> source_beam_values;
+    source_beam_values.reserve(data.sources().size());
+    using namespace std::placeholders;
+    std::transform(data.sources().begin(), data.sources().end(),
+                   std::back_inserter(source_beam_values),
+                   std::bind(eval_gb<Source>, source_beam, _1));
+    std::vector<std::complex<double>> receiver_beam_values;
+    receiver_beam_values.reserve(data.receivers().size());
+    std::transform(data.receivers().begin(), data.receivers().end(),
+                   std::back_inserter(receiver_beam_values),
+                   std::bind(eval_gb<Receiver>, receiver_beam, _1));
+    auto e = std::chrono::high_resolution_clock::now();
+    evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
+    for (size_t source_index = 0; source_index < data.sources().size(); ++source_index) {
+        for (size_t receiver_index = 0; receiver_index < data.receivers().size();
+             ++receiver_index) {
             auto a = std::chrono::high_resolution_clock::now();
-            auto seismogram = cut(data(source_pos, rec_pos), total_traveltime - window_length / 2,
-                                  total_traveltime + window_length / 2);
+            auto seismogram =
+                cut(data(data.sources()[source_index], data.receivers()[receiver_index]),
+                    total_traveltime - window_length / 2, total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
+            cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             AngularFrequency sampling_frequency(2 * M_PI / sampling_rate(seismogram));
             auto seismogram_freq = math::fft_closest_frequency(
                 seismogram.data, receiver_beam.frequency(), sampling_frequency);
             auto c = std::chrono::high_resolution_clock::now();
-            // TODO what to do for two or more resulting frequency bins?
-            stacking_result += source_beam_val * receiver_beam_val * seismogram_freq;
-            cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
+            stacking_result += source_beam_values[source_index] *
+                               receiver_beam_values[receiver_index] * seismogram_freq;
         }
     }
     return stacking_result;
