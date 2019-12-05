@@ -122,6 +122,11 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
     return std::conj(gb_amplitude(beam) * gb_exp(beam, q1, q2));
 }
 
+template <typename T>
+std::complex<double> eval_gauss_beam(const Beam& beam, T cartesian_position) {
+    return eval_gauss_beam(beam, cartesian_position.x, cartesian_position.y, cartesian_position.z);
+}
+
 
 DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
                                    size_t num_of_fracture_orientations) :
@@ -144,12 +149,12 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     using namespace std::placeholders;
     std::transform(data.sources().begin(), data.sources().end(),
                    std::back_inserter(source_beam_values),
-                   std::bind(eval_gb<Source>, source_beam, _1));
+                   std::bind(eval_gauss_beam<Source>, source_beam, _1));
     std::vector<std::complex<double>> receiver_beam_values;
     receiver_beam_values.reserve(data.receivers().size());
     std::transform(data.receivers().begin(), data.receivers().end(),
                    std::back_inserter(receiver_beam_values),
-                   std::bind(eval_gb<Receiver>, receiver_beam, _1));
+                   std::bind(eval_gauss_beam<Receiver>, receiver_beam, _1));
     auto e = std::chrono::high_resolution_clock::now();
     evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
     for (size_t source_index = 0; source_index < data.sources().size(); ++source_index) {
