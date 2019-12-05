@@ -107,6 +107,7 @@ size_t SeismoData::num_receivers() const {
 size_t SeismoData::num_sources() const {
     return seismograms.sources.size();
 }
+
 AngularFrequency SeismoData::sampling_frequency() const {
     auto sample_timestep =
         seismograms.seismograms.front().timesteps[1] - seismograms.seismograms.front().timesteps[0];

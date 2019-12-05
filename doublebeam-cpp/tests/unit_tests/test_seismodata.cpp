@@ -3,8 +3,8 @@
 #include "testing_utils.hpp"
 #include <gtest/gtest.h>
 
-#include "seismodata.hpp"
 #include "printing.hpp"
+#include "seismodata.hpp"
 
 class TestProjectLoading : public testing::TestWithParam<std::string> {
 protected:
@@ -56,8 +56,8 @@ std::ostream& operator<<(std::ostream& os, const Seismogram& seismogram) {
 }
 
 std::ostream& operator<<(std::ostream& os, const TestSeismogramCutData& data) {
-    os << "TestSeismogramCutData(expected = " << data.expected << ", t0 = " << data.t0 << ", t1 = " << data.t1
-       << ")";
+    os << "TestSeismogramCutData(expected = " << data.expected << ", t0 = " << data.t0
+       << ", t1 = " << data.t1 << ")";
     return os;
 }
 
