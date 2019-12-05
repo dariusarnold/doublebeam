@@ -59,11 +59,6 @@ struct UnitVectors {
     vector_t e1, e2;
 };
 
-bool same_direction(double x0, double y0, double z0, double x1, double y1, double z1,
-                    double epsilon = 1e-6) {
-    return math::angle(x0, y0, z0, x1, y1, z1) < epsilon;
-}
-
 /**
  * Return orthogonal ray centred unit vectors e1, e2 at the last point of the beam.
  * @param beam
@@ -138,10 +133,6 @@ double cutt = 0.;
 double fftt = 0;
 double evalt = 0;
 double beamt = 0;
-
-double sampling_rate(const Seismogram& seismogram) {
-    return seismogram.timesteps[1] - seismogram.timesteps[0];
-}
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
