@@ -41,17 +41,21 @@ struct Seismogram {
     std::vector<double> data{};
 };
 
+struct SeismogramPart {
+    std::vector<double>::const_iterator begin;
+    std::vector<double>::const_iterator end;
+};
+
 
 /**
  * Cut seismogram to time samples between time t0 and time t1.
  * Both t0 and t1 are inclusive.
- * Seismogram and t have to have the same size.
  * @param seismogram
- * @param t0
- * @param t1
- * @return New seismogram containing only the amplitude samples between t0 and t1.
+ * @param t0 start time
+ * @param t1 end time
+ * @return Part of seismogram containing only the amplitude samples between t0 and t1.
  */
-Seismogram cut(const Seismogram& seismogram, double t0, double t1);
+SeismogramPart cut(const Seismogram& seismogram, double t0, double t1);
 
 
 struct Seismograms {

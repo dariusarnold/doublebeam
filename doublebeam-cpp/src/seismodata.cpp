@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
-Seismogram cut(const Seismogram& seismogram, double t0, double t1) {
+SeismogramPart cut(const Seismogram& seismogram, double t0, double t1) {
     auto timestep = seismogram.timesteps[1] - seismogram.timesteps[0];
     size_t start_index = std::ceil(t0 / timestep);
     // shift by half a timestep to make t1 inclusive, meaning if t1 is equal to a time value of the
@@ -33,10 +33,7 @@ Seismogram cut(const Seismogram& seismogram, double t0, double t1) {
     if (start_index > seismogram.timesteps.size()) {
         return {};
     }
-    return {std::vector<double>{seismogram.timesteps.begin() + start_index,
-                                seismogram.timesteps.begin() + end_index},
-            std::vector<double>{seismogram.data.begin() + start_index,
-                                seismogram.data.begin() + end_index}};
+    return {seismogram.data.begin() + start_index, seismogram.data.begin() + end_index};
 }
 
 Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {

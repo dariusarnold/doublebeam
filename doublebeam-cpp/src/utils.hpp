@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "raytracing_types.hpp"
+#include "seismodata.hpp"
 #include "units.hpp"
 
 
@@ -501,7 +502,7 @@ namespace math {
 
     /**
      * Calculate value of a single frequency bin for the discrete Fourier transform.
-     * @tparam T Scalar data type. Can be complex or real.
+     * @tparam T Scalar data type. Must be real, complex input is not supported.
      * @param data Input sequence of length N.
      * @param target_frequency_bin Frequencies are restricted to the frequency bins of the discrete
      * Fourier transform (DFT). The frequency to be evaluated is given as target_frequency = 2 * pi
@@ -509,25 +510,28 @@ namespace math {
      * @return Value of DFT frequency bin.
      */
     template <typename T>
-    std::complex<typename impl::value_type_or_type<T>::type>
-    goertzel(const std::vector<T>& data, unsigned long long target_frequency_bin) {
-        if (data.size() == 0) {
+    std::complex<T> goertzel(typename std::vector<T>::const_iterator begin,
+                             typename std::vector<T>::const_iterator end,
+                             long long target_frequency_bin) {
+        const auto N = std::distance(begin, end);
+        if (N == 0) {
             throw std::invalid_argument("Data for Goertzel algorithm is empty.");
         }
-        if (target_frequency_bin > data.size())
+        if (target_frequency_bin > N) {
             throw std::invalid_argument(impl::Formatter()
                                         << "Invalid input bin " << target_frequency_bin << ".");
+        }
         // This will be a float type
         using type = typename impl::value_type_or_type<T>::type;
-        const type N_float(data.size());
+        const type N_float(N);
         const type pi{M_PIl};
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
         // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
         // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].
-        T s_prev_prev = data[0];
-        T s_prev = data[1] + 2 * std::cos(target_frequency) * s_prev_prev;
-        for (auto i = 2U; i < data.size(); ++i) {
-            T s = data[i] + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
+        T s_prev_prev = *begin;
+        T s_prev = *(begin + 1) + 2 * std::cos(target_frequency) * s_prev_prev;
+        for (auto i = 2U; i < N; ++i) {
+            T s = *(begin + i) + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
             s_prev_prev = s_prev;
             s_prev = s;
         }
@@ -539,20 +543,15 @@ namespace math {
     /**
      * Returns value of closest frequency bin to a given frequency of the discrete Fourier
      * transform.
-     * @tparam T
+     * @tparam T Scalar type, must be real, complix input is not supported.
      * @param data
      * @param frequency Target frequency, closest frequency bin of the DFT result to this frequency
      * is returned.
      * @param sampling_frequency_rad Sampling frequency of data in rad/seconds.
      * @return
      */
-    template <typename T>
-    std::complex<typename impl::value_type_or_type<T>::type>
-    fft_closest_frequency(const std::vector<T>& data, AngularFrequency frequency,
-                          AngularFrequency sampling_frequency) {
-        auto bin = std::llround(data.size() * frequency.get() / sampling_frequency.get());
-        return goertzel(data, bin);
-    }
+    std::complex<double> fft_closest_frequency(SeismogramPart seismo, AngularFrequency frequency,
+                                               AngularFrequency sampling_frequency);
 
     /**
      * Return true if x is between a and b (inclusive).

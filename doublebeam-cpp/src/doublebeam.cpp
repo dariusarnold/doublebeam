@@ -165,14 +165,14 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
         for (size_t receiver_index = 0; receiver_index < data.receivers().size();
              ++receiver_index) {
             auto a = std::chrono::high_resolution_clock::now();
-            auto seismogram =
+            SeismogramPart seismogram =
                 cut(data(data.sources()[source_index], data.receivers()[receiver_index]),
                     total_traveltime - window_length / 2, total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-            AngularFrequency sampling_frequency(2 * M_PI / sampling_rate(seismogram));
-            auto seismogram_freq = math::fft_closest_frequency(
-                seismogram.data, receiver_beam.frequency(), sampling_frequency);
+            auto seismogram_freq =
+                math::fft_closest_frequency(seismogram,
+                                            receiver_beam.frequency(), data.sampling_frequency());
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
             stacking_result += source_beam_values[source_index] *
