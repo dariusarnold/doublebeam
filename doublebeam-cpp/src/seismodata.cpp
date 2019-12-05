@@ -9,17 +9,13 @@ SeismoData::SeismoData(const std::filesystem::path& project_folder,
                        const std::string& source_file_name, const std::string& receiver_file_name) :
         seismograms(project_folder, source_file_name, receiver_file_name) {}
 
-bool Source::operator==(const Source& other) const {
+bool PositionWithIndex::operator==(const PositionWithIndex& other) const {
     return x == other.x and y == other.y and z == other.z and index == other.index;
 }
 
 std::ostream& operator<<(std::ostream& os, const Source& s) {
     os << "Source_" << s.index << "(" << s.x << ", " << s.y << ", " << s.z << ")";
     return os;
-}
-
-bool Receiver::operator==(const Receiver& other) const {
-    return x == other.x and y == other.y and z == other.z and index == other.index;
 }
 
 std::ostream& operator<<(std::ostream& os, const Receiver& r) {

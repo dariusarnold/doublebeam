@@ -6,22 +6,24 @@
 #include <iostream>
 #include <vector>
 
-struct Source {
-    // coordinates of source
+
+struct PositionWithIndex {
     double x, y, z;
-    // index of source in source file and project directory.
+    // index of source in source file or of receiver in receiver file.
     size_t index;
-    bool operator==(const Source& other) const;
+    /**
+     * Compare position and index for equality.
+     * @param other
+     * @return
+     */
+    bool operator==(const PositionWithIndex& other) const;
+};
+
+struct Source : public PositionWithIndex{
     friend std::ostream& operator<<(std::ostream& os, const Source& s);
 };
 
-struct Receiver {
-    // coordinates of receiver
-    double x, y, z;
-    // index of receiver in directory structure
-    size_t index;
-    // index of receiver in receiver file and project directory
-    bool operator==(const Receiver& other) const;
+struct Receiver : public PositionWithIndex{
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };
 
