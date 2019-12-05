@@ -21,11 +21,11 @@ struct PositionWithIndex {
     bool operator==(const PositionWithIndex& other) const;
 };
 
-struct Source : public PositionWithIndex{
+struct Source : public PositionWithIndex {
     friend std::ostream& operator<<(std::ostream& os, const Source& s);
 };
 
-struct Receiver : public PositionWithIndex{
+struct Receiver : public PositionWithIndex {
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };
 
