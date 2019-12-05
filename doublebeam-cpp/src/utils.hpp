@@ -293,6 +293,16 @@ namespace math {
     }
 
     /**
+     * Return determinant of 2x2 matrix.
+     * Matrix is given in row major format:
+     * a b
+     * c d
+     */
+    template <typename T>
+    T det(T a, T b, T c, T d) {
+        return a * d - b * c;
+    }
+    /**
      * Return inverse of 3x3 matrix
      *         a b c ^-1
      * A^-1 = (d e f)
