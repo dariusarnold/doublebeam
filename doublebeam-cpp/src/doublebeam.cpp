@@ -130,7 +130,9 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
 
 DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
                                    size_t num_of_fracture_orientations) :
-        data(num_of_fracture_spacings, num_of_fracture_orientations) {}
+        data(num_of_fracture_spacings, num_of_fracture_orientations) {
+    data.setZero();
+}
 
 double cutt = 0.;
 double fftt = 0;
