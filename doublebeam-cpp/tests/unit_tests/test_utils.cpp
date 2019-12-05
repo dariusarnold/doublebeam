@@ -367,7 +367,8 @@ TEST(TestGoertzel, TestFloatNumbers) {
 }
 
 TEST(TestGoertzel, TestEmptyDataThrows) {
-    ASSERT_THROW(math::goertzel(std::vector<double>(), 0), std::invalid_argument);
+    std::vector<double> empty;
+    ASSERT_THROW(math::goertzel(empty, 0), std::invalid_argument);
 }
 
 TEST(TestGoertzel, TestInvalidFrequencyBinThrows) {

@@ -509,10 +509,9 @@ namespace math {
      * * k/N k is an index number going from 0...N-1
      * @return Value of DFT frequency bin.
      */
-    template <typename T>
-    std::complex<T> goertzel(typename std::vector<T>::const_iterator begin,
-                             typename std::vector<T>::const_iterator end,
-                             long long target_frequency_bin) {
+    template <typename Iter>
+    std::complex<typename std::iterator_traits<Iter>::value_type>
+    goertzel(Iter begin, Iter end, long long target_frequency_bin) {
         const auto N = std::distance(begin, end);
         if (N == 0) {
             throw std::invalid_argument("Data for Goertzel algorithm is empty.");
@@ -522,16 +521,16 @@ namespace math {
                                         << "Invalid input bin " << target_frequency_bin << ".");
         }
         // This will be a float type
-        using type = typename impl::value_type_or_type<T>::type;
+        using type = typename std::iterator_traits<Iter>::value_type;
         const type N_float(N);
         const type pi{M_PIl};
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
         // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
         // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].
-        T s_prev_prev = *begin;
-        T s_prev = *(begin + 1) + 2 * std::cos(target_frequency) * s_prev_prev;
+        type s_prev_prev = *begin;
+        type s_prev = *(begin + 1) + 2 * std::cos(target_frequency) * s_prev_prev;
         for (auto i = 2U; i < N; ++i) {
-            T s = *(begin + i) + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
+            type s = *(begin + i) + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
             s_prev_prev = s_prev;
             s_prev = s;
         }
@@ -541,22 +540,84 @@ namespace math {
     }
 
     /**
-     * Returns value of closest frequency bin to a given frequency of the discrete Fourier
-     * transform.
-     * @tparam T Scalar type, must be real, complix input is not supported.
+     * Overload for container type
+     * @tparam Container Container providing begin/end iterators.
      * @param data
-     * @param frequency Target frequency, closest frequency bin of the DFT result to this frequency
-     * is returned.
-     * @param sampling_frequency_rad Sampling frequency of data in rad/seconds.
+     * @param target_frequency_bin
      * @return
      */
-    std::complex<double> fft_closest_frequency(SeismogramPart seismo, AngularFrequency frequency,
-                                               AngularFrequency sampling_frequency);
+    template <typename Container>
+    std::complex<typename Container::value_type> goertzel(const Container& data,
+                                                          long long target_frequency_bin) {
+        return goertzel(data.begin(), data.end(), target_frequency_bin);
+    }
+
+    /**
+     * Calculate frequency bin closest to target frequency.
+     * @param N Number of data points in time domain signal.
+     * @param target_frequency
+     * @param sampling_frequency
+     * @return
+     */
+    size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
+                              AngularFrequency sampling_frequency);
+
+    /**
+     *
+     * @tparam Iterator Iterator with base scalar type, must be real, complex input is not
+     * supported.
+     * @param begin Start of sequence.
+     * @param end One past the end of the sequence.
+     * @param frequency Target frequency, closest frequency bin of the DFT result to this frequency
+     * is returned.
+     * @param sampling_frequency Sampling frequency of data in rad/seconds.
+     * @return
+     */
+    template <typename Iterator>
+    std::complex<typename std::iterator_traits<Iterator>::value_type>
+    fft_closest_frequency(Iterator begin, Iterator end, AngularFrequency frequency,
+                          AngularFrequency sampling_frequency) {
+        if (frequency.get() > (0.5 * sampling_frequency.get())) {
+            throw std::runtime_error(impl::Formatter()
+                                     << "Frequency " << frequency << " above nyquist frequency "
+                                     << sampling_frequency.get() / 2);
+        }
+        auto bin = calc_frequency_bin(std::distance(begin, end), frequency, sampling_frequency);
+        return goertzel(begin, end, bin);
+    }
+
+    /**
+     * Overload taking a container instead of iterators.
+     * @tparam Container
+     * @param data
+     * @param frequency
+     * @param sampling_frequency
+     * @return
+     */
+    template <typename Container>
+    std::complex<typename Container::value_type>
+    fft_closest_frequency(const Container& data, AngularFrequency frequency,
+                          AngularFrequency sampling_frequency) {
+        return fft_closest_frequency(data.begin(), data.end(), frequency, sampling_frequency);
+    }
+
 
     /**
      * Return true if x is between a and b (inclusive).
      */
     bool between(double a, double x, double b);
+
+    /**
+     * Calculate bin closest to target frequency. for a signal with a given sample frequency and
+     * number of points N
+     * @param N Number of points in time signal.
+     * @param target_frequency Desired frequency. Bin index closest to this frequency will be found.
+     * @param sampling_frequency Sampling frequency of time domain signal.
+     * @return Bin index closest to target frequency. Indices start with 0 and go up to
+     * floor(N/2) + 1 for a real signal.
+     */
+    size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
+                              AngularFrequency sampling_frequency);
 
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

@@ -146,18 +146,11 @@ namespace math {
         return {x * new_length / length, y * new_length / length, z * new_length / length};
     }
 
-    std::complex<double> fft_closest_frequency(SeismogramPart seismo, AngularFrequency frequency,
-                                               AngularFrequency sampling_frequency) {
-        if (frequency.get() > (0.5 * sampling_frequency.get())) {
-            throw std::runtime_error(impl::Formatter()
-                                     << "Frequency " << frequency << " above nyquist frequency "
-                                     << sampling_frequency.get() / 2);
-        }
-        // bin index is frequency divded by bin width rounded
+    size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
+                              AngularFrequency sampling_frequency) {
+        // bin index is frequency divided by bin width rounded
         // bin width = sampling_frequency / N (number of time domain data points)
-        auto bin = std::llround(std::distance(seismo.begin, seismo.end) * frequency.get() /
-                                sampling_frequency.get());
-        return goertzel<double>(seismo.begin, seismo.end, bin);
+        return std::llround(N * target_frequency.get() / sampling_frequency.get());
     }
 
 } // namespace math

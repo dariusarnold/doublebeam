@@ -112,3 +112,7 @@ AngularFrequency SeismoData::sampling_frequency() const {
         seismograms.seismograms.front().timesteps[1] - seismograms.seismograms.front().timesteps[0];
     return AngularFrequency(2 * M_PI / sample_timestep);
 }
+
+size_t SeismogramPart::size() const {
+    return std::distance(begin, end);
+}

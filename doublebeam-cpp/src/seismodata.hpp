@@ -44,6 +44,8 @@ struct Seismogram {
 struct SeismogramPart {
     std::vector<double>::const_iterator begin;
     std::vector<double>::const_iterator end;
+
+    size_t size() const;
 };
 
 

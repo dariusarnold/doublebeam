@@ -69,8 +69,8 @@ protected:
 TEST_P(TestSeismogramCut, CompareResultWithExpected) {
     auto [expected, t0, t1] = GetParam();
     auto out = cut(in, t0, t1);
-    ASSERT_EQ(out.data.size(), expected.data.size()) << "Wrong size for cut seismogram.";
-    EXPECT_EQ(out.data, expected.data);
+    ASSERT_EQ(out.size(), expected.data.size()) << "Wrong size for cut seismogram.";
+    EXPECT_TRUE(std::equal(out.begin, out.end, expected.data.begin(), expected.data.end()));
 }
 
 INSTANTIATE_TEST_SUITE_P(TestEmptySeismogram, TestSeismogramCut,
