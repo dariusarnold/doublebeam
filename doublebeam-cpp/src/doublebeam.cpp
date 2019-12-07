@@ -161,9 +161,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
         for (size_t receiver_index = 0; receiver_index < data.receivers().size();
              ++receiver_index) {
             auto a = std::chrono::high_resolution_clock::now();
-            SeismogramPart seismogram =
-                cut(data(data.sources()[source_index], data.receivers()[receiver_index]),
-                    total_traveltime - window_length / 2, total_traveltime + window_length / 2);
+            SeismogramPart seismogram = cut(
+                data.get_seismogram(data.sources()[source_index], data.receivers()[receiver_index]),
+                total_traveltime - window_length / 2, total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto seismogram_freq =

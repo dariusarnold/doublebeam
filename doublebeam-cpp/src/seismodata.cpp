@@ -36,12 +36,12 @@ SeismogramPart cut(const Seismogram& seismogram, double t0, double t1) {
     return {seismogram.data.begin() + start_index, seismogram.data.begin() + end_index};
 }
 
-Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) {
+Seismogram& SeismoData::get_seismogram(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
     return seismograms.seismograms[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
 }
 
-const Seismogram& SeismoData::operator()(const Source& s, const Receiver& r) const {
+const Seismogram& SeismoData::get_seismogram(const Source& s, const Receiver& r) const {
     return seismograms.seismograms[(s.index - 1) * num_receivers() + (r.index - 1)];
 }
 

@@ -90,9 +90,9 @@ public:
      * @param r
      * @return
      */
-    Seismogram& operator()(const Source& s, const Receiver& r);
+    Seismogram& get_seismogram(const Source& s, const Receiver& r);
 
-    const Seismogram& operator()(const Source& s, const Receiver& r) const;
+    const Seismogram& get_seismogram(const Source& s, const Receiver& r) const;
 
     /**
      * Get access to list of sources.
