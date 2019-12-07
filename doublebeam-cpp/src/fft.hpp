@@ -44,8 +44,8 @@ struct Plan {
     std::vector<std::complex<double>, Allocator<std::complex<double>>> out;
 
     struct PlanDeleter {
-        void operator()(fftw_plan p) {
-            fftw_destroy_plan(p);
+        void operator()(fftw_plan plan) {
+            fftw_destroy_plan(plan);
         }
     };
     std::unique_ptr<fftw_plan_s, PlanDeleter> p;
