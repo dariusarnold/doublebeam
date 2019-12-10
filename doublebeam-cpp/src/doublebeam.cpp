@@ -116,7 +116,9 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
     auto e3 = math::cross(e1x, e1y, e1z, e2x, e2y, e2z);
     e3 = math::scale_vector(e3, 1);
     auto [e3x, e3y, e3z] = e3;
-    auto transformation_matrix = math::inv(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
+    // We want to convert from general Cartesian system to ray centred, use right eq. 4.1.31 from
+    // Cerveny2001.
+    auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
     auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
     return std::conj(gb_amplitude(beam) * gb_exp(beam, q1, q2));
 }
