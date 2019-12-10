@@ -464,28 +464,24 @@ RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter bea
                    {0, beam_frequency.get() * beam_width.get() * beam_width.get() / v0}}});
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
-        auto [x, y, z, px, py, pz, t] = segment.data.front();
-        auto layer_index = model.layer_index(x, y, z).value();
-        // evaluate velocity at all points of the ray
-        std::vector<double> v;
-        v.reserve(segment.data.size());
-        std::transform(
-            segment.data.begin(), segment.data.end(), std::back_inserter(v),
-            [&](const state_type& state) {
-                return model.eval_at(state[Index::X], state[Index::Y], state[Index::Z]).value();
-            });
-        auto sigma_ = math::cumtrapz(v, segment.arclength, 0.);
-        Eigen::TensorRef<Eigen::Tensor1d> sigma =
-            Eigen::TensorMap<Eigen::Tensor1d>(sigma_.data(), sigma_.size());
+        const auto [x, y, z, px, py, pz, t] = segment.data.front();
+        const auto s0 = segment.arclength.front();
+        const auto v = model.eval_at(x, y, z).value();
+        const auto layer_index = model.layer_index(x, y, z).value();
         // TODO this could be optimized since P0 is constant in my use case to store it only once
-        Eigen::Tensor3cd P(sigma_.size(), 2, 2);
-        P = P0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1});
-        Eigen::Tensor3cd Q(sigma_.size(), 2, 2);
-        Q = Q0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1}) +
-            sigma.cast<cdouble>()
-                    .reshape(std::array<size_t, 3>{sigma_.size(), 1, 1})
+        Eigen::Tensor3cd P(segment.data.size(), 2, 2);
+        P = P0.broadcast(std::array<size_t, 3>{segment.data.size(), 1, 1});
+        std::vector<double> dists;
+        dists.reserve(segment.arclength.size());
+        std::transform(segment.arclength.begin(), segment.arclength.end(),
+                       std::back_inserter(dists), [=](double s) { return (s - s0) * v; });
+        Eigen::TensorMap<Eigen::Tensor<double, 1>> distances(dists.data(), dists.size());
+        Eigen::Tensor3cd Q(segment.data.size(), 2, 2);
+        Q = Q0.broadcast(std::array<size_t, 3>{segment.data.size(), 1, 1}) +
+            distances.cast<cdouble>()
+                    .reshape(std::array<size_t, 3>{segment.arclength.size(), 1, 1})
                     .broadcast(std::array<int, 3>{1, 2, 2}) *
-                P0.broadcast(std::array<size_t, 3>{sigma_.size(), 1, 1});
+                P0.broadcast(std::array<size_t, 3>{segment.arclength.size(), 1, 1});
         beam.segments.emplace_back(segment, P, Q, v);
         if (segment_index < (ray.value().size() - 1)) {
             // if we are not at the last segment of the ray, transform dynamic ray tracing across

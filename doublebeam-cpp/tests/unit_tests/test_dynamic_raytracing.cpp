@@ -56,14 +56,12 @@ TEST_F(DynamicRaytracingBase, TestBasicCredibilityOfResult) {
         EXPECT_EQ(beam[i].P.dimension(0), beam[i].Q.dimension(0)) << "Length of P and Q different.";
         EXPECT_EQ(beam[i].P.dimension(0), beam[i].ray_segment.data.size())
             << "Number of points along beam and entries in P/Q should be the same.";
-        EXPECT_EQ(beam[i].v.size(), beam[i].data().size())
-            << "Number of velocities not equal to number of points along beam.";
         auto [x, y, z] = first_point(beam[i]);
-        EXPECT_EQ(model.eval_at(x, y, z), beam[i].v.front())
+        EXPECT_EQ(model.eval_at(x, y, z).value(), beam[i].v)
             << "Stored and evaluated velocity differ for first point of beam.";
         std::tie(x, y, z) = last_point(beam[i]);
-        EXPECT_EQ(model.eval_at(x, y, z), beam[i].v.back())
-            << "Stored and evaluated velocity differ for last point of beam.";
+//        EXPECT_EQ(model.eval_at(x, y, z).value(), beam[i].v)
+//            << "Stored and evaluated velocity differ for last point of beam.";
     }
 }
 

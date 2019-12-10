@@ -16,11 +16,8 @@
 class BeamSegment {
 public:
     BeamSegment(RaySegment segment, const Eigen::Tensor3cd& P, const Eigen::Tensor3cd& Q,
-                std::vector<double> v) :
-            ray_segment(segment),
-            P(std::move(P)),
-            Q(std::move(Q)),
-            v(std::move(v)) {}
+                double v) :
+            ray_segment(segment), P(std::move(P)), Q(std::move(Q)), v(v) {}
     // Return data of ray segment
     std::vector<state_type> data() const;
     // return arclength of ray segment
@@ -29,7 +26,7 @@ public:
     RaySegment ray_segment;
     Eigen::Tensor3cd P;
     Eigen::Tensor3cd Q;
-    std::vector<double> v;
+    double v;
 };
 
 /**

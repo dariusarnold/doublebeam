@@ -93,11 +93,10 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
 std::complex<double> gb_amplitude(const Beam& beam) {
     // this calculates the amplitude at the end of the beam, assuming thats the point you want since
     // the beam reached the surface.
-    double v_s = beam.segments.back().v.back();
-    double v_s0 = beam.segments.front().v.front();
+    // Since velocity is constant in one layer its factored out
     std::complex<double> det_Q_s0 = first_element(beam.segments.front().Q).determinant();
     std::complex<double> det_Q_s = last_element(beam.segments.back().Q).determinant();
-    return std::sqrt(v_s * det_Q_s0 / (v_s0 * det_Q_s));
+    return std::sqrt(det_Q_s0 / det_Q_s);
 }
 
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
