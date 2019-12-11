@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
-SeismogramPart cut(const Seismogram& seismogram, double t0, double t1) {
+Seismogram cut(const Seismogram& seismogram, double t0, double t1) {
     auto timestep = seismogram.timesteps[1] - seismogram.timesteps[0];
     size_t start_index = std::ceil(t0 / timestep);
     // shift by half a timestep to make t1 inclusive, meaning if t1 is equal to a time value of the
@@ -38,7 +38,8 @@ SeismogramPart cut(const Seismogram& seismogram, double t0, double t1) {
 
 Seismogram& SeismoData::get_seismogram(const Source& s, const Receiver& r) {
     // subtract 1 since files use 1 based indexing while vector uses zero based indexing
-    return seismograms.seismograms[(s.index - 1) * seismograms.receivers.size() + (r.index - 1)];
+    auto seismogram_index = (s.index - 1) * seismograms.receivers.size() + (r.index - 1);
+    return Seismogram(seismograms.seismograms.begin() + );
 }
 
 const Seismogram& SeismoData::get_seismogram(const Source& s, const Receiver& r) const {
@@ -62,6 +63,20 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
 }
 
 
+/**
+ * Read timesteps from the first normal file with ending .txt in source_path.
+ * @param source_path
+ * @return
+ */
+std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& source_path) {
+    for (const auto& p : source_path) {
+        if (std::filesystem::is_regular_file(p) and p.extension() == ".txt") {
+            return read_timesteps(p);
+        }
+    }
+}
+
+
 void Seismograms::read_all_seismograms(const std::filesystem::path& project_folder) {
     namespace fs = std::filesystem;
     auto p = project_folder / "shotdata";
@@ -78,14 +93,17 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
                  std::back_inserter(source_paths),
                  [](const auto& dir_entry) { return dir_entry.is_directory(); });
     std::sort(source_paths.begin(), source_paths.end());
+    timesteps = read_timesteps_from_some_seismogram(source_paths[0]);
+    seismograms.reserve(sources.size() * receivers.size() * timesteps.size());
     // iterate over source directories and read seismograms
+    auto i = 0;
     for (const auto& sourcepath : source_paths) {
         // read binary data if it exists, else fall back to text data
         if (auto binary_file = sourcepath / "data.bin"; fs::exists(binary_file)) {
-            auto data = load_binary_seismograms(receivers.size(), binary_file);
-            for (auto seismogram : data) {
-                seismograms.emplace_back(std::move(seismogram.first), std::move(seismogram.second));
-            }
+            load_binary_seismograms2(
+                binary_file, receivers.size(),
+                gsl::span<double>(seismograms.data() + i * timesteps.size(),
+                                  seismograms.data() + (i + 1) * timesteps.size()));
         } else {
             std::vector<fs::path> seismo_files;
             std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
@@ -93,10 +111,11 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
                          [](const auto& dir_entry) { return fs::is_regular_file(dir_entry); });
             std::sort(seismo_files.begin(), seismo_files.end());
             for (const auto& seismo_file : seismo_files) {
-                auto seismogram = read_seismogram(seismo_file);
-                seismograms.emplace_back(std::move(seismogram.first), (seismogram.second));
+                auto ampl = read_amplitude(seismo_file);
+                std::copy(ampl.begin(), ampl.end(), seismograms.data() + i * timesteps.size());
             }
         }
+        ++i;
     }
 }
 

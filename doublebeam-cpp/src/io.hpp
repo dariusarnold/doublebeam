@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 
+#include <gsl/span>
+
 #include "seismodata.hpp"
 
 
@@ -54,6 +56,16 @@ void save_binary_seismograms(
  */
 std::vector<std::pair<std::vector<double>, std::vector<double>>>
 load_binary_seismograms(size_t N, const std::filesystem::path& path);
+
+
+/**
+ * Loads only amplitude data, not timesteps from binary file.
+ * @param number_of_seismograms Number of seismograms in file.
+ * @param path
+ * @return
+ */
+void load_binary_seismograms2(const std::filesystem::path& path, size_t number_of_seismograms,
+                              gsl::span<double> amplitudes);
 
 
 /**

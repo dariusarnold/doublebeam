@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#include <gsl/span>
+
 #include "units.hpp"
 
 
@@ -29,23 +31,17 @@ struct Receiver : public PositionWithIndex {
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };
 
+/**
+ * Seismogram class can represent full seismogram or partial (cut out).
+ */
 struct Seismogram {
-    Seismogram() {}
+public:
+    Seismogram(double* data_begin, size_t data_size, double* timesteps_begin,
+               size_t timesteps_size) :
+            data(data_begin, data_size), timesteps(timesteps_begin, timesteps_size) {};
 
-    Seismogram(std::vector<double> t, std::vector<double> d) :
-            timesteps(std::move(t)), data(std::move(d)) {}
-
-    // time data
-    std::vector<double> timesteps{};
-    // amplitude data
-    std::vector<double> data{};
-};
-
-struct SeismogramPart {
-    std::vector<double>::const_iterator begin;
-    std::vector<double>::const_iterator end;
-
-    size_t size() const;
+    gsl::span<double> data;
+    gsl::span<double> timesteps;
 };
 
 
@@ -57,7 +53,7 @@ struct SeismogramPart {
  * @param t1 end time
  * @return Part of seismogram containing only the amplitude samples between t0 and t1.
  */
-SeismogramPart cut(const Seismogram& seismogram, double t0, double t1);
+Seismogram cut(const Seismogram& seismogram, double t0, double t1);
 
 
 struct Seismograms {
@@ -71,7 +67,13 @@ struct Seismograms {
 
     std::vector<Source> sources;
     std::vector<Receiver> receivers;
-    std::vector<Seismogram> seismograms{};
+    // All amplitude data in one vector, ordered first by source, then by receiver.
+    // For S sources and R receivers, will contain S*R seismograms.
+    // First R seismograms will belong to source 1, the following R seismograms to source 2 and so
+    // on.
+    std::vector<double> seismograms;
+    // Common timesteps of all seismograms.
+    std::vector<double> timesteps;
 
 private:
     void read_all_seismograms(const std::filesystem::path& project_folder);
