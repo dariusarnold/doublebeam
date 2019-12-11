@@ -99,17 +99,20 @@ std::complex<double> gb_amplitude(const Beam& beam) {
     return std::sqrt(det_Q_s0 / det_Q_s);
 }
 
-std::complex<double> gb_exp(const Beam& beam, double q1, double q2) {
+std::complex<double> gb_exp(const Beam& beam, double q1, double q2,
+                            std::complex<double>& complex_traveltime) {
     using namespace std::complex_literals;
     Eigen::Vector2d q{q1, q2};
     auto M_s =
         last_element(beam.segments.back().P) * last_element(beam.segments.back().Q).inverse();
-    return std::exp(1i * beam.frequency().get() *
-                    (last_traveltime(beam) + 0.5 * (q.transpose() * M_s * q)[0]));
+    complex_traveltime = last_traveltime(beam) + 0.5 * (q.transpose() * M_s * q)[0];
+    return std::exp(1i * beam.frequency().get() * complex_traveltime);
 }
 
 
-std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, double z) {
+std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, double z,
+                                     std::complex<double>& complex_traveltime) {
+    using namespace std::complex_literals;
     auto [e1, e2] = get_ray_centred_unit_vectors(beam);
     auto [e1x, e1y, e1z] = e1;
     auto [e2x, e2y, e2z] = e2;
@@ -120,12 +123,16 @@ std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, doubl
     // Cerveny2001.
     auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
     auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
-    return std::conj(gb_amplitude(beam) * gb_exp(beam, q1, q2));
+    auto amp = gb_amplitude(beam);
+    auto exp = gb_exp(beam, q1, q2, complex_traveltime);
+    return std::conj(amp * exp);
 }
 
 template <typename T>
-std::complex<double> eval_gauss_beam(const Beam& beam, T cartesian_position) {
-    return eval_gauss_beam(beam, cartesian_position.x, cartesian_position.y, cartesian_position.z);
+std::complex<double> eval_gauss_beam(const Beam& beam, T cartesian_position,
+                                     std::complex<double>& complex_traveltime) {
+    return eval_gauss_beam(beam, cartesian_position.x, cartesian_position.y, cartesian_position.z,
+                           complex_traveltime);
 }
 
 
@@ -143,28 +150,21 @@ double beamt = 0;
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length) {
     std::complex<double> stacking_result(0, 0);
-    auto total_traveltime = last_traveltime(source_beam) + last_traveltime(receiver_beam);
-    auto d = std::chrono::high_resolution_clock::now();
-    std::vector<std::complex<double>> source_beam_values;
-    source_beam_values.reserve(data.sources().size());
-    using namespace std::placeholders;
-    std::transform(data.sources().begin(), data.sources().end(),
-                   std::back_inserter(source_beam_values),
-                   std::bind(eval_gauss_beam<Source>, source_beam, _1));
-    std::vector<std::complex<double>> receiver_beam_values;
-    receiver_beam_values.reserve(data.receivers().size());
-    std::transform(data.receivers().begin(), data.receivers().end(),
-                   std::back_inserter(receiver_beam_values),
-                   std::bind(eval_gauss_beam<Receiver>, receiver_beam, _1));
-    auto e = std::chrono::high_resolution_clock::now();
-    evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(e - d).count();
-    for (size_t source_index = 0; source_index < data.sources().size(); ++source_index) {
-        for (size_t receiver_index = 0; receiver_index < data.receivers().size();
-             ++receiver_index) {
+    std::complex<double> receiver_beam_traveltime, source_beam_traveltime;
+    for (const auto& source_position : data.sources()) {
+        std::complex<double> source_beam_val =
+            eval_gauss_beam(source_beam, source_position, source_beam_traveltime);
+        for (const auto& receiver_position : data.receivers()) {
             auto a = std::chrono::high_resolution_clock::now();
-            SeismogramPart seismogram = cut(
-                data.get_seismogram(data.sources()[source_index], data.receivers()[receiver_index]),
-                total_traveltime - window_length / 2, total_traveltime + window_length / 2);
+            std::complex<double> receiver_beam_val =
+                eval_gauss_beam(receiver_beam, receiver_position, receiver_beam_traveltime);
+            double total_traveltime = std::real(source_beam_traveltime + receiver_beam_traveltime);
+            if (total_traveltime + window_length > 4) {
+                continue;
+            }
+            SeismogramPart seismogram =
+                cut(data.get_seismogram(source_position, receiver_position),
+                    total_traveltime - window_length / 2, total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto seismogram_freq =
@@ -172,8 +172,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                                             receiver_beam.frequency(), data.sampling_frequency());
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
-            stacking_result += source_beam_values[source_index] *
-                               receiver_beam_values[receiver_index] * seismogram_freq;
+            stacking_result += source_beam_val * receiver_beam_val * seismogram_freq;
         }
     }
     return stacking_result;
