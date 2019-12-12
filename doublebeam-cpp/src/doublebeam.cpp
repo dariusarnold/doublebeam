@@ -162,13 +162,13 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             if (total_traveltime + window_length > 4) {
                 continue;
             }
-            SeismogramPart seismogram =
-                cut(data.get_seismogram(source_position, receiver_position),
-                    total_traveltime - window_length / 2, total_traveltime + window_length / 2);
+            Seismogram seismogram = data.get_seismogram(source_position, receiver_position,
+                                                        total_traveltime - window_length / 2,
+                                                        total_traveltime + window_length / 2);
             auto b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto seismogram_freq =
-                math::fft_closest_frequency(seismogram.begin, seismogram.end,
+                math::fft_closest_frequency(seismogram.data.begin(), seismogram.data.end(),
                                             receiver_beam.frequency(), data.sampling_frequency());
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
