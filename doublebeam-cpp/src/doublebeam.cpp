@@ -192,6 +192,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     return stacking_result;
 }
 
+bool isfinite(const std::complex<double>& c) {
+    return std::isfinite(c.real()) & std::isfinite(c.imag());
+}
 
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
@@ -245,9 +248,13 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                         continue;
                     }
                     // iteration over sources and receivers
-                    result.data(spacing_index, orientations_index) +=
-                        stack(source_beam.value(), receiver_beam.value(), data, window_length,
-                              max_stacking_distance);
+                    auto tmp = stack(source_beam.value(), receiver_beam.value(), data,
+                                     window_length, max_stacking_distance);
+                    if (not isfinite(tmp)) {
+                        std::cerr << "(" << spacing_index << ", " << orientations_index
+                                  << ") = " << tmp << std::endl;
+                    }
+                    result.data(spacing_index, orientations_index) += tmp;
                 }
             }
         }
