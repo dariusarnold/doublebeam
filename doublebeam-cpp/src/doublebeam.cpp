@@ -109,6 +109,10 @@ std::complex<double> gb_exp(const Beam& beam, double q1, double q2,
     return std::exp(1i * beam.frequency().get() * complex_traveltime);
 }
 
+double unit_vect{0};
+double amplt{0};
+double expt{0};
+double restt{0};
 
 std::complex<double> eval_gauss_beam(const Beam& beam, double x, double y, double z,
                                      std::complex<double>& complex_traveltime) {
@@ -162,24 +166,29 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             max_eval_distance_squared) {
             continue;
         }
+        auto a = std::chrono::high_resolution_clock::now();
         std::complex<double> source_beam_val =
             eval_gauss_beam(source_beam, source_position, source_beam_traveltime);
+        auto b = std::chrono::high_resolution_clock::now();
+        evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
         for (const auto& receiver_position : data.receivers()) {
             if (squared_distance(last_point(receiver_beam), receiver_position) >
                 max_eval_distance_squared) {
                 continue;
             }
-            auto a = std::chrono::high_resolution_clock::now();
+            auto d = std::chrono::high_resolution_clock::now();
             std::complex<double> receiver_beam_val =
                 eval_gauss_beam(receiver_beam, receiver_position, receiver_beam_traveltime);
             double total_traveltime = std::real(source_beam_traveltime + receiver_beam_traveltime);
             if (total_traveltime + window_length > 4) {
                 continue;
             }
+            a = std::chrono::high_resolution_clock::now();
+            evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(a - d).count();
             Seismogram seismogram = data.get_seismogram(source_position, receiver_position,
                                                         total_traveltime - window_length / 2,
                                                         total_traveltime + window_length / 2);
-            auto b = std::chrono::high_resolution_clock::now();
+            b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto seismogram_freq =
                 math::fft_closest_frequency(seismogram.data.begin(), seismogram.data.end(),
@@ -261,5 +270,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
     }
     std::cout << "Beams: " << beamt * 1E-9 << " s\nFFT: " << fftt * 1E-9
               << " s\nBeam eval: " << evalt * 1E-9 << " s\ncut : " << cutt * 1E-9 << "s\n";
+    std::cout << "amplitude: " << amplt * 1E-9 << " s\nexp: " << expt * 1E-9
+              << " s\nunit vec: " << unit_vect * 1E-9 << " s\nrestt: " << restt * 1E-9;
     return result;
 }
