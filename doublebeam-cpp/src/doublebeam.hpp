@@ -13,7 +13,6 @@
 #include "utils.hpp"
 
 
-
 class FractureParameters {
 public:
     FractureParameters(double depth, double phi_hat_x, double phi_hat_y,
@@ -68,7 +67,8 @@ public:
     DoubleBeamResult algorithm(std::vector<position_t> source_geometry,
                                std::vector<position_t> target_geometry, SeismoData data,
                                FractureParameters fracture_info, Meter beam_width,
-                               AngularFrequency beam_frequency, double window_length);
+                               AngularFrequency beam_frequency, double window_length,
+                               double max_stacking_distance);
 
 private:
     const VelocityModel& model;

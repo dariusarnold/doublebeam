@@ -147,14 +147,28 @@ double fftt = 0;
 double evalt = 0;
 double beamt = 0;
 
+double squared_distance(const position_t& x, const PositionWithIndex& pos) {
+    auto [x0, x1, x2] = x;
+    return std::pow(x0 - pos.x, 2) + std::pow(x1 - pos.y, 2) + std::pow(x2 - pos.z, 2);
+}
+
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
-                           const SeismoData& data, double window_length) {
+                           const SeismoData& data, double window_length, double max_eval_distance) {
     std::complex<double> stacking_result(0, 0);
     std::complex<double> receiver_beam_traveltime, source_beam_traveltime;
+    double max_eval_distance_squared = std::pow(max_eval_distance, 2);
     for (const auto& source_position : data.sources()) {
+        if (squared_distance(last_point(source_beam), source_position) >
+            max_eval_distance_squared) {
+            continue;
+        }
         std::complex<double> source_beam_val =
             eval_gauss_beam(source_beam, source_position, source_beam_traveltime);
         for (const auto& receiver_position : data.receivers()) {
+            if (squared_distance(last_point(receiver_beam), receiver_position) >
+                max_eval_distance_squared) {
+                continue;
+            }
             auto a = std::chrono::high_resolution_clock::now();
             std::complex<double> receiver_beam_val =
                 eval_gauss_beam(receiver_beam, receiver_position, receiver_beam_traveltime);
@@ -182,7 +196,8 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
                                        FractureParameters fracture_info, Meter beam_width,
-                                       AngularFrequency beam_frequency, double window_length) {
+                                       AngularFrequency beam_frequency, double window_length,
+                                       double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target_geometry[0], source_geometry[0], model);
     double step_size = 5, max_step_size = 10;
@@ -231,7 +246,8 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                     }
                     // iteration over sources and receivers
                     result.data(spacing_index, orientations_index) +=
-                        stack(source_beam.value(), receiver_beam.value(), data, window_length);
+                        stack(source_beam.value(), receiver_beam.value(), data, window_length,
+                              max_stacking_distance);
                 }
             }
         }

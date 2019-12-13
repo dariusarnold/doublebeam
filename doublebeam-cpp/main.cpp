@@ -39,7 +39,7 @@ int main() {
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
     auto result = db.algorithm(source_beam_centres, targets, data, fractures, 244_meter,
-                               40_angular_from_hertz, 0.06);
+                               40_angular_from_hertz, 0.08, 1500);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
