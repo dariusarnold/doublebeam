@@ -183,3 +183,22 @@ load_binary_seismograms(size_t N, const std::filesystem::path& path) {
     }
     return seismograms;
 }
+
+
+void load_binary_seismograms2(const std::filesystem::path& path, size_t number_of_seismograms,
+                              gsl::span<double> amplitudes) {
+    std::ifstream binary_file{path, std::ios::binary};
+    if (not binary_file) {
+        throw std::runtime_error("Failed to open file " + path.string());
+    }
+    // Number of data points in the amplitude vector of a single seismograms
+    const auto samples_seismogram =
+        std::filesystem::file_size(path) / sizeof(double) / 2 / number_of_seismograms;
+    for (auto i = 0U; i < number_of_seismograms; ++i) {
+        // ignore timestep data
+        binary_file.ignore(samples_seismogram * sizeof(double));
+        // read amplitude data
+        binary_file.read(reinterpret_cast<char*>(amplitudes.data() + i * samples_seismogram),
+                         samples_seismogram * sizeof(double));
+    }
+}
