@@ -32,6 +32,15 @@ DEFINE_STRONG_TYPE(Degree, double);
 DEFINE_TYPE_LITERAL(Degree, _deg);
 
 
+inline Radian radians(Degree degree) {
+    return Radian(degree.get() * M_PI / 180.);
+}
+
+inline Degree degrees(Radian radians) {
+    return Degree(radians.get() / M_PI / 180.);
+}
+
+
 DEFINE_STRONG_TYPE(Frequency, double);
 DEFINE_TYPE_LITERAL(Frequency, _hertz);
 
