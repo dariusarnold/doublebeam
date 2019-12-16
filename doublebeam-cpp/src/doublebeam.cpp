@@ -216,6 +216,14 @@ bool isfinite(const std::complex<double>& c) {
     return std::isfinite(c.real()) & std::isfinite(c.imag());
 }
 
+RayState make_state(position_t pos, slowness_t slowness) {
+    auto [x, y, z] = pos;
+    auto [px, py, pz] = slowness;
+    return RayState{Position(Meter(x), Meter(y), Meter(z)),
+                    Slowness(InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)),
+                    TravelTime(0_second), Arclength(0_meter)};
+}
+
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
                                        std::vector<position_t> target_geometry, SeismoData data,
                                        FractureParameters fracture_info, Meter beam_width,
