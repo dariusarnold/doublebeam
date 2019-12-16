@@ -6,8 +6,45 @@
 #include <cstddef>
 #include <tuple>
 
+#include "units.hpp"
 
-using state_type = std::array<double, 7>;
+
+struct Position {
+    Meter x;
+    Meter y;
+    Meter z;
+};
+
+std::ostream& operator<<(std::ostream& os, Position position);
+
+struct Slowness {
+    InverseVelocity px;
+    InverseVelocity py;
+    InverseVelocity pz;
+};
+
+std::ostream& operator<<(std::ostream& os, Slowness slowness);
+
+struct TravelTime {
+    Second time;
+};
+
+std::ostream& operator<<(std::ostream& os, TravelTime travel_time);
+
+struct Arclength {
+    Meter length;
+};
+
+std::ostream& operator<<(std::ostream& os, Arclength arclength);
+
+struct RayState {
+    Position position;
+    Slowness slowness;
+    TravelTime travel_time;
+    Arclength arclength;
+};
+
+std::ostream& operator<<(std::ostream& os, RayState ray_state);
 
 using position_t = std::tuple<double, double, double>;
 

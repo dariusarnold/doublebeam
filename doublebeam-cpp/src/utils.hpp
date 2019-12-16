@@ -88,7 +88,7 @@ namespace seismo {
      * @param velocity Velocity in m/s.
      * @return Slowness px, py, pz
      */
-    std::tuple<double, double, double> slowness_3D(double theta, double phi, double velocity);
+    Slowness slowness_3D(Radian theta, Radian phi, double velocity);
 
 
     /**
