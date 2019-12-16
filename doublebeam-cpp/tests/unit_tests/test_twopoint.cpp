@@ -69,17 +69,21 @@ TEST_P(TestTwoPointRayTracingWithData, CompareWithGivenResult) {
 }
 
 std::vector<SourceReceiverSlowness> source_receiver_combinations = {
-    SourceReceiverSlowness{{469. / 2, 0, 500}, {469, 0, 0}, std::sin(math::radians(30)) / 3000},
-    SourceReceiverSlowness{{868. / 2, 0, 500}, {868, 0, 0}, std::sin(math::radians(50)) / 3000},
-    SourceReceiverSlowness{{2159. / 2, 0, 500}, {2159, 0, 0}, std::sin(math::radians(85)) / 3000}};
+    SourceReceiverSlowness{{469. / 2, 0, 500}, {469, 0, 0}, std::sin(radians(30_deg).get()) / 3000},
+    SourceReceiverSlowness{{868. / 2, 0, 500}, {868, 0, 0}, std::sin(radians(50_deg).get()) / 3000},
+    SourceReceiverSlowness{
+        {2159. / 2, 0, 500}, {2159, 0, 0}, std::sin(radians(85_deg).get()) / 3000}};
 
 INSTANTIATE_TEST_SUITE_P(CompareWithFig9FromFang2019, TestTwoPointRayTracingWithData,
                          testing::ValuesIn(source_receiver_combinations));
 
 std::vector<SourceReceiverSlowness> receiver_source_combinations = {
-    SourceReceiverSlowness{{469, 0, 0}, {469. / 2, 0, 500}, -std::sin(math::radians(30)) / 3000},
-    SourceReceiverSlowness{{868, 0, 0}, {868. / 2, 0, 500}, -std::sin(math::radians(50)) / 3000},
-    SourceReceiverSlowness{{2159, 0, 0}, {2159. / 2, 0, 500}, -std::sin(math::radians(85)) / 3000}};
+    SourceReceiverSlowness{
+        {469, 0, 0}, {469. / 2, 0, 500}, -std::sin(radians(30_deg).get()) / 3000},
+    SourceReceiverSlowness{
+        {868, 0, 0}, {868. / 2, 0, 500}, -std::sin(radians(50_deg).get()) / 3000},
+    SourceReceiverSlowness{
+        {2159, 0, 0}, {2159. / 2, 0, 500}, -std::sin(radians(85_deg).get()) / 3000}};
 INSTANTIATE_TEST_SUITE_P(SwapSourceAndReceiver, TestTwoPointRayTracingWithData,
                          testing::ValuesIn(receiver_source_combinations));
 
@@ -184,7 +188,7 @@ TEST_F(TestTwopointRayTracingBase, TestInSingleLayerTopToBottom) {
 class TwopointConstantVelocityModelWithOneLayer : public testing::Test {
 protected:
     double constant_velocity = 4800;
-    VelocityModel model{{Layer{0, 3000, constant_velocity, 0}}, 10000, 10000};
+    VelocityModel model{{Layer{0, 3000, constant_velocity}}, 10000, 10000};
     TwoPointRayTracing twopoint{model};
 };
 
@@ -205,58 +209,64 @@ TEST_F(TwopointConstantVelocityModelWithOneLayer, TestVerticalRayUpwards) {
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestLongDistance) {
-    double sx = 0, sy = 0, sz = 3000;
-    double rx = 2500, ry = 2500, rz = 0;
-    auto [px, py, pz] = twopoint.trace({sx, sy, sz}, {rx, ry, rz});
+    auto sx = 0_meter, sy = 0_meter, sz = 3000_meter;
+    auto rx = 2500_meter, ry = 2500_meter, rz = 0_meter;
+    auto [px, py, pz] =
+        twopoint.trace({sx.get(), sy.get(), sz.get()}, {rx.get(), ry.get(), rz.get()});
     auto tracer = RayTracer(model);
-    auto ray = tracer.trace_ray(make_state(sx, sy, sz, px, py, pz));
-    auto [x, y, z] = last_point(ray.value());
-    EXPECT_TRUE(Close(x, rx));
-    EXPECT_TRUE(Close(y, ry));
-    EXPECT_TRUE(Close(z, rz));
+    auto ray = tracer.trace_ray(
+        make_state(sx, sy, sz, InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)));
+    auto [x, y, z] = ray.value().last_position();
+    EXPECT_TRUE(Close(x.get(), rx.get()));
+    EXPECT_TRUE(Close(y.get(), ry.get()));
+    EXPECT_TRUE(Close(z.get(), rz.get()));
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestLongDistanceSwapped) {
-    double sx = 2500, sy = 2500, sz = 0;
-    double rx = 0, ry = 0, rz = 3000;
-    auto [px, py, pz] = twopoint.trace({sx, sy, sz}, {rx, ry, rz});
+    auto sx = 2500_meter, sy = 2500_meter, sz = 0_meter;
+    auto rx = 0_meter, ry = 0_meter, rz = 3000_meter;
+    auto [px, py, pz] =
+        twopoint.trace({sx.get(), sy.get(), sz.get()}, {rx.get(), ry.get(), rz.get()});
     auto tracer = RayTracer(model);
-    auto ray = tracer.trace_ray(make_state(sx, sy, sz, px, py, pz));
-    auto [x, y, z] = last_point(ray.value());
-    EXPECT_TRUE(Close(x, rx, 0., 1e-12));
-    EXPECT_TRUE(Close(y, ry, 0., 1e-12));
-    EXPECT_TRUE(Close(z, rz));
+    auto ray = tracer.trace_ray(
+        make_state(sx, sy, sz, InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)));
+    auto [x, y, z] = ray.value().last_position();
+    EXPECT_TRUE(Close(x.get(), rx.get(), 0., 1e-12));
+    EXPECT_TRUE(Close(y.get(), ry.get(), 0., 1e-12));
+    EXPECT_TRUE(Close(z.get(), rz.get()));
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestConstantVelocityLayerWithStopDepth) {
-    double source_x = 5000, source_y = 5000, source_z = 0;
-    double target_x = 6200, target_y = 6200, target_z = 2350;
-    auto [px, py, pz] =
-        twopoint.trace({source_x, source_y, source_z}, {target_x, target_y, target_z});
-    std::cerr << px << " " << py << " " << pz;
-    std::cerr << math::degrees(math::angle(px, py, pz, 0, 0, 1)) << std::endl;
+    auto source_x = 5000_meter, source_y = 5000_meter, source_z = 0_meter;
+    auto target_x = 6200_meter, target_y = 6200_meter, target_z = 2350_meter;
+    auto [px, py, pz] = twopoint.trace({source_x.get(), source_y.get(), source_z.get()},
+                                       {target_x.get(), target_y.get(), target_z.get()});
     EXPECT_TRUE(Close(px, 8.624537e-5));
     EXPECT_TRUE(Close(py, 8.624537e-5));
     EXPECT_TRUE(Close(pz, 1.68897e-4, 1e-6));
     auto tracer = RayTracer(model);
-    auto ray = tracer.trace_ray(make_state(source_x, source_y, source_z, px, py, pz), "", target_z);
-    auto [end_point_x, end_point_y, end_point_z] = last_point(ray.value());
-    EXPECT_TRUE(Close(end_point_x, target_x, 1e-5));
-    EXPECT_TRUE(Close(end_point_y, target_y, 1e-5));
-    EXPECT_DOUBLE_EQ(end_point_z, target_z);
+    auto ray = tracer.trace_ray(make_state(source_x, source_y, source_z, InverseVelocity(px),
+                                           InverseVelocity(py), InverseVelocity(pz)),
+                                "", target_z.get());
+    auto [end_point_x, end_point_y, end_point_z] = ray.value().last_position();
+    EXPECT_TRUE(Close(end_point_x.get(), target_x.get(), 1e-5));
+    EXPECT_TRUE(Close(end_point_y.get(), target_y.get(), 1e-5));
+    EXPECT_DOUBLE_EQ(end_point_z.get(), target_z.get());
 }
 
 TEST_F(TwopointConstantVelocityModelWithOneLayer, TestConstantVelocityLayerWithStopDepthUpwards) {
-    double source_x = 6200, source_y = 6200, source_z = 2350;
-    double target_x = 5000, target_y = 5000, target_z = 0;
-    auto [px, py, pz] =
-        twopoint.trace({source_x, source_y, source_z}, {target_x, target_y, target_z});
+    auto source_x = 6200_meter, source_y = 6200_meter, source_z = 2350_meter;
+    auto target_x = 5000_meter, target_y = 5000_meter, target_z = 0_meter;
+    auto [px, py, pz] = twopoint.trace({source_x.get(), source_y.get(), source_z.get()},
+                                       {target_x.get(), target_y.get(), target_z.get()});
     auto tracer = RayTracer(model);
-    auto ray = tracer.trace_ray(make_state(source_x, source_y, source_z, px, py, pz), "", target_z);
-    auto [end_point_x, end_point_y, end_point_z] = last_point(ray.value());
-    EXPECT_TRUE(Close(end_point_x, target_x, 1e-5));
-    EXPECT_TRUE(Close(end_point_y, target_y, 1e-5));
-    EXPECT_DOUBLE_EQ(end_point_z, target_z);
+    auto ray = tracer.trace_ray(make_state(source_x, source_y, source_z, InverseVelocity(px),
+                                           InverseVelocity(py), InverseVelocity(pz)),
+                                "", target_z.get());
+    auto [end_point_x, end_point_y, end_point_z] = ray.value().last_position();
+    EXPECT_TRUE(Close(end_point_x.get(), target_x.get(), 1e-5));
+    EXPECT_TRUE(Close(end_point_y.get(), target_y.get(), 1e-5));
+    EXPECT_DOUBLE_EQ(end_point_z.get(), target_z.get());
 }
 
 
@@ -273,15 +283,20 @@ protected:
 
 
 TEST_P(TestTwoPointRayTracingOneLayer, TestRandomCases) {
-    auto start = position_t{5000, 5000, 1500};
+    position_t start{5000, 5000, 1500};
+    // TODO change twopoint api to accept Position instead of position_t
+    Position start_pos(5000_meter, 5000_meter, 1500_meter);
     position_t target = GetParam();
-    auto slowness = twopoint.trace(start, target);
-    auto ray = ray_tracer.trace_ray(make_state(start, slowness), "", std::get<2>(target));
-    auto [x, y, z] = last_point(ray.value());
+    auto [px, py, pz] = twopoint.trace(start, target);
+    auto ray = ray_tracer.trace_ray(
+        make_state(start_pos,
+                   Slowness{InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)}),
+        "", std::get<2>(target));
+    auto [x, y, z] = ray.value().last_position();
     auto [target_x, target_y, target_z] = target;
-    EXPECT_TRUE(Close(x, target_x, 1e-5));
-    EXPECT_TRUE(Close(y, target_y, 1e-5));
-    EXPECT_DOUBLE_EQ(z, target_z);
+    EXPECT_TRUE(Close(x.get(), target_x, 1e-5));
+    EXPECT_TRUE(Close(y.get(), target_y, 1e-5));
+    EXPECT_DOUBLE_EQ(z.get(), target_z);
 }
 
 std::vector<position_t> get_points() {
@@ -331,22 +346,25 @@ std::vector<position_t> scale_z_coordinate() {
 
 std::vector<WaveType> direct_ray_code(position_t source, position_t receiver,
                                       const VelocityModel& model) {
-    auto n = model.number_of_interfaces_between(std::get<Index::Z>(source),
-                                                std::get<Index::Z>(receiver));
+    auto n = model.number_of_interfaces_between(std::get<2>(source), std::get<2>(receiver));
     return std::vector<WaveType>(n, WaveType::Transmitted);
 }
 
 TEST_P(TestTwoPointRayTracingMultipleLayer, TestByComparisionWithRayTracing) {
     auto start = position_t{5000, 5000, 250};
+    Position start_pos(5000_meter, 5000_meter, 250_meter);
     position_t target = GetParam();
-    auto slowness = twopoint.trace(start, target);
+    auto [px, py, pz] = twopoint.trace(start, target);
     auto ray_code = direct_ray_code(start, target, model);
-    auto ray = ray_tracer.trace_ray(make_state(start, slowness), ray_code, std::get<2>(target));
-    auto [x, y, z] = last_point(ray.value());
+    auto ray = ray_tracer.trace_ray(
+        make_state(start_pos,
+                   Slowness(InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz))),
+        ray_code, std::get<2>(target));
+    auto [x, y, z] = ray.value().last_position();
     auto [target_x, target_y, target_z] = target;
-    EXPECT_TRUE(Close(x, target_x, 1e-5));
-    EXPECT_TRUE(Close(y, target_y, 1e-5));
-    EXPECT_DOUBLE_EQ(z, target_z);
+    EXPECT_TRUE(Close(x.get(), target_x, 1e-5));
+    EXPECT_TRUE(Close(y.get(), target_y, 1e-5));
+    EXPECT_DOUBLE_EQ(z.get(), target_z);
 }
 
 const std::vector<position_t> points_multi_layer = scale_z_coordinate();

@@ -11,9 +11,9 @@
 
 
 TEST(Radians, Equals) {
-    EXPECT_DOUBLE_EQ(math::radians(0), 0.);
-    EXPECT_DOUBLE_EQ(math::radians(360), 2 * M_PI);
-    EXPECT_DOUBLE_EQ(math::radians(360 + 180), 3 * M_PI);
+    EXPECT_DOUBLE_EQ(radians(0_deg).get(), 0.);
+    EXPECT_DOUBLE_EQ(radians(360_deg).get(), 2 * M_PI);
+    EXPECT_DOUBLE_EQ(radians(540_deg).get(), 3 * M_PI);
 }
 
 
@@ -43,7 +43,7 @@ TEST(SameSign, ZeroTreatedAsPositive) {
 
 
 struct AngleData {
-    double angle;
+    Radian angle;
     double x, y;
 };
 
@@ -69,7 +69,7 @@ TEST_P(TestClockWiseAngle, TestNormal) {
     // checking against manually computed test data.
     auto data = GetParam();
     auto angle_result = math::angle_clockwise(x_axis_x, x_axis_y, data.x, data.y);
-    EXPECT_EQ(angle_result, data.angle) << "For x: " << data.x << " y: " << data.y;
+    EXPECT_EQ(angle_result, data.angle.get()) << "For x: " << data.x << " y: " << data.y;
 }
 
 TEST_P(TestClockWiseAngle, TestSwapped) {
@@ -78,16 +78,16 @@ TEST_P(TestClockWiseAngle, TestSwapped) {
     auto data = GetParam();
     auto angle_result = math::angle_clockwise(data.x, data.y, x_axis_x, x_axis_y);
     // module 360° since for 0° the function will not return 360°
-    auto angle_expected = fmod(2 * M_PI - data.angle, 2 * M_PI);
+    auto angle_expected = fmod(2 * M_PI - data.angle.get(), 2 * M_PI);
     EXPECT_EQ(angle_result, angle_expected) << "For x: " << data.x << " y: " << data.y;
 }
 
 INSTANTIATE_TEST_SUITE_P(
     PREFIX, TestClockWiseAngle,
-    ::testing::Values(AngleData{math::radians(0), 1, 0}, AngleData{math::radians(315), 1, 1},
-                      AngleData{math::radians(270), 0, 1}, AngleData{math::radians(225), -1, 1},
-                      AngleData{math::radians(180), -1, 0}, AngleData{math::radians(135), -1, -1},
-                      AngleData{math::radians(90), 0, -1}, AngleData{math::radians(45), 1, -1}));
+    ::testing::Values(AngleData{radians(0_deg), 1, 0}, AngleData{radians(315_deg), 1, 1},
+                      AngleData{radians(270_deg), 0, 1}, AngleData{radians(225_deg), -1, 1},
+                      AngleData{radians(180_deg), -1, 0}, AngleData{radians(135_deg), -1, -1},
+                      AngleData{radians(90_deg), 0, -1}, AngleData{radians(45_deg), 1, -1}));
 
 
 class TestRounding : public ::testing::Test {
@@ -206,13 +206,13 @@ TEST(Testcumtrapz, TestDynamicRayTracingUseCaseByComparingWithPythonResult) {
 }
 
 TEST(TestAngle, Test90Degrees) {
-    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0), math::radians(90));
-    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0, false), math::radians(90));
+    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0), radians(90_deg).get());
+    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0, false), radians(90_deg).get());
 }
 
 TEST(TestAngle, TestParallel) {
     EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4), 0);
-    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4, false), math::radians(180));
+    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4, false), radians(180_deg).get());
 }
 
 TEST(TestAngle, TestFloatClippingForAcosLargerOne) {
@@ -221,7 +221,7 @@ TEST(TestAngle, TestFloatClippingForAcosLargerOne) {
                      0);
     EXPECT_DOUBLE_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
                                  0.874469283050132, 0.262553720250597, 0.477968688795641, false),
-                     math::radians(180));
+                     radians(180_deg).get());
 }
 
 TEST(TestAngle, OrderOfInputVectorsShouldntMatter) {
@@ -293,21 +293,23 @@ TEST(TestFormatter, TestToOStream) {
 
 TEST(TestSlowness3D, TestIfVelocityRelationIsFullfilled) {
     // slowness is defined as p = 1/v, so velocity should be recovered by v = 1/p
-    auto [px, py, pz] = seismo::slowness_3D(math::radians(20), math::radians(10), 1000);
-    EXPECT_DOUBLE_EQ(1000., 1 / math::length(px, py, pz));
+    auto [px, py, pz] =
+        seismo::slowness_3D(radians(20_deg), radians(10_deg), 1000_meter_per_second);
+    EXPECT_DOUBLE_EQ(1000., 1 / math::length(px.get(), py.get(), pz.get()));
 }
 
 TEST(TestSlowness3D, TestUpgoingSlownessShouldBeNegative) {
-    auto [px, py, pz] = seismo::slowness_3D(math::radians(170), 0, 1000);
-    ASSERT_LT(pz, 0);
+    auto [px, py, pz] = seismo::slowness_3D(radians(170_deg), 0_rad, 1000_meter_per_second);
+    ASSERT_LT(pz.get(), 0);
 }
 
 TEST(TestSlowness3D, HorizontalRayShouldHaveZeroAsVerticalSlowness) {
-    auto [px, py, pz] = seismo::slowness_3D(math::radians(90), math::radians(10), 1000);
-    EXPECT_TRUE(AlmostEqual(pz, 0., 17));
-    EXPECT_NE(px, py);
-    EXPECT_NE(px, 0);
-    EXPECT_NE(py, 0);
+    auto [px, py, pz] =
+        seismo::slowness_3D(radians(90_deg), radians(10_deg), 1000_meter_per_second);
+    EXPECT_TRUE(AlmostEqual(pz.get(), 0., 17));
+    EXPECT_NE(px.get(), py.get());
+    EXPECT_NE(px.get(), 0);
+    EXPECT_NE(py.get(), 0);
 }
 
 TEST(TestGridCoordinates, TestEmptySizes) {
@@ -539,15 +541,15 @@ TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
     // test left vector
     EXPECT_DOUBLE_EQ(
         math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
-        math::radians(270.));
+        radians(270_deg).get());
     // test middle vector
     EXPECT_TRUE(Close(
         math::angle(central_direction_x, central_direction_y, 0, vectors[1].x, vectors[1].y, 0),
-        math::radians(0.), 0., 1.5e-8));
+        radians(0_deg).get(), 0., 1.5e-8));
     // test right vector
     EXPECT_DOUBLE_EQ(
         math::angle_clockwise(central_direction_x, central_direction_y, vectors[2].x, vectors[2].y),
-        math::radians(90.));
+        radians(90_deg).get());
 }
 
 TEST(CreateVectorArc, TestCaseWithMoreVectors) {
@@ -558,18 +560,18 @@ TEST(CreateVectorArc, TestCaseWithMoreVectors) {
     ASSERT_EQ(vectors.size(), number_of_vectors_to_generate);
     EXPECT_DOUBLE_EQ(
         math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
-        math::radians(270))
+        radians(270_deg).get())
         << " Leftmost vector is not 90 degrees to central direction.";
     EXPECT_DOUBLE_EQ(math::angle_clockwise(central_direction_x, central_direction_y,
                                            vectors.back().x, vectors.back().y),
-                     math::radians(90))
+                     radians(90_deg).get())
         << "Rightmost vector is not 90 degrees to central direction.";
-    double expected_angle = 180. / (number_of_vectors_to_generate - 1);
+    Degree expected_angle(180. / (number_of_vectors_to_generate - 1));
     for (auto i = 1; i < vectors.size(); ++i) {
-        auto angle =
-            math::angle(vectors[i - 1].x, vectors[i - 1].y, 0, vectors[i].x, vectors[i].y, 0);
-        EXPECT_TRUE(Close(angle, math::radians(expected_angle), 0., 1e-10))
-            << "Vectors with index " << i - 1 << " and " << i << " have angle of "
-            << math::degrees(angle) << ", but it should be " << expected_angle;
+        Radian angle(
+            math::angle(vectors[i - 1].x, vectors[i - 1].y, 0, vectors[i].x, vectors[i].y, 0));
+        EXPECT_TRUE(Close(angle.get(), radians(expected_angle).get(), 0., 1e-10))
+            << "Vectors with index " << i - 1 << " and " << i << " have angle of " << degrees(angle)
+            << ", but it should be " << expected_angle;
     }
 }

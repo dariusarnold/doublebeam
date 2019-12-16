@@ -9,9 +9,8 @@
 class TestInterfaceVelocity : public ::testing::Test {
 protected:
     TestInterfaceVelocity() :
-            vm(VelocityModel(
-                std::vector<Layer>{{0, 100, 1000, 0}, {100, 200, 1500, 1}, {200, 300, 3000, -1}},
-                1000, 1000)) {}
+            vm(VelocityModel(std::vector<Layer>{{0, 100, 1000}, {100, 200, 1500}, {200, 300, 3000}},
+                             1000, 1000)) {}
 
     VelocityModel vm;
 };
@@ -19,13 +18,13 @@ protected:
 TEST_F(TestInterfaceVelocity, TestEvaluation) {
     for (auto z : {99, 100, 101}) {
         auto [v_above, v_below] = vm.interface_velocities(z);
-        EXPECT_DOUBLE_EQ(v_above, 1000);
-        EXPECT_DOUBLE_EQ(v_below, 1600);
+        EXPECT_DOUBLE_EQ(v_above, 1000) << "Error at depth " << z;
+        EXPECT_DOUBLE_EQ(v_below, 1500) << "Error at depth " << z;
     }
     for (auto z : {199, 200, 201}) {
         auto [v_above, v_below] = vm.interface_velocities(z);
-        EXPECT_DOUBLE_EQ(v_above, 1700);
-        EXPECT_DOUBLE_EQ(v_below, 2800);
+        EXPECT_DOUBLE_EQ(v_above, 1500) << "Error at depth " << z;
+        EXPECT_DOUBLE_EQ(v_below, 3000) << "Error at depth " << z;
     }
 }
 
@@ -45,7 +44,7 @@ TEST_F(TestInterfaceVelocity, TestVelocityBottom) {
      * below bottom layer.
      */
     auto [v_above, v_below] = vm.interface_velocities(299.);
-    EXPECT_DOUBLE_EQ(v_above, 2700);
+    EXPECT_DOUBLE_EQ(v_above, 3000);
     EXPECT_DOUBLE_EQ(v_below, 0);
 }
 
@@ -54,11 +53,11 @@ TEST_F(TestInterfaceVelocity, TestVelocityBottom) {
 class TestLayerIndex : public ::testing::TestWithParam<std::pair<double, size_t>> {
 protected:
     TestLayerIndex() :
-            vm(VelocityModel(std::vector<Layer>{{0, 100, 1800, 4},
-                                                {100, 200, 2400, 0},
-                                                {200, 300, 2400, 1},
-                                                {300, 400, 2700, 0},
-                                                {400, 500, 2250, 1.5}},
+            vm(VelocityModel(std::vector<Layer>{{0, 100, 1800},
+                                                {100, 200, 2400},
+                                                {200, 300, 2400},
+                                                {300, 400, 2700},
+                                                {400, 500, 2250}},
                              1000, 1000)) {}
 
     VelocityModel vm;
@@ -89,7 +88,7 @@ INSTANTIATE_TEST_SUITE_P(TestIndexOnInterface, TestLayerIndex,
  */
 class TestLayerIndexReturnsInvalidOptional : public ::testing::Test {
 protected:
-    TestLayerIndexReturnsInvalidOptional() : vm(std::vector<Layer>{{0, 100, 0, 0}}, 1000, 1000) {}
+    TestLayerIndexReturnsInvalidOptional() : vm(std::vector<Layer>{{0, 100, 0}}, 1000, 1000) {}
 
     VelocityModel vm;
 };
@@ -103,44 +102,17 @@ TEST_F(TestLayerIndexReturnsInvalidOptional, TestDepthBelowModel) {
 }
 
 
-// inherit to get the same velocity model but different test names
-class TestInterfaceVelocities : public TestLayerIndex {};
-
-TEST_F(TestInterfaceVelocities, NoInterfaceBetweenDepths) {
-    // interval should be empty
-    auto [begin, end] = vm.interface_velocities(50, 50);
-    EXPECT_EQ(begin, end);
-}
-
-TEST_F(TestInterfaceVelocities, OneInterfaceBetweenDepths) {
-    // interval should contain the two values above/below the enclosed interface
-    auto [begin, end] = vm.interface_velocities(50, 150);
-    EXPECT_EQ(std::distance(begin, end), 2);
-    EXPECT_EQ(*begin, 2200);
-    EXPECT_EQ(*(begin + 1), 2400);
-}
-
-TEST_F(TestInterfaceVelocities, TwoInterfacesBetweenDepths) {
-    // interval should contain four values from two above/below combinations of the two interfaces
-    auto [begin, end] = vm.interface_velocities(150, 350);
-    EXPECT_EQ(std::distance(begin, end), 4);
-    for (auto velocity : {2400, 2600, 2700, 2700}) {
-        EXPECT_EQ(*begin++, velocity);
-    }
-}
-
-
 TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     // TODO better way to specify path, maybe mock file object
     std::filesystem::path filepath(
         "/home/darius/git/doublebeam/doublebeam-cpp/tests/unit_tests/data/model.txt");
     auto vm = read_velocity_file(filepath);
-    VelocityModel expected({{0, 100, 1000, 1}, {100, 200, 1200, -1}}, 100, 100);
+    VelocityModel expected({{0, 100, 1000}, {100, 200, 1200}}, 100, 100);
     EXPECT_EQ(vm, expected);
 }
 
 TEST(TestCreateVelocityModel, TestThrowOnInvalidWidths) {
-    std::vector<Layer> l{{0, 1, 2, 3}};
+    std::vector<Layer> l{{0, 1, 2}};
     EXPECT_THROW(VelocityModel(l, 100, 50), std::invalid_argument)
         << "Not throwing for model creation with different width along x and y axis when using "
            "default values for x0 and y0.";
@@ -154,8 +126,8 @@ TEST(TestCreateVelocityModel, TestThrowOnEmptyListOfLayers) {
 }
 
 TEST(TestCreateVelocityModel, DISABLED_TestThrowOnInvalidListOfLayers) {
-    std::vector<Layer> l_gap{{0, 10, 1, 1}, {20, 30, 1, 1}};
-    std::vector<Layer> l_overlapping{{0, 11, 1, 1}, {10, 20, 1, 1}};
+    std::vector<Layer> l_gap{{0, 10, 1}, {20, 30, 1}};
+    std::vector<Layer> l_overlapping{{0, 11, 1}, {10, 20, 1}};
     EXPECT_THROW(VelocityModel(l_gap, 1, 1), std::invalid_argument)
         << "Not throwing when constructing velocity model with gap between layers.";
     EXPECT_THROW(VelocityModel(l_overlapping, 1, 1), std::invalid_argument)
@@ -179,11 +151,11 @@ class TestTwoPointRayTracing_v_M : public ::testing::TestWithParam<DepthVelocity
 protected:
     // same model as Fang2019 fig. 3 but negative gradient in first layer
     TestTwoPointRayTracing_v_M() :
-            model({{0, 100, 2600, -4},
-                   {100, 200, 2400, 0},
-                   {200, 300, 2400, 1},
-                   {300, 400, 2700, 0},
-                   {400, 500, 2250, 1.5}},
+            model({{0, 100, 2600},
+                   {100, 200, 2400},
+                   {200, 300, 2400},
+                   {300, 400, 2700},
+                   {400, 500, 2250}},
                   1000, 1000) {}
 
     VelocityModel model;
@@ -192,16 +164,20 @@ protected:
 TEST_P(TestTwoPointRayTracing_v_M, Test_v_M) {
     auto [depth1, depth2, velocity] = TestTwoPointRayTracing_v_M::GetParam();
     auto result = highest_velocity_between(depth1, depth2, model);
-    EXPECT_EQ(result, velocity);
+    EXPECT_EQ(result, velocity) << "Did not receive expected velocity " << velocity
+                                << " between depth " << depth1 << " and " << depth2 << ".";
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    InsertTestPrefix, TestTwoPointRayTracing_v_M,
-    testing::Values(DepthVelocityData{0, 500, 3000}, DepthVelocityData{50, 500, 3000},
-                    DepthVelocityData{50, 450, 2925}, DepthVelocityData{300, 400, 2850},
-                    DepthVelocityData{50, 150, 2400}, DepthVelocityData{25, 150, 2500},
+    TestFindingHighestVelocityBetweenTwoDepths, TestTwoPointRayTracing_v_M,
+    testing::Values(DepthVelocityData{0, 500, 2700}, DepthVelocityData{50, 500, 2700},
+                    DepthVelocityData{50, 450, 2700}, DepthVelocityData{300, 400, 2700},
+                    DepthVelocityData{50, 150, 2600}, DepthVelocityData{25, 150, 2600},
                     DepthVelocityData{301, 302, 2700}, DepthVelocityData{0, 1, 2600},
-                    DepthVelocityData{50, 250, 2650}));
+                    DepthVelocityData{50, 250, 2600}));
+
+INSTANTIATE_TEST_SUITE_P(FixThisLater, TestTwoPointRayTracing_v_M,
+                         testing::Values(DepthVelocityData{200, 300, 2400}));
 
 struct DepthIntData {
     double z1, z2;
@@ -212,11 +188,11 @@ class TestNumberOfInterfaces : public ::testing::TestWithParam<DepthIntData> {
 protected:
     // same model as Fang2019 fig. 3 but negative gradient in first layer
     TestNumberOfInterfaces() :
-            model({{0, 100, 2600, -4},
-                   {100, 200, 2400, 0},
-                   {200, 300, 2400, 1},
-                   {300, 400, 2700, 0},
-                   {400, 500, 2250, 1.5}},
+            model({{0, 100, 2600},
+                   {100, 200, 2400},
+                   {200, 300, 2400},
+                   {300, 400, 2700},
+                   {400, 500, 2250}},
                   1000, 1000) {}
 
     VelocityModel model;
@@ -229,7 +205,7 @@ INSTANTIATE_TEST_SUITE_P(TestInOrder, TestNumberOfInterfaces, testing::ValuesIn(
 
 class TestModelGeometry : public testing::Test {
 protected:
-    TestModelGeometry() : model({{0, 500, 1, 1}, {5000, 1000, 1, 1}}, 1000, 1000) {}
+    TestModelGeometry() : model({{0, 500, 1}, {5000, 1000, 1}}, 1000, 1000) {}
 
     VelocityModel model;
 };
