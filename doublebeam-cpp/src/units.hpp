@@ -20,6 +20,10 @@ DEFINE_TYPE_LITERAL(Velocity, _meter_per_second);
 DEFINE_TYPE_LITERAL_WITH_FACTOR(Velocity, _km_per_second, 1000);
 
 
+DEFINE_STRONG_TYPE(InverseVelocity, double);
+DEFINE_TYPE_LITERAL(InverseVelocity, _second_per_meter);
+
+
 DEFINE_STRONG_TYPE(Radian, double);
 DEFINE_TYPE_LITERAL(Radian, _rad);
 
