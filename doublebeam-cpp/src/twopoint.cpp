@@ -169,8 +169,8 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
         throw std::domain_error(impl::Formatter()
                                 << "Receiver at " << stringify(receiver) << "  outside of model.");
     }
-    auto source_index = static_cast<std::size_t>(model.layer_index(source_z).value());
-    auto receiver_index = static_cast<std::size_t>(model.layer_index(receiver_z).value());
+    auto source_index = model.layer_index(source_z).value();
+    auto receiver_index = model.layer_index(receiver_z).value();
     auto [min_index, max_index] = std::minmax(source_index, receiver_index);
     auto num_layers = model.number_of_interfaces_between(source_z, receiver_z) + 1;
     msg(source_index);
