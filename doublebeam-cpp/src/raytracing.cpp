@@ -24,30 +24,23 @@ RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radia
         throw std::domain_error(impl::Formatter() << "Point (" << x << ", " << y << ", " << z
                                                   << ") not in model " << model);
     }
-    double velocity = model.eval_at(x.get(), y.get(), z.get()).value();
+    Velocity velocity(model.eval_at(x.get(), y.get(), z.get()).value());
     auto slowness = seismo::slowness_3D(theta, phi, velocity);
     return {Position{x, y, z}, slowness, TravelTime{T}, Arclength{0_meter}};
 }
 
-RayState init_state(position_t position, const VelocityModel& model, double theta, double phi,
-                    double T) {
-    auto [x, y, z] = position;
-    return init_state(Meter(x), Meter(y), Meter(z), model, Radian(theta), Radian(phi),
-                      TravelTime{Second(T)});
+RayState init_state(Position position, const VelocityModel& model, Radian theta, Radian phi,
+                    TravelTime T) {
+    return init_state(position.x, position.y, position.z, model, theta, phi, T);
 }
 
 RayState make_state(Meter x, Meter y, Meter z, InverseVelocity px, InverseVelocity py,
-                    InverseVelocity pz, Second T) {
-    return {Position{x, y, z}, Slowness{px, py, pz}, TravelTime{T}, Arclength{0._meter}};
+                    InverseVelocity pz, TravelTime T) {
+    return {Position{x, y, z}, Slowness{px, py, pz}, T, Arclength{0._meter}};
 }
 
-// TODO update api to take new Slowness/Position types
-RayState make_state(position_t position, slowness_t slowness, TravelTime T) {
-    auto [x, y, z] = position;
-    auto pos = Position{Meter(x), Meter(y), Meter(z)};
-    auto [px, py, pz] = slowness;
-    auto slow = Slowness{InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)};
-    return {pos, slow, T, Arclength{0_meter}};
+RayState make_state(Position position, Slowness slowness, TravelTime T) {
+    return {position, slowness, T, Arclength{0_meter}};
 }
 
 RayTracingResult<RaySegment> RayTracer::trace_layer(const RayState& initial_state,

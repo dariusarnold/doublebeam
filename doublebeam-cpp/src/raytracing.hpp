@@ -26,8 +26,8 @@ RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radia
 /**
  * Overload for init_state taking tuple of x, y, z coordinate.
  */
-RayState init_state(position_t position, const VelocityModel& model, double theta, double phi,
-                    double T = 0);
+RayState init_state(position_t position, const VelocityModel& model, Radian theta, Radian phi,
+                    TravelTime T = TravelTime(0_second));
 
 /**
  * Create state type instance.
@@ -40,7 +40,8 @@ RayState init_state(position_t position, const VelocityModel& model, double thet
  * @param T Travel time.
  * @return
  */
-RayState make_state(double x, double y, double z, double px, double py, double pz, double T = 0);
+RayState make_state(Meter x, Meter y, Meter z, InverseVelocity px, InverseVelocity py,
+                    InverseVelocity pz, TravelTime T = TravelTime(0_second));
 
 /**
  * Overload taking tuples for position and slowness.
@@ -48,7 +49,7 @@ RayState make_state(double x, double y, double z, double px, double py, double p
  * @param slowness x, y, z slowness vector.
  * @param T Travel time.
  */
-RayState make_state(position_t position, slowness_t slowness, TravelTime T = TravelTime{0_second});
+RayState make_state(Position position, Slowness slowness, TravelTime T = TravelTime{0_second});
 
 
 enum class Status {
