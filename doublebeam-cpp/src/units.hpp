@@ -12,6 +12,7 @@ DEFINE_TYPE_LITERAL_WITH_FACTOR(Meter, _kilometer, 1000);
 
 
 DEFINE_STRONG_TYPE(Second, double);
+DEFINE_TYPE_LITERAL(Second, _second);
 
 
 DEFINE_STRONG_TYPE(Velocity, double);
