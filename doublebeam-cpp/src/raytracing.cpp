@@ -342,9 +342,10 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
     Eigen::Matrix2cd Q;
     Q << beam_frequency.get() * beam_width.get() * beam_width.get() / v0, 0, 0,
         beam_frequency.get() * beam_width.get() * beam_width.get() / v0;
-    Beam beam(beam_width, beam_frequency, ray.value(), P, Q);
+    Beam beam(beam_width, beam_frequency);
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
+        beam.add_segment(P, Q, segment);
         if (not_at_last_ray_segment(segment_index, ray.value().size())) {
             // if we are not at the last segment of the ray, transform dynamic ray tracing across
             // interface (calculate new P0, Q0)
@@ -354,7 +355,6 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
             auto new_initial_state = ray.value()[segment_index + 1].begin();
             std::tie(P, Q) = ip.transform(P, Q_at_end_of_ray_segment, wave_type, segment.end(),
                                           new_initial_state, model);
-            beam.add_segment(P, Q);
         }
         ++segment_index;
     }
