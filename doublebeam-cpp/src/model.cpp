@@ -124,16 +124,16 @@ double layer_height(const Layer& layer) {
 VelocityModel::InterfaceVelocities VelocityModel::interface_velocities(double z) const {
     size_t index = layer_index(z).value();
     const double outside_velocity = 0;
-    if (index == 0) {
+    auto half_depth = layers[index].top_depth + 0.5 * layer_height(layers[index]);
+    if (index == 0 and z < half_depth) {
         return {outside_velocity, layers[index].velocity};
     }
-    if (index == num_layers() - 1) {
+    if (index == num_layers() - 1 and z > half_depth) {
         return {layers[index].velocity, outside_velocity};
     }
-    auto half_depth = layers[index].top_depth + 0.5 * layer_height(layers[index]);
     if (z < half_depth) {
         // interface above current layer
-        return {layers[index - 1].velocity, layers[index - 1].velocity};
+        return {layers[index - 1].velocity, layers[index].velocity};
     }
     // interface below current layer
     return {layers[index].velocity, layers[index + 1].velocity};
