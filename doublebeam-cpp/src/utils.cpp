@@ -5,11 +5,11 @@
 
 namespace seismo {
 
-    Slowness slowness_3D(Radian theta, Radian phi, double velocity) {
-        auto px = 1. / velocity * sin(theta.get()) * cos(phi.get());
-        auto py = 1. / velocity * sin(theta.get()) * sin(phi.get());
-        auto pz = 1. / velocity * cos(theta.get());
-        return {InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)};
+    Slowness slowness_3D(Radian theta, Radian phi, Velocity velocity) {
+        InverseVelocity px(1. / velocity.get() * sin(theta.get()) * cos(phi.get()));
+        InverseVelocity py(1. / velocity.get() * sin(theta.get()) * sin(phi.get()));
+        InverseVelocity pz(1. / velocity.get() * cos(theta.get()));
+        return Slowness(px, py, pz);
     }
 
     std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
