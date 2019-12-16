@@ -14,10 +14,6 @@
 #include "utils.hpp"
 
 
-std::string point_to_str(double x, double y, double z) {
-    return impl::Formatter(",") << x << y << z;
-}
-
 RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radian theta, Radian phi,
                     TravelTime T) {
     if (not model.in_model(x.get(), y.get(), z.get())) {
