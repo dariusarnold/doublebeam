@@ -4,6 +4,7 @@
 #include <boost/numeric/odeint/stepper/generation/generation_dense_output_runge_kutta.hpp>
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
+#include <cstdint>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "eigen_helpers.hpp"
@@ -17,196 +18,88 @@ std::string point_to_str(double x, double y, double z) {
     return impl::Formatter(",") << x << y << z;
 }
 
-state_type init_state(double x, double y, double z, const VelocityModel& model, double theta,
-                      double phi, double T) {
-    if (not model.in_model(x, y, z)) {
-        throw std::domain_error(impl::Formatter()
-                                << "Point " << point_to_str(x, y, z) << " not in model " << model);
+RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radian theta, Radian phi,
+                    TravelTime T) {
+    if (not model.in_model(x.get(), y.get(), z.get())) {
+        throw std::domain_error(impl::Formatter() << "Point (" << x << ", " << y << ", " << z
+                                                  << ") not in model " << model);
     }
-    double velocity = model.eval_at(x, y, z).value();
-    auto [px, py, pz] = seismo::slowness_3D(theta, phi, velocity);
-    return {x, y, z, px, py, pz, T};
+    double velocity = model.eval_at(x.get(), y.get(), z.get()).value();
+    auto slowness = seismo::slowness_3D(theta, phi, velocity);
+    return {Position{x, y, z}, slowness, TravelTime{T}, Arclength{0_meter}};
 }
 
-state_type init_state(position_t position, const VelocityModel& model, double theta, double phi,
-                      double T) {
+RayState init_state(position_t position, const VelocityModel& model, double theta, double phi,
+                    double T) {
     auto [x, y, z] = position;
-    return init_state(x, y, z, model, theta, phi, T);
+    return init_state(Meter(x), Meter(y), Meter(z), model, Radian(theta), Radian(phi),
+                      TravelTime{Second(T)});
 }
 
-state_type make_state(double x, double y, double z, double px, double py, double pz, double T) {
-    return {x, y, z, px, py, pz, T};
+RayState make_state(Meter x, Meter y, Meter z, InverseVelocity px, InverseVelocity py,
+                    InverseVelocity pz, Second T) {
+    return {Position{x, y, z}, Slowness{px, py, pz}, TravelTime{T}, Arclength{0._meter}};
 }
 
-state_type make_state(position_t position, slowness_t slowness, double T) {
+// TODO update api to take new Slowness/Position types
+RayState make_state(position_t position, slowness_t slowness, TravelTime T) {
     auto [x, y, z] = position;
+    auto pos = Position{Meter(x), Meter(y), Meter(z)};
     auto [px, py, pz] = slowness;
-    return {x, y, z, px, py, pz, T};
+    auto slow = Slowness{InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)};
+    return {pos, slow, T, Arclength{0_meter}};
 }
 
-
-/**
- * Calculate first derivative of inverse of velocity after depth z analytically.
- * Valid for linear velocity gradient v = v(z) = a * z + b).
- * @param z
- * @param layer
- * @return Derivative d/dz of 1/v(z) = -(az+b)^{-2}*a
- */
-inline double dvdz(double z, const Layer& layer) {
-    return -layer.gradient /
-           ((layer.gradient * z + layer.intercept) * (layer.gradient * z + layer.intercept));
-}
-
-/**
- * This function implements the system of ODEs required to compute the ray.
- * The method is not called directly from my code, only by the solver.
- * @param state Current state is input from this.
- * @param dfds Next step is stored here.
- * @param s Current arclength along the ray. The ray tracing system of ODEs does not depend
- * on this parameter.
- */
-void ray_tracing_equation(const state_type& state, state_type& dfds, const double /* s */,
-                          const VelocityModel& model, const Layer& layer) {
-    auto [x, y, z, px, py, pz, T] = state;
-    auto v = model.eval_at(x, y, z).value_or(0);
-    auto dxds = px * v;
-    auto dyds = py * v;
-    auto dzds = pz * v;
-    auto dpzds = dvdz(z, layer);
-    auto dTds = v == 0 ? 0. : 1. / v;
-    dfds[0] = dxds;
-    dfds[1] = dyds;
-    dfds[2] = dzds;
-    dfds[3] = 0.;
-    dfds[4] = 0.;
-    dfds[5] = dpzds;
-    dfds[6] = dTds;
-}
-
-double layer_height(const Layer& layer) {
-    return layer.bot_depth - layer.top_depth;
-}
-
-RayTracingResult<RaySegment> RayTracer::trace_layer_gradient(const state_type& initial_state,
-                                                             const Layer& layer, double s_start,
-                                                             double ds, double max_ds) {
-    namespace odeint = boost::numeric::odeint;
-    using stepper_t = odeint::runge_kutta_dopri5<state_type>;
-    InterfaceCrossed crossing = [&]() {
-        if (stop_depth_m) {
-            // set stop depth as an interface where integration will stop.
-            if (initial_state[Index::Z] > stop_depth_m.value()) {
-                // Integration starts at bottom side of layer
-                return InterfaceCrossed(stop_depth_m.value(), layer.bot_depth);
-            } else {
-                return InterfaceCrossed(layer.top_depth, stop_depth_m.value());
-            }
-        } else {
-            // use layer boundaries as integration borders
-            return InterfaceCrossed(layer.top_depth, layer.bot_depth);
-        }
-    }();
-    // error values can be lowered to 1e-8 with only minimal loss in precision to improve speed
-    auto stepper = odeint::make_dense_output(1.E-10, 1.E-10, max_ds, stepper_t());
-    stepper.initialize(initial_state, s_start, ds);
-    std::vector<double> arclengths;
-    std::vector<state_type> states;
-    auto estimate_steps = 2 * layer_height(layer) / ds;
-    arclengths.reserve(estimate_steps);
-    states.reserve(estimate_steps);
-    auto equation = [&](const state_type& state, state_type& dfds, double s) {
-        return ray_tracing_equation(state, dfds, s, model, layer);
-    };
-    // advance stepper until first event occurs
-    do {
-        if (not model.in_horizontal_extent(stepper.current_state()[Index::X],
-                                           stepper.current_state()[Index::Y])) {
-            return {Status::OutOfBounds, {}};
-        }
-        states.emplace_back(stepper.current_state());
-        arclengths.emplace_back(stepper.current_time());
-        stepper.do_step(equation);
-    } while (not crossing(stepper.current_state()));
-    // find exact point of zero crossing
-    auto crossing_function = crossing.get_zero_crossing_event_function(stepper.current_state());
-    auto [state_at_crossing, s_at_crossing] = get_state_at_interface(crossing_function, stepper);
-    arclengths.emplace_back(s_at_crossing);
-    states.emplace_back(state_at_crossing);
-    // workaround for numerical issues where layer boundaries are overshot
-    // do this by clamping the value to the interface depth
-    states.back()[Index::Z] = crossing.get_closest_layer_depth(states.back());
-    bool stop_depth_was_reached = stop_depth_m and states.back()[Index::Z] == stop_depth_m.value();
-    return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
-            RaySegment{states, arclengths}};
-}
-
-
-RayTracingResult<RaySegment> RayTracer::trace_layer_const(const state_type& initial_state,
-                                                          const Layer& layer, double s_start,
-                                                          double ds) {
-    auto [x0, y0, z0, px0, py0, pz0, t0] = initial_state;
-    auto c = layer.intercept;
+RayTracingResult<RaySegment> RayTracer::trace_layer(const RayState& initial_state,
+                                                    const Layer& layer) {
+    auto [position, slowness, time, arclength] = initial_state;
+    const auto c = layer.velocity;
     bool stop_depth_was_reached = false;
-    double z_interface = [&]() {
+    const Meter z_end = Meter([&]() {
         // check if stop depth exists and we are in the layer where we have to stop
         if (stop_depth_m and
             math::between(layer.top_depth, stop_depth_m.value(), layer.bot_depth)) {
             stop_depth_was_reached = true;
             return stop_depth_m.value();
         } else {
-            return seismo::ray_direction_down(pz0) ? layer.bot_depth : layer.top_depth;
+            return seismo::ray_direction_down(slowness.pz.get()) ? layer.bot_depth
+                                                                 : layer.top_depth;
         }
-    }();
-    auto s_end = (z_interface - z0) / (c * pz0);
-    size_t num_steps = std::floor(s_end / ds);
-    auto s_step = s_end / num_steps;
+    }());
+    auto arclength_in_layer = (z_end.get() - position.z.get()) / (c * slowness.pz.get());
     // s has to start at 0 because this calculation is done starting from the current point of
     // the ray.
-    // one element more since first step (for s = 0) should also be stored.
-    std::vector<state_type> states_vector;
-    std::vector<double> arclengths;
-    states_vector.reserve(num_steps + 1);
-    arclengths.reserve(num_steps + 1);
-    const auto x_end = x0 + s_end * c * px0;
-    const auto y_end = y0 + s_end * c * py0;
-    if (not model.in_horizontal_extent(x_end, y_end)) {
+    const Meter x_end(position.x.get() + arclength_in_layer * c * slowness.px.get());
+    const Meter y_end(position.y.get() + arclength_in_layer * c * slowness.py.get());
+    if (not model.in_horizontal_extent(x_end.get(), y_end.get())) {
         // ray left model to the side and did not reach top/bottom of layer
 
         return {Status::OutOfBounds, {}};
     }
-    for (auto i = 0U; i < num_steps + 1; ++i) {
-        auto arclength_in_layer = i * s_step;
-        arclengths.emplace_back(s_start + arclength_in_layer);
-        auto x = x0 + arclength_in_layer * c * px0;
-        auto y = y0 + arclength_in_layer * c * py0;
-        auto z = z0 + arclength_in_layer * c * pz0;
-        states_vector.emplace_back(state_type{x, y, z, px0, py0, pz0, t0 + arclength_in_layer / c});
-    }
-    // "fix" numerical inaccuracy
-    states_vector.back()[Index::Z] = z_interface;
+    const Second t_end(time.time.get() + arclength_in_layer / layer.velocity);
+    const Meter s_end(arclength.length.get() + arclength_in_layer);
     return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
-            RaySegment{states_vector, arclengths}};
+            RaySegment{initial_state,
+                       RayState{Position{x_end, y_end, z_end}, Slowness{slowness},
+                                TravelTime{t_end}, Arclength{s_end}},
+                       Velocity(layer.velocity)}};
 }
 
 
-RayTracer::RayTracer(const VelocityModel& velocity_model) : model(std::move(velocity_model)) {}
+RayTracer::RayTracer(VelocityModel velocity_model) : model(std::move(velocity_model)) {}
 
-RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
+RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
                                            const std::vector<WaveType>& ray_code,
-                                           std::optional<double> stop_depth, double step_size,
-                                           double max_step) {
-    if (not model.in_model(initial_state[Index::X], initial_state[Index::Y],
-                           initial_state[Index::Z])) {
+                                           std::optional<double> stop_depth) {
+    if (not model.in_model(initial_state.position.x.get(), initial_state.position.y.get(),
+                           initial_state.position.z.get())) {
         throw std::domain_error(impl::Formatter()
-                                << "Point "
-                                << point_to_str(initial_state[Index::X], initial_state[Index::Y],
-                                                initial_state[Index::Z])
-                                << " not in model " << model);
+                                << "Point " << initial_state.position << " not in model " << model);
     }
     stop_depth_m = stop_depth;
-    auto layer_index = model.layer_index(initial_state[Index::Z]).value();
+    int64_t layer_index = model.layer_index(initial_state.position.z.get()).value();
     auto current_layer = model[layer_index];
-    auto segment = trace_layer(initial_state, current_layer, 0., step_size, max_step);
+    auto segment = trace_layer(initial_state, current_layer);
     if (segment.status == Status::OutOfBounds) {
         // early exit when ray left model horizontally
         return {Status::OutOfBounds, {}};
@@ -216,30 +109,29 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
     }
     if (ray_code.empty()) {
         // only trace one layer for empty ray code
-        return {Status::Success, {{{segment.value()}}}};
+        return {Status::Success, {{Ray{segment.value()}}}};
     }
     Ray ray{{segment.value()}};
     for (auto ray_type : ray_code) {
         // TODO this line and the trace_layer call below violates the law of Demeter, try to
         //  refactor it by improving Ray class
-        auto [x, y, z, px, py, pz, t] = ray.segments.back().data.back();
+        const auto& last_state = ray.last_state();
         // reflected waves stay in the same layer, so the index doesn't change
         if (ray_type == WaveType::Transmitted) {
-            layer_index += seismo::ray_direction_down(pz) ? 1 : -1;
+            layer_index += seismo::ray_direction_down(last_state.slowness.pz.get()) ? 1 : -1;
             current_layer = model[layer_index];
         }
-        if (layer_index < 0 or layer_index >= model.size()) {
+        if (layer_index < 0 or layer_index >= static_cast<int64_t>(model.num_layers())) {
             throw std::runtime_error(impl::Formatter() << "Ray left model at top or bottom.");
         }
-        auto [v_above, v_below] = model.interface_velocities(z);
-        auto [px_new, py_new, pz_new] = snells_law(px, py, pz, v_above, v_below, ray_type);
-        state_type new_initial_state{x, y, z, px_new, py_new, pz_new, t};
-        segment = trace_layer(new_initial_state, current_layer,
-                              ray.segments.back().arclength.back(), step_size, max_step);
+        auto new_slowness = snells_law(last_state, model, ray_type);
+        RayState new_initial_state{last_state.position, new_slowness, last_state.travel_time,
+                                   last_state.arclength};
+        segment = trace_layer(new_initial_state, current_layer);
         if (segment.status == Status::OutOfBounds) {
             return {Status::OutOfBounds, {}};
         }
-        ray.segments.push_back(segment.value());
+        ray.add_segment(segment.value());
         if (segment.status == Status::StopDepthReached) {
             return {Status::StopDepthReached, ray};
         }
@@ -247,16 +139,6 @@ RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state,
     return {Status::Success, ray};
 }
 
-
-RayTracingResult<RaySegment> RayTracer::trace_layer(const state_type& initial_state,
-                                                    const Layer& layer, double s_start, double ds,
-                                                    double max_ds) {
-    if (layer.gradient == 0) {
-        return trace_layer_const(initial_state, layer, s_start, ds);
-    } else {
-        return trace_layer_gradient(initial_state, layer, s_start, ds, max_ds);
-    }
-}
 
 #define USEDEBUG false
 #if USEDEBUG
@@ -282,34 +164,33 @@ public:
      * @param model Velocity model.
      * @return New values for P, Q.
      */
-    std::pair<Eigen::Tensor2cd, Eigen::Tensor2cd>
+    std::pair<Eigen::Matrix2cd, Eigen::Matrix2cd>
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
-              const state_type& old_state, const state_type& new_state, int layer_index,
-              const VelocityModel& model) {
+              const RayState& old_state, const RayState& new_state, const VelocityModel& model) {
         // TODO modify interface unit vector (params x2, y2, z2) for more general velocity model.
         //  Here it is assumed the model consists only of horizontal layers.
         msg(layer_index);
         msg(wave_type);
-        auto i_S =
-            math::angle(old_state[Index::PX], old_state[Index::PY], old_state[Index::PZ], 0, 0, 1);
+        auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
+                               old_state.slowness.pz.get(), 0, 0, 1);
         msg(i_S);
         auto i_R = wave_type == WaveType::Transmitted
-                       ? math::angle(new_state[Index::PX], new_state[Index::PY],
-                                     new_state[Index::PZ], 0, 0, 1)
+                       ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
+                                     new_state.slowness.pz.get(), 0, 0, 1)
                        : i_S;
         msg(i_R);
         // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
         // horizontal interfaces (unit vector (0, 0, 1)).
-        auto epsilon = std::copysign(1., old_state[Index::PZ]);
+        auto epsilon = std::copysign(1., old_state.slowness.pz.get());
         msg(epsilon);
         // for a downgoing transmitted ray the velocity above the interface is the before
         // velocity and the velocity below the interface is the after velocity.
-        auto [V_top, V_bottom] = model.interface_velocities(old_state[Index::Z]);
+        auto [V_top, V_bottom] = model.interface_velocities(old_state.position.z.get());
         auto V_before = V_top, V_after = V_bottom;
         if (wave_type == WaveType::Reflected) {
             V_after = V_before;
         } else {
-            if (not seismo::ray_direction_down(old_state[Index::PZ])) {
+            if (not seismo::ray_direction_down(old_state.slowness.pz.get())) {
                 std::swap(V_before, V_after);
             }
         }
@@ -340,11 +221,10 @@ public:
         // Evaluate this since it is used two times and would be reevaluated otherwise
         matrix_t G_inverted = G.inverse();
         msg(G_inverted);
-        auto old_gradient = model[layer_index].gradient;
+        // TODO simplify by adapting for constant velocity layers
+        auto old_gradient = 0;
         msg(old_gradient);
-        auto next_layer_index =
-            seismo::next_layer_index(layer_index, old_state[Index::PZ], wave_type);
-        auto new_gradient = model[next_layer_index].gradient;
+        auto new_gradient = 0;
         msg(new_gradient);
         // eq. (4.4.53) from Cerveny2001
         auto E = E_(V_before, i_S, epsilon, old_gradient);
@@ -362,8 +242,7 @@ public:
         msg(P_tilde);
         matrix_t Q_tilde = G_tilde.transpose() * G_inverted.transpose() * Q;
         msg(Q_tilde);
-        return {Eigen::TensorMap<Eigen::Tensor2cd>(P_tilde.data(), {2, 2}),
-                Eigen::TensorMap<Eigen::Tensor2cd>(Q_tilde.data(), {2, 2})};
+        return {P_tilde, Q_tilde};
     }
 
 private:
@@ -440,77 +319,78 @@ private:
     }
 };
 
-RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter beam_width,
+
+/**
+ * Calculate distance between point a and b.
+ */
+Meter distance(const Position& a, const Position& b) {
+    auto [ax, ay, az] = a;
+    auto [bx, by, bz] = b;
+    return Meter(std::sqrt(std::pow(ax.get() - bx.get(), 2) + std::pow(ay.get() - by.get(), 2) +
+                           std::pow(az.get() - bz.get(), 2)));
+}
+
+/**
+ * Return length of ray segment in meters.
+ * @param segment
+ * @return
+ */
+Meter length(const RaySegment& segment) {
+    return Meter(segment.end().arclength.length.get() - segment.begin().arclength.length.get());
+}
+
+bool not_at_last_ray_segment(size_t segment_index, size_t ray_size) {
+    return segment_index < ray_size - 1;
+}
+
+RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Meter beam_width,
                                              AngularFrequency beam_frequency,
                                              const std::vector<WaveType>& ray_code,
-                                             std::optional<double> stop_depth, double step_size,
-                                             double max_step) {
+                                             std::optional<double> stop_depth) {
     // first trace ray kinematically
-    auto ray = trace_ray(initial_state, ray_code, stop_depth, step_size, max_step);
+    auto ray = trace_ray(initial_state, ray_code, stop_depth);
     if (not ray.result) {
         // ray tracing failed
         return {ray.status, {}};
     }
     InterfacePropagator ip;
-    Beam beam(beam_width, beam_frequency);
-    auto [x, y, z, px, py, pz, t] = initial_state;
-    auto v0 = model.eval_at(x, y, z).value();
-    using cdouble = std::complex<double>;
+    auto [position, slowness, traveltime, arclength] = initial_state;
+    auto v0 = model.eval_at(position.x.get(), position.y.get(), position.z.get()).value();
     // initial values for P, Q
-    Eigen::Tensor3cd P0(1, 2, 2);
-    P0.setValues({{{1j / v0, 0}, {0, 1j / v0}}});
-    Eigen::Tensor3cd Q0(1, 2, 2);
-    Q0.setValues({{{beam_frequency.get() * beam_width.get() * beam_width.get() / v0, 0},
-                   {0, beam_frequency.get() * beam_width.get() * beam_width.get() / v0}}});
+    Eigen::Matrix2cd P;
+    P << 1j / v0, 0, 0, 1j / v0;
+    Eigen::Matrix2cd Q;
+    Q << beam_frequency.get() * beam_width.get() * beam_width.get() / v0, 0, 0,
+        beam_frequency.get() * beam_width.get() * beam_width.get() / v0;
+    Beam beam(beam_width, beam_frequency, ray.value(), P, Q);
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
-        const auto [x, y, z, px, py, pz, t] = segment.data.front();
-        const auto s0 = segment.arclength.front();
-        const auto v = model.eval_at(x, y, z).value();
-        const auto layer_index = model.layer_index(x, y, z).value();
-        // TODO this could be optimized since P0 is constant in my use case to store it only once
-        Eigen::Tensor3cd P(segment.data.size(), 2, 2);
-        P = P0.broadcast(std::array<size_t, 3>{segment.data.size(), 1, 1});
-        std::vector<double> dists;
-        dists.reserve(segment.arclength.size());
-        std::transform(segment.arclength.begin(), segment.arclength.end(),
-                       std::back_inserter(dists), [=](double s) { return (s - s0) * v; });
-        Eigen::TensorMap<Eigen::Tensor<double, 1>> distances(dists.data(), dists.size());
-        Eigen::Tensor3cd Q(segment.data.size(), 2, 2);
-        Q = Q0.broadcast(std::array<size_t, 3>{segment.data.size(), 1, 1}) +
-            distances.cast<cdouble>()
-                    .reshape(std::array<size_t, 3>{segment.arclength.size(), 1, 1})
-                    .broadcast(std::array<int, 3>{1, 2, 2}) *
-                P0.broadcast(std::array<size_t, 3>{segment.arclength.size(), 1, 1});
-        beam.segments.emplace_back(segment, P, Q, v);
-        if (segment_index < (ray.value().size() - 1)) {
+        if (not_at_last_ray_segment(segment_index, ray.value().size())) {
             // if we are not at the last segment of the ray, transform dynamic ray tracing across
             // interface (calculate new P0, Q0)
+            Eigen::Matrix2cd Q_at_end_of_ray_segment =
+                Q + segment.layer_velocity().get() * length(segment).get() * P;
             auto wave_type = ray_code[segment_index];
-            auto new_initial_state = ray.value()[segment_index + 1].data.front();
-            auto [P0_new, Q0_new] =
-                ip.transform(last_element(P), last_element(Q), wave_type, segment.data.back(),
-                             new_initial_state, layer_index, model);
-            P0.reshape(std::array<long, 2>{2, 2}) = P0_new;
-            Q0.reshape(std::array<long, 2>{2, 2}) = Q0_new;
+            auto new_initial_state = ray.value()[segment_index + 1].begin();
+            std::tie(P, Q) = ip.transform(P, Q_at_end_of_ray_segment, wave_type, segment.end(),
+                                          new_initial_state, model);
+            beam.add_segment(P, Q);
         }
         ++segment_index;
     }
     return {Status::Success, beam};
 }
 
-RayTracingResult<Ray> RayTracer::trace_ray(state_type initial_state, const std::string& ray_code,
-                                           std::optional<double> stop_depth, double step_size,
-                                           double max_step) {
-    return trace_ray(initial_state, seismo::make_ray_code(ray_code), stop_depth, step_size,
-                     max_step);
+RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
+                                           const std::string& ray_code,
+                                           std::optional<double> stop_depth) {
+    return trace_ray(initial_state, seismo::make_ray_code(ray_code), stop_depth);
 }
 
-RayTracingResult<Beam> RayTracer::trace_beam(state_type initial_state, Meter beam_width,
+RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Meter beam_width,
                                              AngularFrequency beam_frequency,
                                              const std::string& ray_code,
-                                             std::optional<double> stop_depth, double step_size,
-                                             double max_step) {
+                                             std::optional<double> stop_depth) {
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
-                      stop_depth, step_size, max_step);
+                      stop_depth);
 }
