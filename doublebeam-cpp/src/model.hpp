@@ -13,6 +13,8 @@ struct Layer {
     double velocity;
 };
 
+double layer_height(const Layer& layer);
+
 bool operator==(const Layer& l1, const Layer& l2);
 
 
@@ -22,13 +24,6 @@ class VelocityModel {
      * where the layer ends.
      */
     std::vector<double> m_interface_depths;
-
-    /**
-     * Sequence of above, below velocity of every interface (in m/s).
-     * Includes interfaces at top and bottom where the model ends.
-     * Outside velocities are set to zero
-     */
-    std::vector<double> m_interface_velocities;
 
     /**
      * Array of layers.
@@ -70,10 +65,10 @@ public:
      * @param x X coordinate in m.
      * @param y Y coordinate in m.
      * @param z Depth in m.
-     * @return Index of layer in velocity model, 0 indexed.
-     * @throw std::domain_error is thrown when depth is out of model range
+     * @return Index of layer in velocity model, 0 indexed. Empty when point (x, y, z) is  outside
+     * of velocity model.
      */
-    std::optional<size_t> layer_index(double x, double y, double z) const;
+    [[nodiscard]] std::optional<size_t> layer_index(double x, double y, double z) const;
 
     /**
      * Get index of layer at depth z.
@@ -81,10 +76,10 @@ public:
      * layer is a special case, since there the bottom of the layer also
      * belongs to the layer.
      * @param z Depth in m.
-     * @return Index of layer in velocity model, 0 indexed.
-     * @throw std::domain_error is thrown when depth is out of model range
+     * @return Index of layer in velocity model, 0 indexed. Empty when depth z is outside velocity
+     * model.
      */
-    std::optional<std::ptrdiff_t> layer_index(double z) const;
+    [[nodiscard]] std::optional<std::size_t> layer_index(double z) const;
 
     /**
      * Evaluate model at a certain position.
@@ -102,6 +97,11 @@ public:
      */
     bool in_model(double x, double y, double z) const;
 
+    struct InterfaceVelocities {
+        double above;
+        double below;
+    };
+
     /**
      * Return velocities above and below the closest interface.
      * 0 is returned for the velocity outside of the model, e.g. when the
@@ -109,7 +109,7 @@ public:
      * @param z Depth in meter.
      * @return velocity at closest interface to depth z in m/s.
      */
-    std::pair<double, double> interface_velocities(double z) const;
+    InterfaceVelocities interface_velocities(double z) const;
 
     using iterator = std::vector<double>::const_iterator;
     /**
@@ -185,7 +185,7 @@ public:
      * Return number of layers in model.
      * @return
      */
-    std::ptrdiff_t size() const;
+    std::size_t num_layers() const;
 
     const std::vector<double>& interface_depths() const;
 
