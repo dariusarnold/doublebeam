@@ -6,18 +6,31 @@
 #include <cstddef>
 #include <tuple>
 
+#include <boost/operators.hpp>
+
 #include "units.hpp"
 
 
-struct Position {
+struct Position : boost::equality_comparable<Position> {
+    Position(Meter xx, Meter yy, Meter zz) : x(xx), y(yy), z(zz) {}
+
     Meter x;
     Meter y;
     Meter z;
 };
 
+/**
+ * Position is only equality comparable (!=, ==)
+ */
+bool operator==(const Position& position1, const Position& position2);
+
 std::ostream& operator<<(std::ostream& os, Position position);
 
-struct Slowness {
+
+struct Slowness : boost::equality_comparable<Slowness> {
+    Slowness(InverseVelocity pxx, InverseVelocity pyy, InverseVelocity pzz) :
+            px(pxx), py(pyy), pz(pzz) {}
+
     InverseVelocity px;
     InverseVelocity py;
     InverseVelocity pz;
@@ -25,24 +38,52 @@ struct Slowness {
 
 std::ostream& operator<<(std::ostream& os, Slowness slowness);
 
-struct TravelTime {
+/*
+ * Slowness is only equality comparable (!=, ==)
+ */
+bool operator==(const Slowness& slowness1, const Slowness& slowness2);
+
+struct TravelTime : boost::totally_ordered<TravelTime> {
+    explicit TravelTime(Second t) : time(t) {}
+
     Second time;
 };
 
+/**
+ * Traveltime is totally ordered (<, >, <= ,>=, ==, !=).
+ */
+bool operator==(const TravelTime& t1, const TravelTime& t2);
+bool operator<(const TravelTime& t1, const TravelTime& t2);
+
 std::ostream& operator<<(std::ostream& os, TravelTime travel_time);
 
-struct Arclength {
+struct Arclength : boost::totally_ordered<Arclength> {
+
+    explicit Arclength(Meter arclength) : length(arclength) {}
+
     Meter length;
 };
 
+/**
+ * Arclength is totally ordered (<, >, <= ,>=, ==, !=).
+ */
+bool operator==(const Arclength& l1, const Arclength& l2);
+bool operator<(const Arclength& l1, const Arclength& l2);
+
 std::ostream& operator<<(std::ostream& os, Arclength arclength);
 
-struct RayState {
+
+
+struct RayState{
     Position position;
     Slowness slowness;
     TravelTime travel_time;
     Arclength arclength;
 };
+
+bool operator==(const RayState& ray_state1, const RayState& ray_state2);
+bool operator!=(const RayState& ray_state1, const RayState& ray_state2);
+
 
 std::ostream& operator<<(std::ostream& os, RayState ray_state);
 
