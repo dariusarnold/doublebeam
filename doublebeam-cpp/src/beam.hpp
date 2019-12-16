@@ -13,100 +13,83 @@
 #include "units.hpp"
 
 
+class Beam;
+
+
 class BeamSegment {
 public:
-    BeamSegment(RaySegment segment, const Eigen::Tensor3cd& P, const Eigen::Tensor3cd& Q,
-                double v) :
-            ray_segment(segment), P(std::move(P)), Q(std::move(Q)), v(v) {}
-    // Return data of ray segment
-    std::vector<state_type> data() const;
-    // return arclength of ray segment
-    std::vector<double> arclength() const;
+    BeamSegment(Eigen::Matrix2cd P, Eigen::Matrix2cd Q);
 
-    RaySegment ray_segment;
-    Eigen::Tensor3cd P;
-    Eigen::Tensor3cd Q;
-    double v;
+    friend Beam;
+
+private:
+    /**
+     * Matrix P at begin of beam segment.
+     */
+    Eigen::Matrix2cd P;
+    /**
+     * Matrix Q at begin of beam segment.
+     */
+    Eigen::Matrix2cd Q;
 };
-
-/**
- * Get first point (start point) of beam segment.
- * @return x, y, z coordinate triple
- */
-position_t first_point(const BeamSegment& bs);
-
-/**
- * Get last point (end point) of beam segment.
- * @return x, y, z coordinate triple
- */
-position_t last_point(const BeamSegment& bs);
-
-/**
- * Get nth point of beam segment.
- * @param The index n increases in the beam direction and starts at 0. There is no bounds checking.
- * @return x, y, z coordinate triple
- */
-position_t nth_point(const BeamSegment& bs, size_t n);
 
 
 class Beam {
 public:
-    Beam(Meter beam_width, AngularFrequency beam_frequency, BeamSegment segment);
-    Beam(Meter beam_width, AngularFrequency beam_frequency);
-
-    std::vector<BeamSegment>::iterator begin();
-    std::vector<BeamSegment>::iterator end();
-    std::vector<BeamSegment> segments;
+    Beam(Meter beam_width, AngularFrequency beam_frequency, Ray ray, Eigen::Matrix2cd P,
+         Eigen::Matrix2cd Q);
 
     /**
      * Allow indexing beam to return its segments.
      * @param i
      * @return
      */
-    BeamSegment& operator[](int i);
     const BeamSegment& operator[](int i) const;
 
-    size_t size() const;
+    void add_segment(Eigen::Matrix2cd P, Eigen::Matrix2cd Q);
 
-    Meter width() const;
-    AngularFrequency frequency() const;
+    [[nodiscard]] size_t size() const;
+
+    [[nodiscard]] Meter width() const;
+    [[nodiscard]] AngularFrequency frequency() const;
+
+    [[nodiscard]] Slowness last_slowness() const;
+
+    [[nodiscard]] Position last_position() const;
+
+    [[nodiscard]] Arclength last_arclength() const;
+
+    /**
+     * Return value of P at the last beam position.
+     */
+    [[nodiscard]] const Eigen::Matrix2cd& last_P() const;
+
+    /**
+     * Return value of Q at the last beam positon.
+     * @return
+     */
+    [[nodiscard]] Eigen::Matrix2cd last_Q() const;
+
+    [[nodiscard]] Second traveltime() const;
+
+    /**
+     * Get matrix Q at specified arclength s.
+     * @param s
+     * @return
+     */
+    [[nodiscard]] Eigen::Matrix2cd get_Q(Arclength s) const;
 
 private:
+    /**
+     * Find index of the segment containing arclength s.
+     * @return Index for segment of beam where s(start) <= s <= s(end).
+     */
+    [[nodiscard]] size_t find_segment_index(Arclength s) const;
+
+    Ray ray;
+    std::vector<BeamSegment> segments;
     Meter m_width;
     AngularFrequency m_frequency;
 };
-
-/**
- * Return last slowness value of a beam.
- * @param beam
- * @return
- */
-slowness_t last_slowness(const Beam& beam);
-
-/**
- * Return first slowness value of a beam.
- * @param beam
- * @return
- */
-slowness_t first_slowness(const Beam& beam);
-
-/**
- * Return starting point of beam.
- * @param beam
- * @return
- */
-position_t first_point(const Beam& beam);
-
-/**
- * Return last position of a beam.
- * @param beam
- * @return
- */
-position_t last_point(const Beam& beam);
-
-// TODO maybe rename to total traveltime
-double last_traveltime(const Beam& beam);
-
-double last_arclength(const Beam& beam);
 
 #endif // DOUBLEBEAM_CPP_BEAM_HPP
