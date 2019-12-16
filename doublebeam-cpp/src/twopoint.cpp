@@ -183,10 +183,10 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     array_t b(num_layers);
     z[0] = min_depth;
     z[num_layers] = max_depth;
-    b[0] = model[min_index].intercept;
+    b[0] = model[min_index].velocity;
     for (size_t i = 1; i < num_layers; ++i) {
         z[i] = model[min_index + i - 1].bot_depth;
-        b[i] = model[min_index + i].intercept;
+        b[i] = model[min_index + i].velocity;
     }
     msg(z);
     msg(b);

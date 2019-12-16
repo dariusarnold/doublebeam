@@ -6,11 +6,11 @@
 #include <tuple>
 #include <vector>
 
+
 struct Layer {
     double top_depth;
     double bot_depth;
-    double intercept;
-    double gradient;
+    double velocity;
 };
 
 bool operator==(const Layer& l1, const Layer& l2);
