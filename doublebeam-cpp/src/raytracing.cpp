@@ -319,15 +319,6 @@ Meter distance(const Position& a, const Position& b) {
                            std::pow(az.get() - bz.get(), 2)));
 }
 
-/**
- * Return length of ray segment in meters.
- * @param segment
- * @return
- */
-Meter length(const RaySegment& segment) {
-    return Meter(segment.end().arclength.length.get() - segment.begin().arclength.length.get());
-}
-
 bool not_at_last_ray_segment(size_t segment_index, size_t ray_size) {
     return segment_index < ray_size - 1;
 }
@@ -358,7 +349,7 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
             // if we are not at the last segment of the ray, transform dynamic ray tracing across
             // interface (calculate new P0, Q0)
             Eigen::Matrix2cd Q_at_end_of_ray_segment =
-                Q + segment.layer_velocity().get() * length(segment).get() * P;
+                Q + segment.layer_velocity().get() * segment.length().get() * P;
             auto wave_type = ray_code[segment_index];
             auto new_initial_state = ray.value()[segment_index + 1].begin();
             std::tie(P, Q) = ip.transform(P, Q_at_end_of_ray_segment, wave_type, segment.end(),

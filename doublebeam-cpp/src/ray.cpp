@@ -65,3 +65,7 @@ const RayState& RaySegment::end() const {
 Velocity RaySegment::layer_velocity() const {
     return v_m;
 }
+
+Meter RaySegment::length() const {
+    return Meter(end_m.arclength.length.get() - begin_m.arclength.length.get());
+}

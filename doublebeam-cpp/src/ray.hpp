@@ -23,6 +23,12 @@ public:
      */
     [[nodiscard]] Velocity layer_velocity() const;
 
+    /**
+     * Calculate length of ray segment.
+     * @return
+     */
+    [[nodiscard]] Meter length() const;
+
 private:
     /**
      * State at the beginning of the ray segment.
