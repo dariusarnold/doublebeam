@@ -1,0 +1,11 @@
+#depth top, depth bottom, p velocity top
+# model Thomas simulation
+x0 0
+x1 1200
+y0 0
+y1 1200
+0, 200, 3000
+200, 400, 3200
+400, 600, 3500
+600, 800, 3800
+800, 1000, 4000
