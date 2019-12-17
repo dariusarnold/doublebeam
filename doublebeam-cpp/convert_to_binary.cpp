@@ -50,6 +50,7 @@ void convert_all_to_binary(const std::filesystem::path& project_dir) {
     }
     std::cout << "Converting all files in " << project_dir << std::endl;
     auto paths = get_all_directories(project_dir);
+    std::sort(paths.begin(), paths.end());
     auto i = 0;
     for (const auto& source_dir : paths) {
         std::cout << ++i << "/" << paths.size() << ": " << source_dir << std::endl;
