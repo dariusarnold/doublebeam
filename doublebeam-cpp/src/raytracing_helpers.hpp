@@ -8,8 +8,6 @@
 #include <array>
 #include <functional>
 
-#include <boost/math/tools/toms748_solve.hpp>
-
 #include "model.hpp"
 #include "raytracing.hpp"
 #include "raytracing_types.hpp"
@@ -35,72 +33,7 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
  * @param wave_type Which wave type to take ('T' for transmitted, 'R' for reflected).
  * @return New state at interface with changed slowness.
  */
-state_type snells_law(const state_type& old_state, const VelocityModel& model, WaveType wave_type);
+Slowness snells_law(const RayState& old_state, const VelocityModel& model, WaveType wave_type);
 
 
-class InterfaceCrossed {
-public:
-    /**
-     * Helper class that acts as an event which is triggered once the layer boundary is crossed
-     * during ray tracing. If the event is triggered, integration is stopped and the exact location
-     * of the layer boundary is found.
-     * @param upper_depth Upper depth above which an event is triggered.
-     * @param lower_depth Lower depth below which an event is triggered.
-     */
-    explicit InterfaceCrossed(double upper_depth, double lower_depth);
-    /**
-     * Check if depth of current state is outside of the layer.
-     * @param state Current state.
-     * @return True if interface was crossed with the given state.
-     */
-    bool operator()(const state_type& state) const;
-
-    /**
-     * Return function that has a zero crossing where the layer is crossed. This function is used to
-     * locate to exact depth of the interface.
-     * @return
-     */
-    std::function<double(const state_type&)>
-    get_zero_crossing_event_function(const state_type& state) const;
-
-    /**
-     * Get closest interface depth (either top or bottom) to a given depth.
-     * @param state Current state of integration.
-     * @return Return top depth of layer if the given state is closer to the top, else return bottom
-     * depth.
-     */
-    double get_closest_layer_depth(const state_type& state) const;
-
-private:
-    double top_depth, bottom_depth;
-};
-
-/**
- * Calculate exact state at interface crossing.
- * @tparam Stepper Boost dense output stepper type.
- * @param crossing_function Continuous function of state that has a zero crossing at the interface
- * depth.
- * @param stepper Stepper used for solving the system of ODEs.
- * @return Pair of: state at interface and arclength at interface.
- */
-template <typename Stepper>
-std::pair<state_type, double>
-get_state_at_interface(std::function<double(const state_type&)> crossing_function,
-                       Stepper stepper) {
-    // our integration variable is not time t but arclengths s
-    double s0 = stepper.previous_time();
-    double s1 = stepper.current_time();
-    state_type x_middle;
-    boost::uintmax_t max_calls = 1000;
-    auto [s_left, s_right] = boost::math::tools::toms748_solve(
-        [&](double t) {
-            stepper.calc_state(t, x_middle);
-            return (crossing_function(x_middle));
-        },
-        s0, s1, boost::math::tools::eps_tolerance<double>(), max_calls);
-    // calculate final position of crossing and save state at crossing
-    auto s_middle = (s_left + s_right) * 0.5;
-    stepper.calc_state(s_middle, x_middle);
-    return {x_middle, s_middle};
-}
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HELPERS_HPP

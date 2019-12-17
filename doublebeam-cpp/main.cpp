@@ -11,28 +11,11 @@
 #include "utils.hpp"
 
 
-std::ostream& operator<<(std::ostream& os, const RaySegment& segment) {
-    os << "Raysegment: " << segment.data.front() << " to " << segment.data.back() << " ( "
-       << segment.data.size() << ") steps";
-    return os;
-}
-
-
-std::ostream& operator<<(std::ostream& os, const Ray& ray) {
-    auto i = 0;
-    for (auto& segment : ray.segments) {
-        std::cout << i << " " << segment << "\n";
-        ++i;
-    }
-    return os;
-}
-
-
 int main() {
     std::ios_base::sync_with_stdio(false);
     auto vm = read_velocity_file("/home/darius/git/doublebeam/doublebeam-cpp/velocity_model.txt");
     auto db = DoubleBeam(vm);
-    auto source_beam_centres = seismo::grid_coordinates(4500, 8500, 4500, 8500, 0, 4, 4);
+    auto source_beam_centres = seismo::grid_coordinates(4500, 8500, 4500, 8500, 0, 2, 2);
     auto targets = seismo::grid_coordinates(6500, 6500, 6500, 6500, 2400, 1, 1);
     // TODO fracture depth is unused
     FractureParameters fractures(2400, 0, 1, 61, 100, 300, 41);

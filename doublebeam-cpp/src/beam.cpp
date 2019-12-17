@@ -1,23 +1,13 @@
 #include "beam.hpp"
 
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
-std::vector<BeamSegment>::iterator Beam::begin() {
-    return segments.begin();
-}
+#include <utility>
 
-std::vector<BeamSegment>::iterator Beam::end() {
-    return segments.end();
-}
-
-Beam::Beam(Meter beam_width, AngularFrequency beam_frequency, BeamSegment segment) :
-        segments{segment},
-        m_width(beam_width),
-        m_frequency(beam_frequency) {}
 
 Beam::Beam(Meter beam_width, AngularFrequency beam_frequency) :
-        segments(),
-        m_width(beam_width),
-        m_frequency(beam_frequency) {}
+        segments(), m_width(beam_width), m_frequency(beam_frequency) {}
 
 Meter Beam::width() const {
     return m_width;
@@ -27,77 +17,88 @@ AngularFrequency Beam::frequency() const {
     return m_frequency;
 }
 
-BeamSegment& Beam::operator[](int i) {
+const BeamSegment& Beam::operator[](size_t i) const {
     return segments[i];
 }
 
-const BeamSegment& Beam::operator[](int i) const {
-    return segments[i];
+Eigen::Matrix2cd Beam::get_Q(Arclength s) const {
+    auto segment_index = find_segment_index(s);
+    Velocity v = segments[segment_index].layer_velocity();
+    double distance_in_layer =
+        s.length.get() - segments[segment_index].begin().arclength.length.get();
+    return segments[segment_index].Q + v.get() * distance_in_layer * segments[segment_index].P;
+}
+
+BeamSegment::BeamSegment(Eigen::Matrix2cd P, Eigen::Matrix2cd Q, RaySegment segment) :
+        RaySegment(segment.begin(), segment.end(), segment.layer_velocity()),
+        P(std::move(P)),
+        Q(std::move(Q)) {}
+
+size_t Beam::find_segment_index(Arclength s) const {
+    if (s.length.get() < 0) {
+        throw std::domain_error(fmt::format("Negative arclength not allowed: {}", s));
+    }
+    for (size_t i = 0; i < size(); ++i) {
+        if (segments[i].begin().arclength.length.get() <= s.length.get() and
+            segments[i].end().arclength.length.get() >= s.length.get()) {
+            return i;
+        }
+    }
+    throw std::invalid_argument(fmt::format("{} beyond maximum {}.", s, last_arclength()));
+}
+
+const Eigen::Matrix2cd& Beam::last_P() const {
+    return segments.back().P;
+}
+
+void Beam::add_segment(Eigen::Matrix2cd P, Eigen::Matrix2cd Q, RaySegment segment) {
+    segments.emplace_back(P, Q, segment);
+}
+
+Eigen::Matrix2cd Beam::last_Q() const {
+    return get_Q(Beam::last_arclength());
+}
+
+std::vector<BeamSegment>::const_iterator Beam::begin() const {
+    return segments.begin();
+}
+
+std::vector<BeamSegment>::const_iterator Beam::end() const {
+    return segments.end();
+}
+
+const Eigen::Matrix2cd& BeamSegment::get_P() const {
+    return P;
+}
+
+const Eigen::Matrix2cd& BeamSegment::Q_begin() const {
+    return Q;
+}
+
+Eigen::Matrix2cd BeamSegment::Q_end() const {
+    return Q + layer_velocity().get() * length().get() * P;
 }
 
 size_t Beam::size() const {
     return segments.size();
 }
 
-slowness_t last_slowness(const Beam& beam) {
-    if (beam.size() == 0) {
-        throw std::length_error("Accessing empty beam.");
-    }
-    const auto& last_state = beam.segments.back().ray_segment.data.back();
-    return {last_state[Index::PX], last_state[Index::PY], last_state[Index::PZ]};
+const RayState& Beam::last_state() const {
+    return segments.back().end();
 }
 
-position_t last_point(const Beam& beam) {
-    if (beam.size() == 0) {
-        throw std::length_error("Acessing empty beam.");
-    }
-    const auto& last_state = beam.segments.back().ray_segment.data.back();
-    return {last_state[Index::X], last_state[Index::Y], last_state[Index::Z]};
+const Position& Beam::last_position() const {
+    return last_state().position;
 }
 
-position_t first_point(const BeamSegment& bs) {
-    auto [x, y, z, px, py, pz, t] = bs.data().front();
-    return {x, y, z};
+const Slowness& Beam::last_slowness() const {
+    return last_state().slowness;
 }
 
-position_t last_point(const BeamSegment& bs) {
-    auto [x, y, z, px, py, pz, t] = bs.data().back();
-    return {x, y, z};
+Arclength Beam::last_arclength() const {
+    return last_state().arclength;
 }
 
-double last_traveltime(const Beam& beam) {
-    return beam.segments.back().data().back()[Index::T];
-}
-
-position_t first_point(const Beam& beam) {
-    if (beam.size() == 0) {
-        throw std::length_error("Acessing empty beam.");
-    }
-    const auto& first_state = beam.segments.front().ray_segment.data.front();
-    return {first_state[Index::X], first_state[Index::Y], first_state[Index::Z]};
-}
-
-double last_arclength(const Beam& beam) {
-    return beam.segments.back().arclength().back();
-}
-
-position_t nth_point(const BeamSegment& bs, size_t n) {
-    auto [x, y, z, px, py, pz, t] = bs.ray_segment.data[n];
-    return {x, y, z};
-}
-
-slowness_t first_slowness(const Beam& beam) {
-    if (beam.size() == 0) {
-        throw std::length_error("Accessing empty beam.");
-    }
-    const auto& first_state = beam.segments.front().data().front();
-    return {first_state[Index::PX], first_state[Index::PY], first_state[Index::PZ]};
-}
-
-std::vector<state_type> BeamSegment::data() const {
-    return ray_segment.data;
-}
-
-std::vector<double> BeamSegment::arclength() const {
-    return ray_segment.arclength;
+Second Beam::traveltime() const {
+    return last_state().travel_time.time;
 }

@@ -5,11 +5,11 @@
 
 namespace seismo {
 
-    std::tuple<double, double, double> slowness_3D(double theta, double phi, double velocity) {
-        auto px = 1. / velocity * sin(theta) * cos(phi);
-        auto py = 1. / velocity * sin(theta) * sin(phi);
-        auto pz = 1. / velocity * cos(theta);
-        return {px, py, pz};
+    Slowness slowness_3D(Radian theta, Radian phi, Velocity velocity) {
+        InverseVelocity px(1. / velocity.get() * sin(theta.get()) * cos(phi.get()));
+        InverseVelocity py(1. / velocity.get() * sin(theta.get()) * sin(phi.get()));
+        InverseVelocity pz(1. / velocity.get() * cos(theta.get()));
+        return Slowness(px, py, pz);
     }
 
     std::vector<std::ptrdiff_t> ray_code_to_layer_indices(const std::vector<WaveType>& ray_code,
@@ -94,8 +94,8 @@ namespace math {
                                              double central_direction_y) {
         auto angle_against_xaxis =
             math::angle_clockwise(1., 0., central_direction_x, central_direction_y);
-        auto angles = math::linspace(angle_against_xaxis - math::radians(90),
-                                     angle_against_xaxis + math::radians(90), num_values);
+        auto angles = math::linspace(angle_against_xaxis - radians(90_deg).get(),
+                                     angle_against_xaxis + radians(90_deg).get(), num_values);
         std::vector<Vector2> v(num_values);
         std::transform(angles.begin(), angles.end(), v.begin(), [](double angle) {
             return Vector2{std::cos(angle), -std::sin(angle)};

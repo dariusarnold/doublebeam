@@ -12,11 +12,16 @@ DEFINE_TYPE_LITERAL_WITH_FACTOR(Meter, _kilometer, 1000);
 
 
 DEFINE_STRONG_TYPE(Second, double);
+DEFINE_TYPE_LITERAL(Second, _second);
 
 
 DEFINE_STRONG_TYPE(Velocity, double);
 DEFINE_TYPE_LITERAL(Velocity, _meter_per_second);
 DEFINE_TYPE_LITERAL_WITH_FACTOR(Velocity, _km_per_second, 1000);
+
+
+DEFINE_STRONG_TYPE(InverseVelocity, double);
+DEFINE_TYPE_LITERAL(InverseVelocity, _second_per_meter);
 
 
 DEFINE_STRONG_TYPE(Radian, double);
@@ -25,6 +30,15 @@ DEFINE_TYPE_LITERAL(Radian, _rad);
 
 DEFINE_STRONG_TYPE(Degree, double);
 DEFINE_TYPE_LITERAL(Degree, _deg);
+
+
+inline Radian radians(Degree degree) {
+    return Radian(degree.get() * M_PI / 180.);
+}
+
+inline Degree degrees(Radian radians) {
+    return Degree(radians.get() / M_PI / 180.);
+}
 
 
 DEFINE_STRONG_TYPE(Frequency, double);

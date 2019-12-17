@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Boost REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
+find_package(fmt)
+
 # the following is taken from https://github.com/egpbos/findFFTW
 configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -36,8 +38,8 @@ set(WARNINGS -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-al
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/ray.cpp src/beam.cpp src/printing.cpp src/io.cpp src/seismodata.cpp
-        src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp)
-target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs fftw3)
+        src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp src/raytracing_types.cpp)
+target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs fftw3 fmt::fmt)
 target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_include_directories(doublebeam_lib PRIVATE FFTW_INCLUDE_DIRS)

@@ -34,40 +34,10 @@ std::tuple<double, double, double> snells_law(double px, double py, double pz, d
     return {px, py, pz};
 }
 
-state_type snells_law(const state_type& old_state, const VelocityModel& model, WaveType wave_type) {
-    auto [v_above, v_below] = model.interface_velocities(old_state[Index::Z]);
-    auto [x, y, z, px, py, pz, t] = old_state;
-    std::tie(px, py, pz) = snells_law(old_state[Index::PX], old_state[Index::PY],
-                                      old_state[Index::PZ], v_above, v_below, wave_type);
-    return {x, y, z, px, py, pz, t};
-}
-
-
-InterfaceCrossed::InterfaceCrossed(double upper_depth, double lower_depth) :
-        top_depth(upper_depth),
-        bottom_depth(lower_depth){};
-
-bool InterfaceCrossed::operator()(const state_type& state) const {
-    return state[Index::Z] > bottom_depth or state[Index::Z] < top_depth;
-}
-
-std::function<double(const state_type&)>
-InterfaceCrossed::get_zero_crossing_event_function(const state_type& state) const {
-    if (state[Index::Z] < top_depth) {
-        // top interface was crossed
-        return [top_depth = this->top_depth](const state_type& state) {
-            return top_depth - state[Index::Z];
-        };
-    } else {
-        // bottom interface was crossed
-        return [bottom_depth = this->bottom_depth](const state_type& state) {
-            return bottom_depth - state[Index::Z];
-        };
-    }
-}
-
-double InterfaceCrossed::get_closest_layer_depth(const state_type& state) const {
-    return std::abs(state[Index::Z] - top_depth) < std::abs(state[Index::Z] - bottom_depth)
-               ? top_depth
-               : bottom_depth;
+Slowness snells_law(const RayState& old_state, const VelocityModel& model, WaveType wave_type) {
+    auto [position, slowness, travel_time, arclength] = old_state;
+    auto [v_above, v_below] = model.interface_velocities(position.z.get());
+    auto [px, py, pz] = snells_law(slowness.px.get(), slowness.py.get(), slowness.pz.get(), v_above,
+                                   v_below, wave_type);
+    return {InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)};
 }

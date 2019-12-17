@@ -5,6 +5,8 @@
 #include <utility>
 #include <ostream>
 
+#include <boost/operators.hpp>
+
 
 /**
  * Base class for strong named types.
@@ -14,7 +16,7 @@
  * @tparam Parameter Type that makes instantiations of NamedType unique even when T is the same.
  */
 template <typename T, typename Parameter>
-class NamedType {
+class NamedType : boost::totally_ordered<NamedType<T, Parameter>> {
 public:
     explicit NamedType(const T& value) : value(value) {}
     explicit NamedType(T&& value) : value(std::move(value)) {}
@@ -30,8 +32,12 @@ public:
         return os << quantity.value;
     }
 
-    bool operator==(const NamedType& quantity) const{
-        return value == quantity.value;
+    bool operator==(const NamedType& other) const{
+        return value == other.value;
+    }
+
+    bool operator<(const NamedType& other) const {
+        return value < other.value;
     }
 
 private:

@@ -1,41 +1,71 @@
 #include "ray.hpp"
 
-RaySegment::RaySegment(std::vector<state_type> data, std::vector<double> arclength) :
-        data(std::move(data)), arclength(std::move(arclength)) {}
 
-
-std::vector<RaySegment>::iterator Ray::begin() {
-    return segments.begin();
-}
-
-std::vector<RaySegment>::iterator Ray::end() {
-    return segments.end();
-}
-
-std::ptrdiff_t Ray::size() const {
+std::size_t Ray::size() const {
     return segments.size();
-}
-
-RaySegment& Ray::operator[](size_t index) {
-    return segments[index];
 }
 
 const RaySegment& Ray::operator[](size_t index) const {
     return segments[index];
 }
 
-slowness_t last_slowness(const Ray& ray) {
-    if (ray.size() == 0) {
+Ray::Ray(RaySegment ray_segment) : segments({ray_segment}) {}
+
+Position Ray::last_position() const {
+    if (size() == 0) {
         throw std::length_error("Accessing empty ray.");
     }
-    auto last_segment = ray.segments.back().data.back();
-    return {last_segment[Index::PX], last_segment[Index::PY], last_segment[Index::PZ]};
+    return segments.back().end().position;
 }
 
-position_t last_point(const Ray& ray) {
-    if (ray.size() == 0) {
-        throw std::length_error("Acessing empty ray.");
+Slowness Ray::last_slowness() const {
+    if (size() == 0) {
+        throw std::length_error("Accessing empty ray.");
     }
-    auto last_segment = ray.segments.back().data.back();
-    return {last_segment[Index::X], last_segment[Index::Y], last_segment[Index::Z]};
+    return segments.back().end().slowness;
+}
+
+void Ray::add_segment(RaySegment ray_segment) {
+    segments.push_back(ray_segment);
+}
+
+Second Ray::traveltime() const {
+    return segments.back().end().travel_time.time;
+}
+
+Ray::Ray() : segments() {}
+
+const RayState& Ray::last_state() const {
+    return segments.back().end();
+}
+
+std::vector<RaySegment>::const_iterator Ray::begin() const {
+    return segments.begin();
+}
+
+std::vector<RaySegment>::const_iterator Ray::end() const {
+    return segments.end();
+}
+
+Arclength Ray::last_arclength() const {
+    return segments.back().end().arclength;
+}
+
+RaySegment::RaySegment(RayState begin, RayState end, Velocity v) :
+        begin_m(begin), end_m(end), v_m(v) {}
+
+const RayState& RaySegment::begin() const {
+    return begin_m;
+}
+
+const RayState& RaySegment::end() const {
+    return end_m;
+}
+
+Velocity RaySegment::layer_velocity() const {
+    return v_m;
+}
+
+Meter RaySegment::length() const {
+    return Meter(end_m.arclength.length.get() - begin_m.arclength.length.get());
 }

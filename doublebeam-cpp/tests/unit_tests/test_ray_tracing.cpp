@@ -9,11 +9,11 @@
 class TestRayTracingBase : public ::testing::Test {
 public:
     TestRayTracingBase() :
-            vm{{{0, 100, 1800, 4},
-                {100, 200, 2400, 0},
-                {200, 300, 2400, 1},
-                {300, 400, 2700, 0},
-                {400, 500, 2250, 1.5}},
+            vm{{{0, 100, 2000},
+                {100, 200, 2400},
+                {200, 300, 2650},
+                {300, 400, 2700},
+                {400, 500, 2925}},
                3000,
                3000},
             krt(vm) {}
@@ -24,64 +24,65 @@ public:
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerDownwards) {
     // This ray ends in a linear velocity gradient layer and travels downwards
-    auto initial_state = init_state(0, 0, 100, vm, 0, 0);
+    auto initial_state = init_state(0_meter, 0_meter, 100_meter, vm, 0_rad, 0_rad);
     auto ray = krt.trace_ray(initial_state, "", 150).value();
-    auto [x, y, z] = last_point(ray);
-    EXPECT_EQ(x, 0);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 150);
+    auto [x, y, z] = ray.last_position();
+    EXPECT_EQ(x.get(), 0);
+    EXPECT_EQ(y.get(), 0);
+    EXPECT_EQ(z.get(), 150);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerUpwards) {
-    double p = -1 / vm.eval_at(0, 0, 199).value();
+    InverseVelocity p(-1 / vm.eval_at(0, 0, 199).value());
     // This ray ends in a linear velocity gradient layer
-    auto initial_state = make_state(0, 0, 199, 0, 0, p);
+    auto initial_state =
+        make_state(0_meter, 0_meter, 199_meter, InverseVelocity(0), InverseVelocity(0), p);
     auto ray = krt.trace_ray(initial_state, "", 150).value();
-    auto [x, y, z] = last_point(ray);
+    auto [x, y, z] = ray.last_position();
     // px is very small due to numerical inaccuracies calc
-    EXPECT_DOUBLE_EQ(x, 0);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 150);
+    EXPECT_DOUBLE_EQ(x.get(), 0);
+    EXPECT_EQ(y.get(), 0);
+    EXPECT_EQ(z.get(), 150);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthLinearVelocityLayer) {
     // This ray ends in a linear velocity gradient layer
-    auto initial_state = init_state(0, 0, 0, vm, 0, 0);
+    auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, 0_rad, 0_rad);
     double stop_depth = 50;
     auto ray = krt.trace_ray(initial_state, "", stop_depth).value();
-    auto [x, y, z] = last_point(ray);
-    EXPECT_EQ(x, 0);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, stop_depth);
+    auto [x, y, z] = ray.last_position();
+    EXPECT_EQ(x.get(), 0);
+    EXPECT_EQ(y.get(), 0);
+    EXPECT_EQ(z.get(), stop_depth);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthOneLayerBottomToTop) {
     // This ray ends in a linear velocity gradient layer
-    auto initial_state = init_state(1, 1, 99, vm, math::radians(180), 0);
+    auto initial_state = init_state(1_meter, 1_meter, 99_meter, vm, radians(180_deg), 0_rad);
     auto ray = krt.trace_ray(initial_state, "", 50).value();
-    auto [x, y, z] = last_point(ray);
-    EXPECT_EQ(x, 1);
-    EXPECT_EQ(y, 1);
-    EXPECT_EQ(z, 50);
+    auto [x, y, z] = ray.last_position();
+    EXPECT_TRUE(Close(x.get(), 1.));
+    EXPECT_DOUBLE_EQ(y.get(), 1.);
+    EXPECT_DOUBLE_EQ(z.get(), 50.);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayer) {
     // This ray ends in constant velocity layer
-    auto initial_state = init_state(0, 0, 0, vm, 0, 0);
+    auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, 0_rad, 0_rad);
     auto ray = krt.trace_ray(initial_state, "T", 150).value();
-    auto [x, y, z] = last_point(ray);
-    EXPECT_EQ(x, 0);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 150);
+    auto [x, y, z] = ray.last_position();
+    EXPECT_EQ(x.get(), 0);
+    EXPECT_EQ(y.get(), 0);
+    EXPECT_EQ(z.get(), 150);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayerWithNonVerticalRay) {
-    auto initial_state = init_state(0, 0, 0, vm, math::radians(15), 0);
+    auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, radians(15_deg), 0_rad);
     auto ray = krt.trace_ray(initial_state, "T", 150).value();
-    auto [x, y, z] = last_point(ray);
-    EXPECT_NE(x, 0);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 150);
+    auto [x, y, z] = ray.last_position();
+    EXPECT_NE(x.get(), 0);
+    EXPECT_EQ(y.get(), 0);
+    EXPECT_EQ(z.get(), 150);
 }
 
 class TestRayTracing
@@ -91,50 +92,48 @@ class TestRayTracing
 TEST_P(TestRayTracing, TestCorrectEndpoint) {
     auto [slowness, endpoint] = GetParam();
     auto [px, py, pz] = slowness;
-    state_type initial_state{0, 0, 0, px, py, pz, 0};
-    auto ray = krt.trace_ray(initial_state, "TTTTRTTTT", {}, 1, 1).value();
-    auto last_traced_point = ray.segments.back().data.back();
-    EXPECT_TRUE(Close(last_traced_point[Index::X], endpoint, 1E-6));
+    RayState initial_state{Position{0_meter, 0_meter, 0_meter},
+                           Slowness{InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)},
+                           TravelTime{0_second}, Arclength{0_meter}};
+    auto ray = krt.trace_ray(initial_state, "TTTT").value();
+    auto last_traced_point = ray.last_position();
+    EXPECT_TRUE(Close(last_traced_point.x.get(), endpoint, 1E-6));
 }
 
 TEST_P(TestRayTracing, TestArcLengthIncreasesContinuously) {
-    // Test if arclength stays the same between an interface crossing and if it increases along the
-    // ray.
+    // Test if arclength stays the same between an interface crossing and if it increases along
+    // the ray.
     auto [slowness, _] = GetParam();
     auto [px, py, pz] = slowness;
-    state_type initial_state{0, 0, 0, px, py, pz, 0};
+    RayState initial_state{Position{0_meter, 0_meter, 0_meter},
+                           Slowness{InverseVelocity(px), InverseVelocity(py), InverseVelocity(pz)},
+                           TravelTime{0_second}, Arclength{0_meter}};
     auto ray = krt.trace_ray(initial_state, "TTTT").value();
-    auto arclength = ray.segments.front().arclength.front();
-    EXPECT_EQ(arclength, 0) << "Initial arc length not zero.";
-    for (const auto& segment : ray.segments) {
-        EXPECT_EQ(segment.arclength.front(), arclength)
+    Arclength arclength = ray[0].begin().arclength;
+    EXPECT_EQ(arclength.length.get(), 0) << "Initial arc length not zero.";
+    for (const auto& segment : ray) {
+        EXPECT_EQ(segment.begin().arclength, arclength)
             << "Arclength changed when crossing interface.";
-        EXPECT_GE(segment.arclength.back(), arclength) << "Arclength did not increase in layer.";
-        arclength = segment.arclength.back();
+        EXPECT_GE(segment.end().arclength.length.get(), arclength.length.get())
+            << "Arclength did not increase in layer.";
+        arclength = segment.end().arclength;
     }
 }
 
 using test_data_t = std::vector<std::pair<std::array<double, 3>, double>>;
 
-test_data_t test_data = {{{0.000166674323178, 0., 0.0005299638150872}, 469},
-                         {{0.0002545148149717, 0., 0.0004938260668176}, 868},
-                         {{0.0003320005004714, 0., 0.0004454409534331}, 2159},
-                         {{0.000333271179152, 0., 0.0004444910532905}, 2411}};
+// values pre calculated from two point ray tracing
+test_data_t test_data = {{{0.00026509666908597633, 0, 0.00042393838707944381}, 469},
+                         {{0.00032493968941590484, 0, 0.00038001868143855151}, 868},
+                         {{0.00034109782958686665, 0, 0.00036558483372690507}, 2159},
+                         {{0.00034130759537050534, 0, 0.00036538900550290698}, 2411}};
 
 INSTANTIATE_TEST_SUITE_P(TestCorrectEndpoints, TestRayTracing, testing::ValuesIn(test_data));
 
 
-TEST(TestRayTracingFunctionality, TestTurningRay) {
-    VelocityModel vm({{0, 1000, 3000, 1}, {1000, 101000, 4500, 1.5}}, 10000, 10000);
-    RayTracer rt(vm);
-    auto initial_state = init_state(0, 0, 0, vm, math::radians(20), 0, 0);
-    auto ray = rt.trace_ray(initial_state, "TT").value();
-    EXPECT_TRUE(Close(ray.segments.back().data.back()[Index::X], 9403.354242));
-}
-
 TEST_F(TestRayTracing, LeaveTopOfModel) {
-    auto initial_state = init_state(0, 0, 0, vm, math::radians(170), math::radians(0));
-    initial_state = make_state(0, 0, 0, 0, 0, -0.005);
+    RayState initial_state = make_state(0_meter, 0_meter, 0_meter, InverseVelocity(0),
+                                        InverseVelocity(0), InverseVelocity(-0.005));
     EXPECT_THROW(krt.trace_ray(initial_state, "TRT"), std::runtime_error)
         << "Kinematic ray tracing not throwing when ray leaves top of model.";
     EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TRT"),
@@ -143,7 +142,7 @@ TEST_F(TestRayTracing, LeaveTopOfModel) {
 }
 
 TEST_F(TestRayTracing, LeaveBottomOfModel) {
-    auto initial_state = init_state(0, 0, 0, vm, math::radians(10), 0);
+    auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, radians(10_deg), 0_rad);
     EXPECT_THROW(krt.trace_ray(initial_state, "TTTTTT"), std::runtime_error);
     EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TTTTTT"),
                  std::runtime_error);

@@ -8,15 +8,6 @@
 namespace fs = std::filesystem;
 
 
-/**
- * Helper function to calculate velocity in layer.
- * @return Velocity (m/s) in layer at depth. No bounds checking is done.
- */
-double layer_velocity(Layer layer, double depth) {
-    return layer.intercept + layer.gradient * depth;
-}
-
-
 std::vector<double> get_interface_depths(const std::vector<Layer>& layers) {
     if (layers.empty()) {
         throw std::invalid_argument("Velocity model has to contain layers.");
@@ -30,28 +21,10 @@ std::vector<double> get_interface_depths(const std::vector<Layer>& layers) {
     return interface_depths;
 }
 
-std::vector<double> get_interface_velocities(const std::vector<Layer>& layers) {
-    std::vector<double> interface_velocities;
-    interface_velocities.reserve(layers.size() + 2);
-    const double out_of_model_velocity = 0;
-    // get interface velocities with two special cases for first and last layer
-    double velocity = out_of_model_velocity;
-    interface_velocities.push_back(velocity);
-    for (auto& l : layers) {
-        velocity = layer_velocity(l, l.top_depth);
-        interface_velocities.push_back(velocity);
-        velocity = layer_velocity(l, l.bot_depth);
-        interface_velocities.push_back(velocity);
-    }
-    interface_velocities.emplace_back(out_of_model_velocity);
-    return interface_velocities;
-}
-
 
 VelocityModel::VelocityModel(const std::vector<Layer>& layers, double x1, double y1, double x0,
                              double y0) :
         m_interface_depths(get_interface_depths(layers)),
-        m_interface_velocities(get_interface_velocities(layers)),
         layers(layers),
         x0_(x0),
         x1_(x1),
@@ -77,7 +50,7 @@ VelocityModel read_velocity_file(const fs::path& filepath) {
     std::string line;
     std::istringstream iss;
     std::vector<double> widths;
-    double depth_top, depth_bot, velocity_top, velocity_bottom, intercept, gradient;
+    double depth_top, depth_bot, velocity;
     // extract widths
     int number_of_widths = 4;
     while (number_of_widths > 0) {
@@ -104,20 +77,16 @@ VelocityModel read_velocity_file(const fs::path& filepath) {
         iss.ignore(1, ',');
         iss >> depth_bot;
         iss.ignore(1, ',');
-        iss >> velocity_top;
-        iss.ignore(1, ',');
-        iss >> velocity_bottom;
-        gradient = (velocity_bottom - velocity_top) / (depth_bot - depth_top);
-        intercept = velocity_top - gradient * depth_top;
-        ls.push_back({depth_top, depth_bot, intercept, gradient});
+        iss >> velocity;
+        ls.push_back({depth_top, depth_bot, velocity});
     }
     // widths from file are given as x0 x1 y0 y1, but constructor takes them as x1 y1 x0 y0
     return VelocityModel{ls, widths[1], widths[3], widths[0], widths[2]};
 }
 
 bool operator==(const Layer& l1, const Layer& l2) {
-    return l1.gradient == l2.gradient and l1.top_depth == l2.top_depth and
-           l1.bot_depth == l2.bot_depth and l1.intercept == l2.intercept;
+    return l1.top_depth == l2.top_depth and l1.bot_depth == l2.bot_depth and
+           l1.velocity == l2.velocity;
 }
 
 
@@ -135,7 +104,7 @@ std::optional<size_t> VelocityModel::layer_index(double x, double y, double z) c
 }
 
 
-std::optional<std::ptrdiff_t> VelocityModel::layer_index(double z) const {
+std::optional<std::size_t> VelocityModel::layer_index(double z) const {
     return layer_index(x0_, y0_, z);
 }
 
@@ -145,20 +114,29 @@ std::optional<double> VelocityModel::eval_at(double x, double y, double z) const
     if (not index) {
         return {};
     }
-    return layer_velocity(layers[index.value()], z);
+    return layers[index.value()].velocity;
 }
 
-std::pair<double, double> VelocityModel::interface_velocities(double z) const {
-    auto index = layer_index(z).value();
-    auto half_depth =
-        layers[index].top_depth + 0.5 * (layers[index].bot_depth - layers[index].top_depth);
-    // index is layer index, which goes from 0 to n-1. Indices for interface velocities go from
-    // 0 to 2*(n+1)+1 since the first layer has 2 interface velocity pairs and every layer after
-    // that adds one interface velocity pair.
-    if (z < half_depth) {
-        return {m_interface_velocities[2 * index], m_interface_velocities[2 * index + 1]};
+double layer_height(const Layer& layer) {
+    return layer.bot_depth - layer.top_depth;
+}
+
+VelocityModel::InterfaceVelocities VelocityModel::interface_velocities(double z) const {
+    size_t index = layer_index(z).value();
+    const double outside_velocity = 0;
+    auto half_depth = layers[index].top_depth + 0.5 * layer_height(layers[index]);
+    if (index == 0 and z < half_depth) {
+        return {outside_velocity, layers[index].velocity};
     }
-    return {m_interface_velocities[2 * (index + 1)], m_interface_velocities[2 * (index + 1) + 1]};
+    if (index == num_layers() - 1 and z > half_depth) {
+        return {layers[index].velocity, outside_velocity};
+    }
+    if (z < half_depth) {
+        // interface above current layer
+        return {layers[index - 1].velocity, layers[index].velocity};
+    }
+    // interface below current layer
+    return {layers[index].velocity, layers[index + 1].velocity};
 }
 
 std::pair<double, double> VelocityModel::get_top_bottom() const {
@@ -176,15 +154,6 @@ bool VelocityModel::in_model(double x, double y, double z) const {
     return in_depth and in_widths;
 }
 
-std::pair<VelocityModel::iterator, VelocityModel::iterator>
-VelocityModel::interface_velocities(double z1, double z2) const {
-    auto [z_low, z_high] = std::minmax(z1, z2);
-    auto index_low = layer_index(z_low).value();
-    auto index_high = layer_index(z_high).value();
-    return {m_interface_velocities.begin() + 2 * (index_low + 1),
-            m_interface_velocities.begin() + 2 * (index_high + 1)};
-}
-
 std::vector<Layer>::const_iterator VelocityModel::begin() const {
     return layers.begin();
 }
@@ -193,7 +162,7 @@ std::vector<Layer>::const_iterator VelocityModel::end() const {
     return layers.end();
 }
 
-std::ptrdiff_t VelocityModel::size() const {
+std::size_t VelocityModel::num_layers() const {
     return layers.size();
 }
 
@@ -260,15 +229,13 @@ double highest_velocity_between(double source_depth, double receiver_depth,
                                 const VelocityModel& model) {
     auto receiver_index = model.layer_index(receiver_depth).value();
     auto source_index = model.layer_index(source_depth).value();
-    auto receiver_layer = model[receiver_index];
-    auto source_layer = model[source_index];
     // if points in same layer, maximum has to be at either point for linear velocity gradient
-    if (source_index == receiver_index) {
-        return std::max(layer_velocity(receiver_layer, receiver_depth),
-                        layer_velocity(source_layer, source_depth));
+    double max_velocity = 0;
+    for (auto i = std::min(receiver_index, source_index);
+         i <= std::max(receiver_index, source_index); ++i) {
+        if (model[i].velocity > max_velocity) {
+            max_velocity = model[i].velocity;
+        }
     }
-    auto [iterator_begin, iterator_end] = model.interface_velocities(receiver_depth, source_depth);
-    auto max_vel = std::max_element(iterator_begin, iterator_end);
-    return std::max({*max_vel, layer_velocity(source_layer, source_depth),
-                     layer_velocity(receiver_layer, receiver_depth)});
+    return max_velocity;
 }

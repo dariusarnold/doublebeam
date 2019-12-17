@@ -88,7 +88,7 @@ namespace seismo {
      * @param velocity Velocity in m/s.
      * @return Slowness px, py, pz
      */
-    std::tuple<double, double, double> slowness_3D(double theta, double phi, double velocity);
+    Slowness slowness_3D(Radian theta, Radian phi, Velocity velocity);
 
 
     /**
@@ -156,26 +156,6 @@ namespace seismo {
 
 
 namespace math {
-
-    /**
-     * Convert radians to degrees.
-     * @tparam T
-     * @param degrees Angle in degrees.
-     * @return Angle in radians.
-     */
-    template <typename T>
-    constexpr double radians(T degrees) {
-        constexpr double factor = M_PI / 180.;
-        return degrees * factor;
-    }
-
-    template <typename T>
-    constexpr double degrees(T radians) {
-        constexpr double factor = M_PI / 180.;
-        return radians / factor;
-    }
-
-
     /**
      * Check if two numbers have the same sign.
      * Zero is treated as a positive number.
