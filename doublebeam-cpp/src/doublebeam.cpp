@@ -224,70 +224,67 @@ RayState make_state(position_t pos, slowness_t slowness) {
                     TravelTime(0_second), Arclength(0_meter)};
 }
 
-DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry,
-                                       std::vector<position_t> target_geometry, SeismoData data,
-                                       FractureParameters fracture_info, Meter beam_width,
-                                       AngularFrequency beam_frequency, double window_length,
-                                       double max_stacking_distance) {
+DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, position_t target,
+                                       SeismoData data, FractureParameters fracture_info,
+                                       Meter beam_width, AngularFrequency beam_frequency,
+                                       double window_length, double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
-    auto ray_code = direct_ray_code(target_geometry[0], source_geometry[0], model);
-    std::cout << target_geometry.size() << "Targets\n"
-              << source_geometry.size() << "Sources." << std::endl;
-    for (const auto& target : target_geometry) {
-        int source_beam_index = 0;
-        for (const auto& source_beam_center : source_geometry) {
-            std::cout << "Beam " << source_beam_index++ << std::endl;
-            slowness_t slowness = twopoint.trace(target, source_beam_center);
-            // TODO add overload so declaring initial state is not required for ray tracing
-            auto initial_state = make_state(target, slowness);
-            auto a = std::chrono::high_resolution_clock::now();
-            auto source_beam =
-                tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
-            auto b = std::chrono::high_resolution_clock::now();
-            beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-            if (source_beam.status == Status::OutOfBounds) {
-                continue;
-            }
-            // Since we traced the beam from the target upwards to the surface, we will have to flip
-            // the direction of the slowness to be able to treat it as the incoming direction of the
-            // beam at the fractures and then scatter.
-            std::get<0>(slowness) *= -1;
-            std::get<1>(slowness) *= -1;
-            std::get<2>(slowness) *= -1;
-            for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
-                 ++spacing_index) {
-                for (auto orientations_index = 0U;
-                     orientations_index < fracture_info.orientations.size(); ++orientations_index) {
-//                    fmt::print("Spacing {}, orientation {}\n", spacing_index, orientations_index);
-                    auto [phi_hat_x, phi_hat_y] = fracture_info.orientations[orientations_index];
-                    auto [px, py] = scattered_slowness(
-                        std::get<0>(slowness), std::get<1>(slowness), phi_hat_x, phi_hat_y,
-                        fracture_info.spacings[spacing_index], angular_to_hertz(beam_frequency));
-                    // trace receiver beam in scattered direction
-                    // -pz to reflect beam upwards from target
-                    slowness_t new_slowness = math::scale_vector(
-                        {px, py, -std::get<2>(slowness)}, std::apply(math::length, slowness));
-                    initial_state = make_state(target, new_slowness);
-                    // reuse ray code since beam should pass through the same layers
-                    a = std::chrono::high_resolution_clock::now();
-                    auto receiver_beam =
-                        tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
-                    b = std::chrono::high_resolution_clock::now();
-                    beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-                    if (receiver_beam.status == Status::OutOfBounds) {
-                        // beam didn't reach surface, skip
-                        std::cout << "Receiver beam left model" << std::endl;
-                        continue;
-                    }
-                    // iteration over sources and receivers
-                    auto tmp = stack(source_beam.value(), receiver_beam.value(), data,
-                                     window_length, max_stacking_distance);
-                    if (not isfinite(tmp)) {
-                        std::cerr << "(" << spacing_index << ", " << orientations_index
-                                  << ") = " << tmp << std::endl;
-                    }
-                    result.data(spacing_index, orientations_index) += tmp;
+    auto ray_code = direct_ray_code(target, source_geometry[0], model);
+    std::cout << source_geometry.size() << " Source beam centers." << std::endl;
+    int source_beam_index = 0;
+    for (const auto& source_beam_center : source_geometry) {
+        std::cout << "Beam " << source_beam_index++ << std::endl;
+        slowness_t slowness = twopoint.trace(target, source_beam_center);
+        // TODO add overload so declaring initial state is not required for ray tracing
+        auto initial_state = make_state(target, slowness);
+        auto a = std::chrono::high_resolution_clock::now();
+        auto source_beam =
+            tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
+        auto b = std::chrono::high_resolution_clock::now();
+        beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+        if (source_beam.status == Status::OutOfBounds) {
+            continue;
+        }
+        // Since we traced the beam from the target upwards to the surface, we will have to flip
+        // the direction of the slowness to be able to treat it as the incoming direction of the
+        // beam at the fractures and then scatter.
+        std::get<0>(slowness) *= -1;
+        std::get<1>(slowness) *= -1;
+        std::get<2>(slowness) *= -1;
+        for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
+             ++spacing_index) {
+            for (auto orientations_index = 0U;
+                 orientations_index < fracture_info.orientations.size(); ++orientations_index) {
+                //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
+                //                    orientations_index);
+                auto [phi_hat_x, phi_hat_y] = fracture_info.orientations[orientations_index];
+                auto [px, py] = scattered_slowness(
+                    std::get<0>(slowness), std::get<1>(slowness), phi_hat_x, phi_hat_y,
+                    fracture_info.spacings[spacing_index], angular_to_hertz(beam_frequency));
+                // trace receiver beam in scattered direction
+                // -pz to reflect beam upwards from target
+                slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
+                                                             std::apply(math::length, slowness));
+                initial_state = make_state(target, new_slowness);
+                // reuse ray code since beam should pass through the same layers
+                a = std::chrono::high_resolution_clock::now();
+                auto receiver_beam =
+                    tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
+                b = std::chrono::high_resolution_clock::now();
+                beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+                if (receiver_beam.status == Status::OutOfBounds) {
+                    // beam didn't reach surface, skip
+                    std::cout << "Receiver beam left model" << std::endl;
+                    continue;
                 }
+                // iteration over sources and receivers
+                auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
+                                 max_stacking_distance);
+                if (not isfinite(tmp)) {
+                    std::cerr << "(" << spacing_index << ", " << orientations_index << ") = " << tmp
+                              << std::endl;
+                }
+                result.data(spacing_index, orientations_index) += tmp;
             }
         }
     }
