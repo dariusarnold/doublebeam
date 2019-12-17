@@ -243,7 +243,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
         auto b = std::chrono::high_resolution_clock::now();
         beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
         if (source_beam.status == Status::OutOfBounds) {
-            continue;
+            throw std::logic_error("Source beam left model.");
         }
         // Since we traced the beam from the target upwards to the surface, we will have to flip
         // the direction of the slowness to be able to treat it as the incoming direction of the
