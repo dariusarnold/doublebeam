@@ -32,6 +32,9 @@ std::vector<fs::path> get_all_files(const fs::path& path, const std::string& fil
 void convert_content_to_binary(const fs::path& source_dir) {
     std::vector<SeismogramFileContent> seismograms;
     auto files = get_all_files(source_dir, ".txt");
+    if (files.empty()) {
+        throw std::length_error("Found no seismogram files in " + source_dir.string());
+    }
     std::sort(files.begin(), files.end());
     std::transform(files.begin(), files.end(), std::back_inserter(seismograms), read_seismogram);
     save_binary_seismograms(seismograms, source_dir / "data.bin");
