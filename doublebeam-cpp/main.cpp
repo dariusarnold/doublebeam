@@ -16,12 +16,12 @@ int main() {
     auto vm = read_velocity_file("/home/darius/masterarbeit/thomas/velocity_model.txt");
     auto db = DoubleBeam(vm);
     auto source_beam_centres = seismo::grid_coordinates(0, 1200, 0, 1200, 0, 2, 2);
-    auto targets = seismo::grid_coordinates(600, 600, 600, 600, 400, 1, 1);
+    position_t target{600, 600, 400};
     // TODO fracture depth is unused
     FractureParameters fractures(600, 1, 0, 61, 50, 150, 41);
     auto data = SeismoData("/home/darius/masterarbeit/thomas");
     auto a = std::chrono::high_resolution_clock::now();
-    auto result = db.algorithm(source_beam_centres, targets, data, fractures, 244_meter,
+    auto result = db.algorithm(source_beam_centres, target, data, fractures, 244_meter,
                                20_angular_from_hertz, 0.12, 1500);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()

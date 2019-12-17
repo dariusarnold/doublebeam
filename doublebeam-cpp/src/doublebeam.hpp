@@ -64,9 +64,8 @@ class DoubleBeam {
 public:
     DoubleBeam(const VelocityModel& model);
 
-    DoubleBeamResult algorithm(std::vector<position_t> source_geometry,
-                               std::vector<position_t> target_geometry, SeismoData data,
-                               FractureParameters fracture_info, Meter beam_width,
+    DoubleBeamResult algorithm(std::vector<position_t> source_geometry, position_t target,
+                               SeismoData data, FractureParameters fracture_info, Meter beam_width,
                                AngularFrequency beam_frequency, double window_length,
                                double max_stacking_distance);
 
