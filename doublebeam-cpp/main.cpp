@@ -27,7 +27,7 @@ int main() {
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
     std::string result_filename = "result";
-    std::filesystem::path result_path(result_filename + ".txt");
+    std::filesystem::path result_path(result_filename + "0.txt");
     int index = 0;
     while (std::filesystem::exists(result_path)) {
         ++index;
