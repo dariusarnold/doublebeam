@@ -7,6 +7,7 @@
 
 #include <gsl/span>
 
+#include "raytracing_types.hpp"
 #include "seismodata.hpp"
 
 

@@ -1,7 +1,7 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include <raytracing_types.hpp>
+#include "raytracing_types.hpp"
 
 
 std::ostream& operator<<(std::ostream& os, Position position) {
