@@ -251,6 +251,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
         std::get<0>(slowness) *= -1;
         std::get<1>(slowness) *= -1;
         std::get<2>(slowness) *= -1;
+        int number_of_rec_beams_that_left_model = 0;
         for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
              ++spacing_index) {
             for (auto orientations_index = 0U;
@@ -274,7 +275,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                 beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                 if (receiver_beam.status == Status::OutOfBounds) {
                     // beam didn't reach surface, skip
-                    std::cout << "Receiver beam left model" << std::endl;
+                    number_of_rec_beams_that_left_model++;
                     continue;
                 }
                 // iteration over sources and receivers
@@ -287,6 +288,9 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                 result.data(spacing_index, orientations_index) += tmp;
             }
         }
+        std::cout << number_of_rec_beams_that_left_model << "/"
+                  << fracture_info.spacings.size() * fracture_info.orientations.size()
+                  << " receiver beams left the model.\n";
     }
     std::cout << "Beams: " << beamt * 1E-9 << " s\nFFT: " << fftt * 1E-9
               << " s\nBeam eval: " << evalt * 1E-9 << " s\ncut : " << cutt * 1E-9 << "s\n";
