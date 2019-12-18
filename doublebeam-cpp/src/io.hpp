@@ -106,4 +106,240 @@ std::vector<double> read_timesteps(std::filesystem::path path);
  */
 std::pair<std::vector<double>, std::vector<double>> read_seismogram(std::filesystem::path path);
 
+/**
+ * Extract number from string after equal sign.
+ * @tparam Number int, double
+ * @param string String with format a = N where a is any identifier (name) and N is a number.
+ * @return Number that comes after the equal sign.
+ */
+template <typename Number>
+Number extract_number(const std::string& string) {
+    // +1 to exclude = from substring
+    auto equal_position = string.find('=') + 1;
+    char* end;
+    if constexpr (std::is_floating_point_v<Number>) {
+        Number res = std::strtod(string.data() + equal_position, &end);
+        return res;
+    }
+    if constexpr (std::is_integral_v<Number>) {
+        const int base = 10;
+        Number res = std::strtol(string.data() + equal_position, &end, base);
+        return res;
+    }
+}
+
+const auto extract_double = extract_number<double>;
+const auto extract_int = extract_number<int>;
+
+inline std::filesystem::path extract_path(const std::string& string) {
+    // +1 to exclude = from substring
+    auto equal_position = string.find('=') + 1;
+    // could be made more efficient, doesnt matter for parsing the file.
+    auto part_after_equal = string.substr(equal_position);
+    auto first_not_whitespace = part_after_equal.find_first_not_of(' ');
+    auto path_string = part_after_equal.substr(first_not_whitespace);
+    std::filesystem::path p(path_string);
+    return p;
+}
+
+inline bool contains(const std::string& string, std::string_view search_term) {
+    auto n = string.find(search_term);
+    return n != std::string::npos;
+}
+
+struct SourceBeamCenterParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "x0")) {
+                x0 = extract_double(line);
+                continue;
+            }
+            if (contains(line, "x1")) {
+                x1 = extract_double(line);
+                continue;
+            }
+            if (contains(line, "y0")) {
+                y0 = extract_double(line);
+                continue;
+            }
+            if (contains(line, "y1")) {
+                y1 = extract_double(line);
+                continue;
+            }
+            if (contains(line, "z")) {
+                z = extract_double(line);
+                continue;
+            }
+            if (contains(line, "num_x")) {
+                num_x = extract_int(line);
+                continue;
+            }
+            if (contains(line, "num_y")) {
+                num_y = extract_int(line);
+                continue;
+            }
+            break;
+        }
+    }
+    double x0, x1, y0, y1, z;
+    int num_x, num_y;
+
+    //    SourceBeamCenterParams(std::ifstream& config_file) {}
+};
+
+struct FractureParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "phi_hat_x")) {
+                phi_hat_x = extract_double(line);
+                continue;
+            }
+            if (contains(line, "phi_hat_y")) {
+                phi_hat_y = extract_double(line);
+                continue;
+            }
+            if (contains(line, "num_orientations")) {
+                num_orientations = extract_int(line);
+                continue;
+            }
+            if (contains(line, "spacing_min")) {
+                spacings_min = extract_double(line);
+                continue;
+            }
+            if (contains(line, "spacing_max")) {
+                spacings_max = extract_double(line);
+                continue;
+            }
+            if (contains(line, "num_spacings")) {
+                num_spacings = extract_int(line);
+                continue;
+            }
+            break;
+        }
+    }
+    double phi_hat_x, phi_hat_y;
+    int num_orientations;
+    double spacings_min, spacings_max;
+    int num_spacings;
+};
+
+struct BeamParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "width")) {
+                width = extract_double(line);
+                continue;
+            }
+            if (contains(line, "frequency")) {
+                frequency = extract_double(line);
+                continue;
+            }
+            if (contains(line, "window_length")) {
+                window_length = extract_double(line);
+                continue;
+            }
+            if (contains(line, "max_stacking_distance")) {
+                max_stacking_distance = extract_double(line);
+                continue;
+            }
+            break;
+        }
+    }
+    double width;
+    double frequency;
+    double window_length;
+    double max_stacking_distance;
+};
+
+struct VelocityModelParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "file")) {
+                path = extract_path(line);
+                break;
+            }
+        }
+    }
+    std::filesystem::path path;
+};
+
+struct SeismoDataParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "path")) {
+                path = extract_path(line);
+                break;
+            }
+        }
+    }
+    std::filesystem::path path;
+};
+
+struct TargetParams {
+    inline void init_from_file(std::ifstream& config_file) {
+        std::string line;
+        double x = 0, y = 0, z = 0;
+        while (std::getline(config_file, line)) {
+            if (contains(line, "x")) {
+                x = extract_number<double>(line);
+                continue;
+            } if (contains(line, "y")) {
+                y = extract_number<double>(line);
+                continue;
+            } if (contains(line, "z")) {
+                z = extract_number<double>(line);
+                continue;
+            }
+            break;
+        }
+        position = {x, y, z};
+    }
+    position_t position;
+};
+
+struct DoubleBeamOptions {
+    VelocityModelParams model_params;
+    SeismoDataParams seismo_data_params;
+    TargetParams target;
+    SourceBeamCenterParams sbc_params;
+    FractureParams fracture_params;
+    BeamParams beam_params;
+};
+
+inline DoubleBeamOptions read_config_file(const std::filesystem::path& config_path) {
+    std::ifstream config_file{config_path};
+    if (not config_file.is_open()) {
+        throw std::runtime_error("Failed to open config file " + config_path.string());
+    }
+    std::string line;
+    DoubleBeamOptions options{};
+    while (std::getline(config_file, line)) {
+        if (contains(line, "[model]")) {
+            options.model_params.init_from_file(config_file);
+        }
+        if (contains(line, "[data]")) {
+            options.seismo_data_params.init_from_file(config_file);
+        }
+        if (contains(line, "[target]")) {
+            options.target.init_from_file(config_file);
+        }
+        if (contains(line, "[source beam centers]")) {
+            options.sbc_params.init_from_file(config_file);
+        }
+        if (contains(line, "[fractures]")) {
+            options.fracture_params.init_from_file(config_file);
+        }
+        if (contains(line, "[beam]")) {
+            options.beam_params.init_from_file(config_file);
+        }
+    }
+    return options;
+}
+
+
 #endif // DOUBLEBEAM_CPP_IO_HPP
