@@ -1,9 +1,9 @@
-#include "beam.hpp"
+#include <utility>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include <utility>
+#include "beam.hpp"
 
 
 Beam::Beam(Meter beam_width, AngularFrequency beam_frequency) :
