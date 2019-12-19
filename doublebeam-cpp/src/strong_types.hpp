@@ -1,9 +1,9 @@
 #ifndef DOUBLEBEAM_CPP_STRONG_TYPES_HPP
 #define DOUBLEBEAM_CPP_STRONG_TYPES_HPP
 
+#include <ostream>
 #include <typeinfo>
 #include <utility>
-#include <ostream>
 
 #include <boost/operators.hpp>
 
@@ -35,7 +35,7 @@ public:
         return os << quantity.value;
     }
 
-    bool operator==(const NamedType& other) const{
+    bool operator==(const NamedType& other) const {
         return value == other.value;
     }
 
