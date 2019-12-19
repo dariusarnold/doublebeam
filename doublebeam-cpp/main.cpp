@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
     auto source_beam_centres = seismo::grid_coordinates(
         options.sbc_params.x0, options.sbc_params.x1, options.sbc_params.y0, options.sbc_params.y1,
         options.sbc_params.z, options.sbc_params.num_x, options.sbc_params.num_y);
-    // TODO fracture depth is unused
     FractureParameters fractures(
         options.fracture_params.phi_hat, options.fracture_params.num_orientations,
         options.fracture_params.spacings_min, options.fracture_params.spacings_max,
