@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
         options.sbc_params.z, options.sbc_params.num_x, options.sbc_params.num_y);
     // TODO fracture depth is unused
     FractureParameters fractures(
-        400, options.fracture_params.phi_hat_x, options.fracture_params.phi_hat_y,
+        options.fracture_params.phi_hat_x, options.fracture_params.phi_hat_y,
         options.fracture_params.num_orientations, options.fracture_params.spacings_min,
         options.fracture_params.spacings_max, options.fracture_params.num_spacings);
     auto data = SeismoData(options.seismo_data_params.path);
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
     std::string result_filename = "result";
-    std::filesystem::path result_path(result_filename + ".txt");
+    std::filesystem::path result_path(result_filename + "0.txt");
     int index = 0;
     while (std::filesystem::exists(result_path)) {
         ++index;

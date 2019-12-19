@@ -29,13 +29,11 @@ std::tuple<double, double> scattered_slowness(double px, double py, double phi_h
 }
 
 
-FractureParameters::FractureParameters(double depth, double phi_hat_x, double phi_hat_y,
-                                       int num_fracture_orientations, double spacing_min,
-                                       double spacing_max, int num_fracture_spacings) :
-        depth(depth),
-        phi_hat_x(phi_hat_x),
-        phi_hat_y(phi_hat_y),
-        orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat_x, phi_hat_y)),
+FractureParameters::FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations,
+                                       double spacing_min, double spacing_max,
+                                       int num_fracture_spacings) :
+        phi_hat(phi_hat),
+        orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat)),
         spacings(math::linspace(spacing_min, spacing_max, num_fracture_spacings)) {}
 
 std::vector<WaveType> direct_ray_code(position_t source, position_t receiver,

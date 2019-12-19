@@ -15,22 +15,15 @@
 
 class FractureParameters {
 public:
-    FractureParameters(double depth, double phi_hat_x, double phi_hat_y,
-                       int num_fracture_orientations, double spacing_min, double spacing_max,
-                       int num_fracture_spacings);
+    FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations, double spacing_min,
+                       double spacing_max, int num_fracture_spacings);
+    /**
+     * Central fracture orientation vector (unit vector perpendicular to fracture plane).
+     * This vector is horizontal (has only x, y component) since only vertical fractures are
+     * allowed.
+     */
+    math::Vector2 phi_hat;
 
-    /**
-     * Top depth of fracture plane.
-     */
-    double depth;
-    /**
-     * X component of central fracture orientation (unit vector perpendicular to fracture plane).
-     */
-    double phi_hat_x;
-    /**
-     * Y component of central fracture orientation (unit vector perpendicular to fracture plane).
-     */
-    double phi_hat_y;
     /**
      * Array of possible fracture orientations. Shape N, 2 where N is the number of fracture
      * orientations. Second axis contains x, y components of fracture orientations.
@@ -54,8 +47,11 @@ struct DoubleBeamResult {
     DoubleBeamResult(size_t num_of_fracture_spacings, size_t num_of_fracture_orientations);
     /**
      * Result of double beam algorithm: Matrix with stacking amplitude sigma.
-     * TODO explain how fracture spacing/orientation is represented in this, eg. spacing values are
-     *  column wise and orientations are row wise.
+     * The matrix has num_of_fracture_orientations columns and num_of_fracture_spacings rows.
+     * This means the results are stored as different orientations in columns and different spacings
+     * in columns. The 0,0 index of the matrix corresponds to the first fracture orientation and the
+     * first fracture spacing. Downwards the spacing index increases and to the right the
+     * orientations index increases.
      */
     Eigen::ArrayXXcd data;
 };

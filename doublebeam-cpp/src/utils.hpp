@@ -486,12 +486,11 @@ namespace math {
      * The first vector of the returned range will have a clockwise angle of -90° of the central
      * direction, the last vector will have a 90° clockwise angle to the central direction.
      * @param num_values The first dimension of the returned result will have this size.
-     * @param central_direction_x X component of central direction.
-     * @param central_direction_y Y component of central direction.
+     * @param central_direction Central direction, for uneven num, the middle Vector2 in the result
+     * will have this direction.
      * @return
      */
-    std::vector<Vector2> generate_vector_arc(int num_values, double central_direction_x,
-                                             double central_direction_y);
+    std::vector<Vector2> generate_vector_arc(int num_values, math::Vector2 central_direction);
 
     /**
      * Create vector filled with num values from start to stop.

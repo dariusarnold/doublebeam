@@ -90,10 +90,9 @@ namespace math {
         return x1 * x2 + y1 * y2 + z1 * z2;
     }
 
-    std::vector<Vector2> generate_vector_arc(int num_values, double central_direction_x,
-                                             double central_direction_y) {
+    std::vector<Vector2> generate_vector_arc(int num_values, math::Vector2 central_direction) {
         auto angle_against_xaxis =
-            math::angle_clockwise(1., 0., central_direction_x, central_direction_y);
+            math::angle_clockwise(1., 0., central_direction.x, central_direction.y);
         auto angles = math::linspace(angle_against_xaxis - radians(90_deg).get(),
                                      angle_against_xaxis + radians(90_deg).get(), num_values);
         std::vector<Vector2> v(num_values);
