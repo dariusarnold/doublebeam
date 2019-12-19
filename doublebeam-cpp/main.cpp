@@ -16,7 +16,7 @@ int main() {
     auto vm = read_velocity_file("/home/darius/git/doublebeam/doublebeam-cpp/velocity_model.txt");
     auto db = DoubleBeam(vm);
     auto source_beam_centres = seismo::grid_coordinates(4500, 8500, 4500, 8500, 0, 2, 2);
-    position_t target{6500, 6500, 2400);
+    position_t target{6500, 6500, 2400};
     // TODO fracture depth is unused
     FractureParameters fractures(2400, 0, 1, 61, 100, 300, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
