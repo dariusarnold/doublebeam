@@ -20,7 +20,7 @@ class NamedType : boost::totally_ordered<NamedType<T, Parameter>>,
                   boost::additive<NamedType<T, Parameter>>,
                   boost::multiplicative<NamedType<T, Parameter>, T> {
 public:
-    NamedType() = default;
+    NamedType() : value(0.) {}
     explicit NamedType(const T& value) : value(value) {}
     explicit NamedType(T&& value) : value(std::move(value)) {}
 
