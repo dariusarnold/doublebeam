@@ -63,6 +63,14 @@ public:
         return *this;
     }
 
+    NamedType operator-() {
+        return NamedType(-value);
+    }
+
+    NamedType& operator+() {
+        return *this;
+    }
+
 private:
     T value;
 };
