@@ -3,6 +3,7 @@ file = /home/darius/masterarbeit/thomas/velocity_model.txt
 
 [data]
 path = /home/darius/masterarbeit/thomas
+source_frequency = 30
 
 [target]
 x = 600

@@ -275,11 +275,17 @@ struct SeismoDataParams {
         while (std::getline(config_file, line)) {
             if (contains(line, "path")) {
                 path = extract_path(line);
-                break;
+                continue;
             }
+            if (contains(line, "source_frequency")) {
+                source_frequency = Frequency(extract_double(line));
+                continue;
+            }
+            break;
         }
     }
     std::filesystem::path path;
+    Frequency source_frequency;
 };
 
 struct TargetParams {
@@ -290,10 +296,12 @@ struct TargetParams {
             if (contains(line, "x")) {
                 x = extract_number<double>(line);
                 continue;
-            } if (contains(line, "y")) {
+            }
+            if (contains(line, "y")) {
                 y = extract_number<double>(line);
                 continue;
-            } if (contains(line, "z")) {
+            }
+            if (contains(line, "z")) {
                 z = extract_number<double>(line);
                 continue;
             }

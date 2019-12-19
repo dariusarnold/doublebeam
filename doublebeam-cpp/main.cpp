@@ -29,10 +29,11 @@ int main(int argc, char* argv[]) {
         options.fracture_params.num_spacings);
     auto data = SeismoData(options.seismo_data_params.path);
     auto a = std::chrono::high_resolution_clock::now();
-    auto result = db.algorithm(
-        source_beam_centres, options.target.position, data, fractures,
-        Meter(options.beam_params.width), hertz_to_angular(options.beam_params.frequency),
-        options.beam_params.window_length, options.beam_params.max_stacking_distance);
+    auto result =
+        db.algorithm(source_beam_centres, options.target.position, data, fractures,
+                     options.seismo_data_params.source_frequency, Meter(options.beam_params.width),
+                     hertz_to_angular(Frequency(options.beam_params.frequency)),
+                     options.beam_params.window_length, options.beam_params.max_stacking_distance);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
