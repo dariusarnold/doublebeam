@@ -37,7 +37,7 @@ inline Radian radians(Degree degree) {
 }
 
 inline Degree degrees(Radian radians) {
-    return Degree(radians.get() / M_PI / 180.);
+    return Degree(radians.get() * 180. / M_PI);
 }
 
 
