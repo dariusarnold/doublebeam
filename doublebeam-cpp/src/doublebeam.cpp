@@ -29,10 +29,9 @@ std::tuple<double, double> scattered_slowness(double px, double py, double phi_h
 }
 
 
-FractureParameters::FractureParameters(double depth, math::Vector2 phi_hat,
-                                       int num_fracture_orientations, double spacing_min,
-                                       double spacing_max, int num_fracture_spacings) :
-        depth(depth),
+FractureParameters::FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations,
+                                       double spacing_min, double spacing_max,
+                                       int num_fracture_spacings) :
         phi_hat(phi_hat),
         orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat)),
         spacings(math::linspace(spacing_min, spacing_max, num_fracture_spacings)) {}

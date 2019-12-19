@@ -15,14 +15,8 @@
 
 class FractureParameters {
 public:
-    FractureParameters(double depth, math::Vector2 phi_hat, int num_fracture_orientations,
-                       double spacing_min, double spacing_max, int num_fracture_spacings);
-
-    /**
-     * Top depth of fracture plane.
-     */
-    double depth;
-
+    FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations, double spacing_min,
+                       double spacing_max, int num_fracture_spacings);
     /**
      * Central fracture orientation vector (unit vector perpendicular to fracture plane).
      * This vector is horizontal (has only x, y component) since only vertical fractures are

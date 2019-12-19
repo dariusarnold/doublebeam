@@ -18,7 +18,7 @@ int main() {
     auto source_beam_centres = seismo::grid_coordinates(4500, 8500, 4500, 8500, 0, 2, 2);
     position_t target{6500, 6500, 2400};
     // TODO fracture depth is unused
-    FractureParameters fractures(2400, math::Vector2{0, 1}, 61, 100, 300, 41);
+    FractureParameters fractures(math::Vector2{0, 1}, 61, 100, 300, 41);
     auto data = SeismoData("/home/darius/masterarbeit/output_0degrees");
     auto a = std::chrono::high_resolution_clock::now();
     auto result = db.algorithm(source_beam_centres, target, data, fractures, 244_meter,
