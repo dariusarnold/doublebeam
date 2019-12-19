@@ -82,6 +82,16 @@ TEST_P(TestClockWiseAngle, TestSwapped) {
     EXPECT_EQ(angle_result, angle_expected) << "For x: " << data.x << " y: " << data.y;
 }
 
+TEST_F(TestClockWiseAngle, TestCase) {
+    auto res = math::angle_clockwise(1, 0, -1, 1);
+    EXPECT_EQ(degrees(Radian(res)).get(), (225_deg).get());
+}
+
+TEST_F(TestClockWiseAngle, TestCase2) {
+    auto res = math::angle_clockwise(1, 0, 1, -1);
+    EXPECT_EQ(degrees(Radian(res)).get(), (45_deg).get());
+}
+
 INSTANTIATE_TEST_SUITE_P(
     PREFIX, TestClockWiseAngle,
     ::testing::Values(AngleData{radians(0_deg), 1, 0}, AngleData{radians(315_deg), 1, 1},
