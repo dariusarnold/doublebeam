@@ -17,7 +17,8 @@
  */
 template <typename T, typename Parameter>
 class NamedType : boost::totally_ordered<NamedType<T, Parameter>>,
-                  boost::additive<NamedType<T, Parameter>> {
+                  boost::additive<NamedType<T, Parameter>>,
+                  boost::multiplicative<NamedType<T, Parameter>, T>{
 public:
     NamedType() = default;
     explicit NamedType(const T& value) : value(value) {}
@@ -49,6 +50,16 @@ public:
 
     NamedType& operator-=(const NamedType& rhs) {
         value -= rhs.value;
+        return *this;
+    }
+
+    NamedType& operator*=(T factor) {
+        value *= factor;
+        return *this;
+    }
+
+    NamedType& operator/=(T factor) {
+        value /= factor;
         return *this;
     }
 
