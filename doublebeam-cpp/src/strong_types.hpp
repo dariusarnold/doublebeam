@@ -18,6 +18,7 @@
 template <typename T, typename Parameter>
 class NamedType : boost::totally_ordered<NamedType<T, Parameter>> {
 public:
+    NamedType() = default;
     explicit NamedType(const T& value) : value(value) {}
     explicit NamedType(T&& value) : value(std::move(value)) {}
 
