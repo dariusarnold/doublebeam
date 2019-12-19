@@ -18,7 +18,7 @@
 template <typename T, typename Parameter>
 class NamedType : boost::totally_ordered<NamedType<T, Parameter>>,
                   boost::additive<NamedType<T, Parameter>>,
-                  boost::multiplicative<NamedType<T, Parameter>, T>{
+                  boost::multiplicative<NamedType<T, Parameter>, T> {
 public:
     NamedType() = default;
     explicit NamedType(const T& value) : value(value) {}
@@ -35,6 +35,7 @@ public:
         return os << quantity.value;
     }
 
+    // comparison of strong types
     bool operator==(const NamedType& other) const {
         return value == other.value;
     }
@@ -43,6 +44,7 @@ public:
         return value < other.value;
     }
 
+    // addition/subtraction of strong types
     NamedType& operator+=(const NamedType& rhs) {
         value += rhs.value;
         return *this;
@@ -53,6 +55,7 @@ public:
         return *this;
     }
 
+    // division/multiplication by another scalar
     NamedType& operator*=(T factor) {
         value *= factor;
         return *this;
@@ -63,6 +66,7 @@ public:
         return *this;
     }
 
+    // unary negative/positive operator
     NamedType operator-() {
         return NamedType(-value);
     }
