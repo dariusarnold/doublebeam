@@ -9,6 +9,7 @@
 
 #include "raytracing_types.hpp"
 #include "seismodata.hpp"
+#include "utils.hpp"
 
 
 /**
@@ -194,11 +195,11 @@ struct FractureParams {
         std::string line;
         while (std::getline(config_file, line)) {
             if (contains(line, "phi_hat_x")) {
-                phi_hat_x = extract_double(line);
+                phi_hat.x = extract_double(line);
                 continue;
             }
             if (contains(line, "phi_hat_y")) {
-                phi_hat_y = extract_double(line);
+                phi_hat.y = extract_double(line);
                 continue;
             }
             if (contains(line, "num_orientations")) {
@@ -220,7 +221,7 @@ struct FractureParams {
             break;
         }
     }
-    double phi_hat_x, phi_hat_y;
+    math::Vector2 phi_hat;
     int num_orientations;
     double spacings_min, spacings_max;
     int num_spacings;

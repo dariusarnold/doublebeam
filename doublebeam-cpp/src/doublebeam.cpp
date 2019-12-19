@@ -11,20 +11,19 @@
  * Calculate horizontal slowness for wave scattered from fractures.
  * @param px X component of slowness vector.
  * @param py Y component of slowness vector.
- * @param phi_hat_x X component of unit vector normal to fracture plane.
- * @param phi_hat_y Y component of unit vector normal to fracture plane.
+ * @param phi_hat Unit vector normal to fracture plane. Since only vertical fracture planes are
+ * considered, only x and y component of the vector is required.
  * @param fracture_spacing Distance between fracture planes.
  * @param frequency Frequency of wave.
  * @return X, Y component of slowness.
  */
-std::tuple<double, double> scattered_slowness(double px, double py, double phi_hat_x,
-                                              double phi_hat_y, double fracture_spacing,
-                                              Frequency frequency) {
+std::tuple<double, double> scattered_slowness(double px, double py, math::Vector2 phi_hat,
+                                              double fracture_spacing, Frequency frequency) {
     // pass 0 as pz and phi_hat_z since formula only transforms horizontal slownesses and is only
     // valid for vertical fracture planes.
-    auto sig = sign(math::dot(px, py, 0, phi_hat_x, phi_hat_y, 0));
-    auto px_new = px - sig * phi_hat_x / (fracture_spacing * frequency.get());
-    auto py_new = py - sig * phi_hat_y / (fracture_spacing * frequency.get());
+    auto sig = math::sign(math::dot(px, py, 0, phi_hat.x, phi_hat.y, 0));
+    auto px_new = px - sig * phi_hat.x / (fracture_spacing * frequency.get());
+    auto py_new = py - sig * phi_hat.y / (fracture_spacing * frequency.get());
     return {px_new, py_new};
 }
 
@@ -256,10 +255,10 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                  orientations_index < fracture_info.orientations.size(); ++orientations_index) {
                 //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
                 //                    orientations_index);
-                auto [phi_hat_x, phi_hat_y] = fracture_info.orientations[orientations_index];
-                auto [px, py] = scattered_slowness(
-                    std::get<0>(slowness), std::get<1>(slowness), phi_hat_x, phi_hat_y,
-                    fracture_info.spacings[spacing_index], angular_to_hertz(beam_frequency));
+                auto phi_hat = fracture_info.orientations[orientations_index];
+                auto [px, py] = scattered_slowness(std::get<0>(slowness), std::get<1>(slowness),
+                                                   phi_hat, fracture_info.spacings[spacing_index],
+                                                   angular_to_hertz(beam_frequency));
                 // trace receiver beam in scattered direction
                 // -pz to reflect beam upwards from target
                 slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
