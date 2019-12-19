@@ -60,6 +60,22 @@ class DoubleBeam {
 public:
     DoubleBeam(const VelocityModel& model);
 
+    /**
+     * Performs doublebeam algorithm and calculates scattering coefficient sigma
+     * @param source_geometry Vector of source positions
+     * @param target Target position in the subsurface.
+     * @param data Contains seismograms.
+     * @param fracture_info Fracture information
+     * @param source_frequency Frequency of source wavelet
+     * @param beam_width Width of Gauss beam
+     * @param beam_frequency Frequency for Gauss beam
+     * @param window_length Window length for cutting seismic data. The real part of the added
+     * complex traveltime from source and receiver beam gives the center point where the seismograms
+     * are cut. The window will be centered around that value.
+     * @param max_stacking_distance If a source or receiver beam is farther than this distance from
+     * a source/receiver, it will not be evaluated in the stacking process.
+     * @return
+     */
     DoubleBeamResult algorithm(std::vector<position_t> source_geometry, position_t target,
                                const SeismoData& data, FractureParameters fracture_info,
                                Frequency source_frequency, Meter beam_width,
