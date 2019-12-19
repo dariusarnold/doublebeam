@@ -543,36 +543,34 @@ INSTANTIATE_TEST_SUITE_P(TestUnitVectors, TestCrossProduct,
 
 
 TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
-    double central_direction_x = 1, central_direction_y = 1;
+    math::Vector2 central_direction{1, 1};
     auto number_of_vectors_to_generate = 3;
-    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction_x,
-                                             central_direction_y);
+    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction);
     ASSERT_EQ(vectors.size(), number_of_vectors_to_generate);
     // test left vector
     EXPECT_DOUBLE_EQ(
-        math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
+        math::angle_clockwise(central_direction.x, central_direction.y, vectors[0].x, vectors[0].y),
         radians(270_deg).get());
     // test middle vector
     EXPECT_TRUE(Close(
-        math::angle(central_direction_x, central_direction_y, 0, vectors[1].x, vectors[1].y, 0),
+        math::angle(central_direction.x, central_direction.y, 0, vectors[1].x, vectors[1].y, 0),
         radians(0_deg).get(), 0., 1.5e-8));
     // test right vector
     EXPECT_DOUBLE_EQ(
-        math::angle_clockwise(central_direction_x, central_direction_y, vectors[2].x, vectors[2].y),
+        math::angle_clockwise(central_direction.x, central_direction.y, vectors[2].x, vectors[2].y),
         radians(90_deg).get());
 }
 
 TEST(CreateVectorArc, TestCaseWithMoreVectors) {
-    double central_direction_x = -1, central_direction_y = 1;
+    math::Vector2 central_direction{-1, 1};
     auto number_of_vectors_to_generate = 12;
-    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction_x,
-                                             central_direction_y);
+    auto vectors = math::generate_vector_arc(number_of_vectors_to_generate, central_direction);
     ASSERT_EQ(vectors.size(), number_of_vectors_to_generate);
     EXPECT_DOUBLE_EQ(
-        math::angle_clockwise(central_direction_x, central_direction_y, vectors[0].x, vectors[0].y),
+        math::angle_clockwise(central_direction.x, central_direction.y, vectors[0].x, vectors[0].y),
         radians(270_deg).get())
         << " Leftmost vector is not 90 degrees to central direction.";
-    EXPECT_DOUBLE_EQ(math::angle_clockwise(central_direction_x, central_direction_y,
+    EXPECT_DOUBLE_EQ(math::angle_clockwise(central_direction.x, central_direction.y,
                                            vectors.back().x, vectors.back().y),
                      radians(90_deg).get())
         << "Rightmost vector is not 90 degrees to central direction.";
