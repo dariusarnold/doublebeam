@@ -94,7 +94,7 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
  */
 std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& source_path) {
     for (const auto& p : std::filesystem::directory_iterator(source_path)) {
-        if (std::filesystem::is_regular_file(p) and p.path().extension() == ".txt") {
+        if (std::filesystem::is_regular_file(p) and p.path().extension() == ".sdu") {
             return read_timesteps(p);
         }
     }
