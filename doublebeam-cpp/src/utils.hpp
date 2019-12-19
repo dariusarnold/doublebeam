@@ -621,5 +621,15 @@ namespace math {
     size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
                               AngularFrequency sampling_frequency);
 
+    /**
+     * Return sign of x.
+     * @param x
+     * @return 1 if x >= 0, -1 if x < 0.
+     */
+    template <typename T>
+    T sign(T x) {
+        return std::copysign(T{1.}, x);
+    }
+
 } // namespace math
 #endif // DOUBLEBEAM_CPP_UTILS_HPP

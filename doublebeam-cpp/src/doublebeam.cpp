@@ -22,9 +22,9 @@ std::tuple<double, double> scattered_slowness(double px, double py, double phi_h
                                               Frequency frequency) {
     // pass 0 as pz and phi_hat_z since formula only transforms horizontal slownesses and is only
     // valid for vertical fracture planes.
-    auto sign = std::copysign(1., math::dot(px, py, 0, phi_hat_x, phi_hat_y, 0));
-    auto px_new = px - sign * phi_hat_x / (fracture_spacing * frequency.get());
-    auto py_new = py - sign * phi_hat_y / (fracture_spacing * frequency.get());
+    auto sig = sign(math::dot(px, py, 0, phi_hat_x, phi_hat_y, 0));
+    auto px_new = px - sig * phi_hat_x / (fracture_spacing * frequency.get());
+    auto py_new = py - sig * phi_hat_y / (fracture_spacing * frequency.get());
     return {px_new, py_new};
 }
 
