@@ -223,7 +223,7 @@ RayState make_state(position_t pos, slowness_t slowness) {
 }
 
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, position_t target,
-                                       SeismoData data, FractureParameters fracture_info,
+                                       const SeismoData& data, FractureParameters fracture_info,
                                        Meter beam_width, AngularFrequency beam_frequency,
                                        double window_length, double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
