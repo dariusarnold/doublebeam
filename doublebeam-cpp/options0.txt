@@ -1,0 +1,33 @@
+[model]
+file = /home/darius/masterarbeit/thomas/velocity_model.txt
+
+[data]
+path = /home/darius/masterarbeit/thomas
+
+[target]
+x = 600
+y = 600
+z = 420
+
+[source beam centers]
+x0 = 0
+x1 = 1200
+y0 = 0
+y1 = 1200
+z = 0
+num_x = 20
+num_y = 20
+
+[fractures]
+phi_hat_x = 1
+phi_hat_y = 0
+num_orientations = 61
+spacing_min = 50
+spacing_max = 150
+num_spacings = 41
+
+[beam]
+width = 100
+frequency = 20
+window_length = 0.12
+max_stacking_distance = 150
