@@ -49,19 +49,9 @@ DEFINE_STRONG_TYPE(AngularFrequency, double);
 DEFINE_TYPE_LITERAL(AngularFrequency, _rad_per_sec);
 DEFINE_TYPE_LITERAL_WITH_FACTOR(AngularFrequency, _angular_from_hertz, 2 * M_PIl);
 
-// Those conversion functions here are not beautiful, it would be better if they were members.
+
 inline AngularFrequency hertz_to_angular(Frequency freq) {
     return AngularFrequency(2 * M_PI * freq.get());
-}
-template <typename T>
-/**
- * Overload for basic scalar types.
- * @tparam T Float, integer type.
- * @param value Value in Hertz
- * @return AngularFrequency converted to rad/s
- */
-AngularFrequency hertz_to_angular(T value) {
-    return AngularFrequency(2 * M_PI * value);
 }
 inline Frequency angular_to_hertz(AngularFrequency ang) {
     return Frequency(ang.get() / (2 * M_PI));
