@@ -16,7 +16,8 @@
  * @tparam Parameter Type that makes instantiations of NamedType unique even when T is the same.
  */
 template <typename T, typename Parameter>
-class NamedType : boost::totally_ordered<NamedType<T, Parameter>> {
+class NamedType : boost::totally_ordered<NamedType<T, Parameter>>,
+                  boost::additive<NamedType<T, Parameter>> {
 public:
     NamedType() = default;
     explicit NamedType(const T& value) : value(value) {}
@@ -39,6 +40,16 @@ public:
 
     bool operator<(const NamedType& other) const {
         return value < other.value;
+    }
+
+    NamedType& operator+=(const NamedType& rhs) {
+        value += rhs.value;
+        return *this;
+    }
+
+    NamedType& operator-=(const NamedType& rhs) {
+        value -= rhs.value;
+        return *this;
     }
 
 private:
