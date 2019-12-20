@@ -154,23 +154,23 @@ struct SourceBeamCenterParams {
         std::string line;
         while (std::getline(config_file, line)) {
             if (contains(line, "x0")) {
-                x0 = extract_double(line);
+                x0.get() = extract_double(line);
                 continue;
             }
             if (contains(line, "x1")) {
-                x1 = extract_double(line);
+                x1.get() = extract_double(line);
                 continue;
             }
             if (contains(line, "y0")) {
-                y0 = extract_double(line);
+                y0.get() = extract_double(line);
                 continue;
             }
             if (contains(line, "y1")) {
-                y1 = extract_double(line);
+                y1.get() = extract_double(line);
                 continue;
             }
             if (contains(line, "z")) {
-                z = extract_double(line);
+                z.get() = extract_double(line);
                 continue;
             }
             if (contains(line, "num_x")) {
@@ -184,7 +184,7 @@ struct SourceBeamCenterParams {
             break;
         }
     }
-    double x0, x1, y0, y1, z;
+    Meter x0, x1, y0, y1, z;
     int num_x, num_y;
 
     //    SourceBeamCenterParams(std::ifstream& config_file) {}
@@ -307,18 +307,18 @@ struct TargetParams {
             }
             break;
         }
-        position = {x, y, z};
+        position = {Meter(x), Meter(y), Meter(z)};
     }
-    position_t position;
+    Position position;
 };
 
 struct DoubleBeamOptions {
-    VelocityModelParams model_params;
-    SeismoDataParams seismo_data_params;
-    TargetParams target;
-    SourceBeamCenterParams sbc_params;
-    FractureParams fracture_params;
-    BeamParams beam_params;
+    VelocityModelParams model_params{};
+    SeismoDataParams seismo_data_params{};
+    TargetParams target{};
+    SourceBeamCenterParams sbc_params{};
+    FractureParams fracture_params{};
+    BeamParams beam_params{};
 };
 
 inline DoubleBeamOptions read_config_file(const std::filesystem::path& config_path) {
@@ -327,7 +327,7 @@ inline DoubleBeamOptions read_config_file(const std::filesystem::path& config_pa
         throw std::runtime_error("Failed to open config file " + config_path.string());
     }
     std::string line;
-    DoubleBeamOptions options{};
+    DoubleBeamOptions options;
     while (std::getline(config_file, line)) {
         if (contains(line, "[model]")) {
             options.model_params.init_from_file(config_file);
