@@ -84,6 +84,10 @@ public:
         return NamedType{std::abs(quantity.value)};
     }
 
+    friend bool isnan(const NamedType& quantity) {
+        return std::isnan(quantity.get());
+    }
+
 private:
     T value;
 };
