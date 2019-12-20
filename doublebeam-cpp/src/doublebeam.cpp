@@ -268,7 +268,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                 // reuse ray code since beam should pass through the same layers
                 a = std::chrono::high_resolution_clock::now();
                 auto receiver_beam =
-                    tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
+                    tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code);
                 b = std::chrono::high_resolution_clock::now();
                 beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                 if (receiver_beam.status == Status::OutOfBounds) {
