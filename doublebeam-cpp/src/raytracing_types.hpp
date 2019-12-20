@@ -82,8 +82,7 @@ bool operator<(const Arclength& l1, const Arclength& l2);
 std::ostream& operator<<(std::ostream& os, Arclength arclength);
 
 
-
-struct RayState{
+struct RayState {
     Position position;
     Slowness slowness;
     TravelTime travel_time;
