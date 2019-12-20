@@ -80,6 +80,10 @@ public:
         return *this;
     }
 
+    friend NamedType abs(const NamedType& quantity) {
+        return NamedType{std::abs(quantity.value)};
+    }
+
 private:
     T value;
 };
