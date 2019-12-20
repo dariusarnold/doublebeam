@@ -35,6 +35,11 @@ public:
         return os << quantity.value;
     }
 
+    friend std::istream& operator>>(std::istream& is, NamedType& quantity) {
+        is >> quantity.value;
+        return is;
+    }
+
     // comparison of strong types
     bool operator==(const NamedType& other) const {
         return value == other.value;
