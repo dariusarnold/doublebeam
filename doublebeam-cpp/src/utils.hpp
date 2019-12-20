@@ -99,6 +99,10 @@ namespace seismo {
         return pz > 0;
     }
 
+    inline bool ray_direction_down(const Slowness& slowness) {
+        return slowness.pz.get() > 0;
+    }
+
     /**
      * Generate ray code from string.
      * Raise invalid_argument exception when string is not valid (contains characters other than T
@@ -217,6 +221,13 @@ namespace math {
      * @return
      */
     double length(double x, double y, double z);
+
+    /**
+     * Overload for length taking a 3-element slowness vector.
+     * @param slowness
+     * @return Length of slowness vector.
+     */
+    double length(const Slowness& slowness);
 
     /**
      * Dot product of two 3D vectors.

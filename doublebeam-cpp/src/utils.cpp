@@ -86,6 +86,10 @@ namespace math {
         return std::sqrt(x * x + y * y + z * z);
     }
 
+    double length(const Slowness& slowness) {
+        return length(slowness.px.get(), slowness.py.get(), slowness.pz.get());
+    }
+
     double dot(double x1, double y1, double z1, double x2, double y2, double z2) {
         return x1 * x2 + y1 * y2 + z1 * z2;
     }
