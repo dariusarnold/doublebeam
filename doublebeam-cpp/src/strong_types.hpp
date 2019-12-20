@@ -67,11 +67,11 @@ public:
     }
 
     // unary negative/positive operator
-    NamedType operator-() {
+    NamedType operator-() const {
         return NamedType(-value);
     }
 
-    NamedType& operator+() {
+    NamedType& operator+() const {
         return *this;
     }
 
