@@ -156,23 +156,21 @@ TwoPointRayTracing::TwoPointRayTracing(VelocityModel velocity_model) :
         model(std::move(velocity_model)) {}
 
 
-slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, double accuracy,
-                                     int max_iterations) {
-    auto [source_x, source_y, source_z] = source;
-    auto [receiver_x, receiver_y, receiver_z] = receiver;
-    auto [min_depth, max_depth] = std::minmax(source_z, receiver_z);
-    if (not model.in_model(source_x, source_y, source_z)) {
+Slowness TwoPointRayTracing::trace(Position source, Position receiver, double accuracy,
+                                   int max_iterations) {
+    auto [min_depth, max_depth] = std::minmax(source.z.get(), receiver.z.get());
+    if (not model.in_model(source.x, source.y, source.z)) {
         throw std::domain_error(impl::Formatter()
-                                << "Source at " << stringify(source) << " outside of model.");
+                                << "Source at " << source << " outside of model.");
     }
-    if (not model.in_model(receiver_x, receiver_y, receiver_z)) {
+    if (not model.in_model(receiver.x, receiver.y, receiver.z)) {
         throw std::domain_error(impl::Formatter()
-                                << "Receiver at " << stringify(receiver) << "  outside of model.");
+                                << "Receiver at " << receiver << "  outside of model.");
     }
-    auto source_index = model.layer_index(source_z).value();
-    auto receiver_index = model.layer_index(receiver_z).value();
+    auto source_index = model.layer_index(source.z).value();
+    auto receiver_index = model.layer_index(receiver.z).value();
     auto [min_index, max_index] = std::minmax(source_index, receiver_index);
-    auto num_layers = model.number_of_interfaces_between(source_z, receiver_z) + 1;
+    auto num_layers = model.number_of_interfaces_between(source.z, receiver.z) + 1;
     msg(source_index);
     msg(receiver_index);
     msg(num_layers);
@@ -183,10 +181,10 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     array_t b(num_layers);
     z[0] = min_depth;
     z[num_layers] = max_depth;
-    b[0] = model[min_index].velocity;
+    b[0] = model[min_index].velocity.get();
     for (size_t i = 1; i < num_layers; ++i) {
-        z[i] = model[min_index + i - 1].bot_depth;
-        b[i] = model[min_index + i].velocity;
+        z[i] = model[min_index + i - 1].bot_depth.get();
+        b[i] = model[min_index + i].velocity.get();
     }
     msg(z);
     msg(b);
@@ -194,7 +192,7 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     msg(epsilon);
     array_t h(num_layers);
     if (num_layers == 1) {
-        h = b * std::abs(source_z - receiver_z);
+        h = b * std::abs((source.z - receiver.z).get());
     } else {
         for (size_t i = 0; i < num_layers; ++i) {
             h[i] = b[i] * (z[i + 1] - z[i]);
@@ -217,7 +215,8 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
     msg(c1);
     msg(cn2);
 
-    auto X = horizontal_distance(source_x, source_y, receiver_x, receiver_y);
+    auto X =
+        horizontal_distance(source.x.get(), source.y.get(), receiver.x.get(), receiver.y.get());
     auto q = initial_q(X, d1, c0, c1, cn2);
     for (; max_iterations > 0; --max_iterations) {
         double q_next = next_q(q, X, epsilon_tilde, h_tilde);
@@ -228,18 +227,19 @@ slowness_t TwoPointRayTracing::trace(position_t source, position_t receiver, dou
         q = q_next;
     }
     double horizontal_slowness = q_to_p(q, vM);
-    double c = model.eval_at(source_x, source_y, source_z).value();
-    double vertical_slowness =
-        std::sqrt(std::pow(c, -2) - horizontal_slowness * horizontal_slowness);
-    bool source_below_receiver = source_z > receiver_z;
+    Velocity c = model.eval_at(source.x, source.y, source.z).value();
+    InverseVelocity vertical_slowness(
+        std::sqrt(std::pow(c.get(), -2) - horizontal_slowness * horizontal_slowness));
+    bool source_below_receiver = source.z > receiver.z;
     if (source_below_receiver) {
         // ray should travel upward from source in this case
         vertical_slowness *= -1;
     }
     // calculate angle to x axis
-    double phi = math::angle_clockwise(receiver_x - source_x, receiver_y - source_y, 1., 0.);
+    double phi =
+        math::angle_clockwise((receiver.x - source.x).get(), (receiver.y - source.y).get(), 1., 0.);
     // horizontal slowness is combination of px and py, now we have to split it up into its parts
-    double px = std::cos(phi) * horizontal_slowness;
-    double py = std::sin(phi) * horizontal_slowness;
+    InverseVelocity px(std::cos(phi) * horizontal_slowness);
+    InverseVelocity py(std::sin(phi) * horizontal_slowness);
     return {px, py, vertical_slowness};
 }
