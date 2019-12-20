@@ -62,3 +62,11 @@ bool operator==(const RayState& ray_state1, const RayState& ray_state2) {
 bool operator!=(const RayState& ray_state1, const RayState& ray_state2) {
     return !(ray_state1 == ray_state2);
 }
+
+std::size_t hash_value(const Position& position) {
+    std::size_t seed = 0;
+    boost::hash_combine(seed, position.x.get());
+    boost::hash_combine(seed, position.y.get());
+    boost::hash_combine(seed, position.z.get());
+    return seed;
+}

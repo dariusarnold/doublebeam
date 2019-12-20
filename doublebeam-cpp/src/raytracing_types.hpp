@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <tuple>
 
+#include <boost/container_hash/hash.hpp>
 #include <boost/operators.hpp>
 
 #include "units.hpp"
@@ -18,6 +19,13 @@ struct Position : boost::equality_comparable<Position> {
     Meter x;
     Meter y;
     Meter z;
+
+    /**
+     * Implement hash function because positions are stored in a hash map during unit testing.
+     * @param position
+     * @return
+     */
+    friend std::size_t hash_value(const Position& position);
 };
 
 /**
