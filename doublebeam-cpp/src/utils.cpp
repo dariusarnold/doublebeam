@@ -134,14 +134,6 @@ namespace math {
         return {x / l, y / l, z / l};
     }
 
-    bool between(double a, double x, double b) {
-        if (a < b) {
-            return a <= x and x <= b;
-        } else {
-            return b <= x and x <= b;
-        }
-    }
-
     std::tuple<double, double, double>
     scale_vector(const std::tuple<double, double, double>& vector, double new_length) {
         auto [x, y, z] = vector;

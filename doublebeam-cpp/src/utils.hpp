@@ -618,10 +618,17 @@ namespace math {
     /**
      * Return true if x is between a and b (inclusive).
      */
-    bool between(double a, double x, double b);
-
     template <typename T>
     bool between(T a, T x, T b) {
+        if (a < b) {
+            return a <= x and x <= b;
+        } else {
+            return b <= x and x <= b;
+        }
+    }
+
+    template <typename T, typename U>
+    bool between(NamedType<T, U> a, NamedType<T, U> x, NamedType<T, U> b) {
         return between(a.get(), x.get(), b.get());
     }
 
