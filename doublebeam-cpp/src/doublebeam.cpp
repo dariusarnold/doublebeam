@@ -223,7 +223,7 @@ RayState make_state(position_t pos, slowness_t slowness) {
 
 DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, position_t target,
                                        const SeismoData& data, FractureParameters fracture_info,
-                                       Frequency source_freqency, Meter beam_width,
+                                       Frequency source_frequency, Meter beam_width,
                                        AngularFrequency beam_frequency, double window_length,
                                        double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
@@ -259,7 +259,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                 auto phi_hat = fracture_info.orientations[orientations_index];
                 auto [px, py] =
                     scattered_slowness(std::get<0>(slowness), std::get<1>(slowness), phi_hat,
-                                       fracture_info.spacings[spacing_index], source_freqency);
+                                       fracture_info.spacings[spacing_index], source_frequency);
                 // trace receiver beam in scattered direction
                 // -pz to reflect beam upwards from target
                 slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
