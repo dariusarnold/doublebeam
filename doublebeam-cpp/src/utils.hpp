@@ -609,6 +609,11 @@ namespace math {
      */
     bool between(double a, double x, double b);
 
+    template <typename T>
+    bool between(T a, T x, T b) {
+        return between(a.get(), x.get(), b.get());
+    }
+
     /**
      * Calculate bin closest to target frequency. for a signal with a given sample frequency and
      * number of points N
