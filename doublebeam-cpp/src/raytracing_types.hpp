@@ -12,6 +12,7 @@
 
 
 struct Position : boost::equality_comparable<Position> {
+    Position() : x(), y(), z() {}
     Position(Meter xx, Meter yy, Meter zz) : x(xx), y(yy), z(zz) {}
 
     Meter x;
