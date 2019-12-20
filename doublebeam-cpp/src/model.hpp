@@ -6,14 +6,17 @@
 #include <tuple>
 #include <vector>
 
+#include "raytracing_types.hpp"
+#include "units.hpp"
+
 
 struct Layer {
-    double top_depth;
-    double bot_depth;
-    double velocity;
+    Meter top_depth;
+    Meter bot_depth;
+    Velocity velocity;
 };
 
-double layer_height(const Layer& layer);
+Meter layer_height(const Layer& layer);
 
 bool operator==(const Layer& l1, const Layer& l2);
 
@@ -23,7 +26,7 @@ class VelocityModel {
      * Depth of all interfaces, including the top and the bottom one
      * where the layer ends.
      */
-    std::vector<double> m_interface_depths;
+    std::vector<Meter> m_interface_depths;
 
     /**
      * Array of layers.
@@ -33,8 +36,8 @@ class VelocityModel {
     /**
      * Horizontal dimension of velocity model.
      */
-    double x0_, x1_;
-    double y0_, y1_;
+    Meter x0_, x1_;
+    Meter y0_, y1_;
 
 public:
     /**
@@ -47,8 +50,8 @@ public:
      * @param x0 First x coordinate of model width.
      * @param y0 First y coordinate of model width.
      */
-    explicit VelocityModel(const std::vector<Layer>& layers, double x1, double y1, double x0 = 0,
-                           double y0 = 0);
+    explicit VelocityModel(const std::vector<Layer>& layers, Meter x1, Meter y1, Meter x0 = 0_meter,
+                           Meter y0 = 0_meter);
 
     /**
      * Get layer by index.
@@ -68,7 +71,7 @@ public:
      * @return Index of layer in velocity model, 0 indexed. Empty when point (x, y, z) is  outside
      * of velocity model.
      */
-    [[nodiscard]] std::optional<size_t> layer_index(double x, double y, double z) const;
+    [[nodiscard]] std::optional<size_t> layer_index(Meter x, Meter y, Meter z) const;
 
     /**
      * Get index of layer at depth z.
@@ -79,7 +82,7 @@ public:
      * @return Index of layer in velocity model, 0 indexed. Empty when depth z is outside velocity
      * model.
      */
-    [[nodiscard]] std::optional<std::size_t> layer_index(double z) const;
+    [[nodiscard]] std::optional<std::size_t> layer_index(Meter z) const;
 
     /**
      * Evaluate model at a certain position.
@@ -88,18 +91,25 @@ public:
      * @param z Depth in meter.
      * @return Velocity in m/s.
      */
-    std::optional<double> eval_at(double x, double y, double z) const;
+    std::optional<Velocity> eval_at(Meter x, Meter y, Meter z) const;
+
+    /**
+     * Evaluate model at position.
+     * @param position
+     * @return
+     */
+    std::optional<Velocity> eval_at(const Position& position) const;
 
     /**
      * Return true if point given by depth, z coordinates is within the velocity model.
      * @param z Depth of point in m.
      * @return
      */
-    bool in_model(double x, double y, double z) const;
+    bool in_model(Meter x, Meter y, Meter z) const;
 
     struct InterfaceVelocities {
-        double above;
-        double below;
+        Velocity above;
+        Velocity below;
     };
 
     /**
@@ -109,43 +119,43 @@ public:
      * @param z Depth in meter.
      * @return velocity at closest interface to depth z in m/s.
      */
-    [[nodiscard]] InterfaceVelocities interface_velocities(double z) const;
+    [[nodiscard]] InterfaceVelocities interface_velocities(Meter z) const;
 
     /**
      * Return top and bottom depth of model in m.
      * @return Pair of (top, bottom).
      */
-    std::pair<double, double> get_top_bottom() const;
+    std::pair<Meter, Meter> get_top_bottom() const;
 
     /**
      * Get x0, x1 pair.
      */
-    std::pair<double, double> get_x_extent() const;
+    std::pair<Meter, Meter> get_x_extent() const;
 
     /**
      * Get y0, y1 pair.
      */
-    std::pair<double, double> get_y_extent() const;
+    std::pair<Meter, Meter> get_y_extent() const;
 
-    double x0() const;
+    Meter x0() const;
 
-    double x1() const;
+    Meter x1() const;
 
-    double y0() const;
+    Meter y0() const;
 
-    double y1() const;
+    Meter y1() const;
 
     /**
      * Get width of model along x direction
      * @return
      */
-    double x_width() const;
+    Meter x_width() const;
 
     /**
      * Get width of model along y direction
      * @return
      */
-    double y_width() const;
+    Meter y_width() const;
 
     /**
      * Compare two velocity models. Return true if they are the same.
@@ -174,12 +184,12 @@ public:
      */
     std::size_t num_layers() const;
 
-    const std::vector<double>& interface_depths() const;
+    const std::vector<Meter>& interface_depths() const;
 
     /**
      * Get Layer at depth z.
      */
-    Layer get_layer(double x, double y, double z) const;
+    Layer get_layer(Meter x, Meter y, Meter z) const;
 
     /**
      * Get number of interfaces between two points.
@@ -188,9 +198,9 @@ public:
      * @param z2
      * @return
      */
-    size_t number_of_interfaces_between(double z1, double z2) const;
+    size_t number_of_interfaces_between(Meter z1, Meter z2) const;
 
-    bool in_horizontal_extent(double x, double y) const;
+    bool in_horizontal_extent(Meter x, Meter y) const;
 };
 
 
@@ -207,6 +217,6 @@ VelocityModel read_velocity_file(const std::filesystem::path& filepath);
  * @param model Velocity model.
  * @return Highest velocity (m/s) between depth 1 and depth 2 for a direct ray.
  */
-double highest_velocity_between(double depth1, double depth2, const VelocityModel& model);
+Velocity highest_velocity_between(Meter depth1, Meter depth2, const VelocityModel& model);
 
 #endif // DOUBLEBEAM_CPP_MODEL_HPP
