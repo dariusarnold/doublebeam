@@ -54,7 +54,7 @@ TEST_F(DynamicRaytracingBase, TestBasicCredibilityOfResult) {
     EXPECT_EQ(beam.frequency(), frequency) << "Beam frequency not set correctly.";
     for (auto i = 0; i < beam.size(); ++i) {
         auto [x, y, z] = beam[i].begin().position;
-        EXPECT_EQ(model.eval_at(x.get(), y.get(), z.get()).value(), beam[i].layer_velocity().get())
+        EXPECT_EQ(model.eval_at(x, y, z).value(), beam[i].layer_velocity())
             << "Stored and evaluated velocity differ for first point of beam.";
     }
 }
@@ -115,7 +115,7 @@ namespace testing::internal {
 
 TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
     // trace beam through single layer and compare with previous result.
-    VelocityModel model{{{0, 10, 2000}}, 1000, 1000};
+    VelocityModel model{{{0_meter, 10_meter, 2000_meter_per_second}}, 1000_meter, 1000_meter};
     RayTracer rt{model};
     auto P_desired =
         load_npy<complex, 3>(current_source_path(__FILE__) / "data/P_analytic_squeeze.npy");
@@ -139,7 +139,10 @@ TEST(DynamicRaytracing, TestForRegressionSingleLayer) {
 #define name_and_value(x) #x << ": " << x << "\n"
 
 TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
-    VelocityModel model{{{0, 10, 2000}, {10, 20, 2000}}, 1000, 1000};
+    VelocityModel model{
+        {{0_meter, 10_meter, 2000_meter_per_second}, {10_meter, 20_meter, 2000_meter_per_second}},
+        1000_meter,
+        1000_meter};
     RayTracer rt{model};
     auto initial_state = init_state(0_meter, 0_meter, 0_meter, model, radians(20_deg), 0_rad);
     auto beam = rt.trace_beam(initial_state, 10_meter, AngularFrequency(40), "TRT").value();
@@ -170,6 +173,6 @@ TEST_F(DynamicRaytracingBase, TestIfFailingCaseWorks) {
     auto initial_state = make_state(
         10_meter, 10_meter, 450_meter, InverseVelocity(-3.8270212473354787e-20),
         InverseVelocity(-0.00062500000000000001), InverseVelocity(-0.00055555555555555556));
-    EXPECT_EQ(rt.trace_beam(initial_state, 10_meter, hertz_to_angular(45), "TTTT").status,
+    EXPECT_EQ(rt.trace_beam(initial_state, 10_meter, hertz_to_angular(45_hertz), "TTTT").status,
               Status::OutOfBounds);
 }
