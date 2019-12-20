@@ -154,8 +154,8 @@ namespace seismo {
      * @return Container of all grid locations with shape (num_x, num_y, 3) where the first axis
      * is the x axis, the second axis is the y axis and the third axis contains the z values.
      */
-    std::vector<position_t> grid_coordinates(double x0, double x1, double y0, double y1,
-                                             double depth, size_t num_x, size_t num_y);
+    std::vector<Position> grid_coordinates(Meter x0, Meter x1, Meter y0, Meter y1, Meter depth,
+                                           size_t num_x, size_t num_y);
 } // namespace seismo
 
 
