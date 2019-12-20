@@ -16,11 +16,11 @@
 
 RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radian theta, Radian phi,
                     TravelTime T) {
-    if (not model.in_model(x.get(), y.get(), z.get())) {
+    if (not model.in_model(x, y, z)) {
         throw std::domain_error(impl::Formatter() << "Point (" << x << ", " << y << ", " << z
                                                   << ") not in model " << model);
     }
-    Velocity velocity(model.eval_at(x.get(), y.get(), z.get()).value());
+    Velocity velocity(model.eval_at(x, y, z).value());
     auto slowness = seismo::slowness_3D(theta, phi, velocity);
     return {Position{x, y, z}, slowness, TravelTime{T}, Arclength{0_meter}};
 }
@@ -44,28 +44,27 @@ RayTracingResult<RaySegment> RayTracer::trace_layer(const RayState& initial_stat
     auto [position, slowness, time, arclength] = initial_state;
     const auto c = layer.velocity;
     bool stop_depth_was_reached = false;
-    const Meter z_end = Meter([&]() {
+    const Meter z_end = [&]() {
         // check if stop depth exists and we are in the layer where we have to stop
         if (stop_depth_m and
             math::between(layer.top_depth, stop_depth_m.value(), layer.bot_depth)) {
             stop_depth_was_reached = true;
             return stop_depth_m.value();
         } else {
-            return seismo::ray_direction_down(slowness.pz.get()) ? layer.bot_depth
-                                                                 : layer.top_depth;
+            return seismo::ray_direction_down(slowness) ? layer.bot_depth : layer.top_depth;
         }
-    }());
-    auto arclength_in_layer = (z_end.get() - position.z.get()) / (c * slowness.pz.get());
+    }();
+    auto arclength_in_layer = (z_end.get() - position.z.get()) / (c.get() * slowness.pz.get());
     // s has to start at 0 because this calculation is done starting from the current point of
     // the ray.
-    const Meter x_end(position.x.get() + arclength_in_layer * c * slowness.px.get());
-    const Meter y_end(position.y.get() + arclength_in_layer * c * slowness.py.get());
-    if (not model.in_horizontal_extent(x_end.get(), y_end.get())) {
+    const Meter x_end(position.x.get() + arclength_in_layer * c.get() * slowness.px.get());
+    const Meter y_end(position.y.get() + arclength_in_layer * c.get() * slowness.py.get());
+    if (not model.in_horizontal_extent(x_end, y_end)) {
         // ray left model to the side and did not reach top/bottom of layer
 
         return {Status::OutOfBounds, {}};
     }
-    const Second t_end(time.time.get() + arclength_in_layer / layer.velocity);
+    const Second t_end(time.time.get() + arclength_in_layer / layer.velocity.get());
     const Meter s_end(arclength.length.get() + arclength_in_layer);
     return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
             RaySegment{initial_state,
@@ -79,14 +78,14 @@ RayTracer::RayTracer(VelocityModel velocity_model) : model(std::move(velocity_mo
 
 RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
                                            const std::vector<WaveType>& ray_code,
-                                           std::optional<double> stop_depth) {
-    if (not model.in_model(initial_state.position.x.get(), initial_state.position.y.get(),
-                           initial_state.position.z.get())) {
+                                           std::optional<Meter> stop_depth) {
+    if (not model.in_model(initial_state.position.x, initial_state.position.y,
+                           initial_state.position.z)) {
         throw std::domain_error(impl::Formatter()
                                 << "Point " << initial_state.position << " not in model " << model);
     }
     stop_depth_m = stop_depth;
-    int64_t layer_index = model.layer_index(initial_state.position.z.get()).value();
+    int64_t layer_index = model.layer_index(initial_state.position.z).value();
     auto current_layer = model[layer_index];
     auto segment = trace_layer(initial_state, current_layer);
     if (segment.status == Status::OutOfBounds) {
@@ -174,7 +173,7 @@ public:
         msg(epsilon);
         // for a downgoing transmitted ray the velocity above the interface is the before
         // velocity and the velocity below the interface is the after velocity.
-        auto [V_top, V_bottom] = model.interface_velocities(old_state.position.z.get());
+        auto [V_top, V_bottom] = model.interface_velocities(old_state.position.z);
         auto V_before = V_top, V_after = V_bottom;
         if (wave_type == WaveType::Reflected) {
             V_after = V_before;
@@ -216,11 +215,11 @@ public:
         auto new_gradient = 0;
         msg(new_gradient);
         // eq. (4.4.53) from Cerveny2001
-        auto E = E_(V_before, i_S, epsilon, old_gradient);
+        auto E = E_(V_before.get(), i_S, epsilon, old_gradient);
         msg(E);
-        auto E_tilde = E_tilde_(wave_type, V_after, i_R, epsilon, new_gradient);
+        auto E_tilde = E_tilde_(wave_type, V_after.get(), i_R, epsilon, new_gradient);
         msg(E_tilde);
-        auto u = u_(wave_type, V_before, V_after, i_S, i_R, epsilon);
+        auto u = u_(wave_type, V_before.get(), V_after.get(), i_S, i_R, epsilon);
         msg(u);
         auto D = D_();
         // eq. (4.4.67) Cerveny2001
@@ -326,7 +325,7 @@ bool not_at_last_ray_segment(size_t segment_index, size_t ray_size) {
 RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Meter beam_width,
                                              AngularFrequency beam_frequency,
                                              const std::vector<WaveType>& ray_code,
-                                             std::optional<double> stop_depth) {
+                                             std::optional<Meter> stop_depth) {
     // first trace ray kinematically
     auto ray = trace_ray(initial_state, ray_code, stop_depth);
     if (not ray.result) {
@@ -335,13 +334,13 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
     }
     InterfacePropagator ip;
     auto [position, slowness, traveltime, arclength] = initial_state;
-    auto v0 = model.eval_at(position.x.get(), position.y.get(), position.z.get()).value();
+    auto v0 = model.eval_at(position).value();
     // initial values for P, Q
     Eigen::Matrix2cd P;
-    P << 1j / v0, 0, 0, 1j / v0;
+    P << 1j / v0.get(), 0, 0, 1j / v0.get();
     Eigen::Matrix2cd Q;
-    Q << beam_frequency.get() * beam_width.get() * beam_width.get() / v0, 0, 0,
-        beam_frequency.get() * beam_width.get() * beam_width.get() / v0;
+    Q << beam_frequency.get() * beam_width.get() * beam_width.get() / v0.get(), 0, 0,
+        beam_frequency.get() * beam_width.get() * beam_width.get() / v0.get();
     Beam beam(beam_width, beam_frequency);
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
@@ -363,14 +362,14 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
 
 RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
                                            const std::string& ray_code,
-                                           std::optional<double> stop_depth) {
+                                           std::optional<Meter> stop_depth) {
     return trace_ray(initial_state, seismo::make_ray_code(ray_code), stop_depth);
 }
 
 RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Meter beam_width,
                                              AngularFrequency beam_frequency,
                                              const std::string& ray_code,
-                                             std::optional<double> stop_depth) {
+                                             std::optional<Meter> stop_depth) {
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
                       stop_depth);
 }

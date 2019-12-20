@@ -89,14 +89,14 @@ public:
      */
     RayTracingResult<Ray> trace_ray(const RayState& initial_state,
                                     const std::vector<WaveType>& ray_code = {},
-                                    std::optional<double> stop_depth = {});
+                                    std::optional<Meter> stop_depth = {});
 
     /**
      * Overload that takes a string and converts it to a ray code.
      * An invalid_argument exception will be thrown when the ray code contains invalid characters.
      */
     RayTracingResult<Ray> trace_ray(const RayState& initial_state, const std::string& ray_code,
-                                    std::optional<double> stop_depth = {});
+                                    std::optional<Meter> stop_depth = {});
 
     /**
      * Do dynamic ray tracing and return gaussian beam.
@@ -111,7 +111,7 @@ public:
     RayTracingResult<Beam> trace_beam(const RayState& initial_state, Meter beam_width,
                                       AngularFrequency beam_frequency,
                                       const std::vector<WaveType>& ray_code = {},
-                                      std::optional<double> stop_depth = {});
+                                      std::optional<Meter> stop_depth = {});
 
     /**
      * Overload that takes a string and converts it to a ray code.
@@ -119,7 +119,7 @@ public:
      */
     RayTracingResult<Beam> trace_beam(const RayState& initial_state, Meter beam_width,
                                       AngularFrequency beam_frequency, const std::string& ray_code,
-                                      std::optional<double> stop_depth = {});
+                                      std::optional<Meter> stop_depth = {});
 
 private:
     /**
@@ -134,7 +134,7 @@ private:
 
     VelocityModel model;
 
-    std::optional<double> stop_depth_m{};
+    std::optional<Meter> stop_depth_m{};
 };
 
 #endif // DOUBLEBEAM_CPP_RAYTRACING_HPP
