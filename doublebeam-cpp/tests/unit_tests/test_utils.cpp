@@ -323,23 +323,23 @@ TEST(TestSlowness3D, HorizontalRayShouldHaveZeroAsVerticalSlowness) {
 }
 
 TEST(TestGridCoordinates, TestEmptySizes) {
-    auto result = seismo::grid_coordinates(0, 1, 0, 1, 1, 0, 0);
+    auto result = seismo::grid_coordinates(0_meter, 1_meter, 0_meter, 1_meter, 1_meter, 0, 0);
     ASSERT_EQ(result.size(), 0);
 }
 
 TEST(TestGridCoordinates, TestSizeOneGrid) {
-    auto result = seismo::grid_coordinates(0, 1, 0, 1, 1, 1, 1);
+    auto result = seismo::grid_coordinates(0_meter, 1_meter, 0_meter, 1_meter, 1_meter, 1, 1);
     ASSERT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0], position_t(0., 0., 1.));
+    EXPECT_EQ(result[0], Position(0_meter, 0_meter, 1_meter));
 }
 
 TEST(TestGridCoordinates, TestNormalUseCase) {
-    auto result = seismo::grid_coordinates(0, 3, 4, 6, 1, 4, 3);
+    auto result = seismo::grid_coordinates(0_meter, 3_meter, 4_meter, 6_meter, 1_meter, 4, 3);
     ASSERT_EQ(result.size(), 4 * 3);
-    std::unordered_set<position_t, boost::hash<position_t>> coordinates;
-    for (auto x : {0, 1, 2, 3}) {
-        for (auto y : {4, 5, 6}) {
-            coordinates.emplace(x, y, 1);
+    std::unordered_set<Position, boost::hash<Position>> coordinates;
+    for (auto x : {0_meter, 1_meter, 2_meter, 3_meter}) {
+        for (auto y : {4_meter, 5_meter, 6_meter}) {
+            coordinates.emplace(x, y, 1_meter);
         }
     }
     for (auto pos : result) {
@@ -348,12 +348,12 @@ TEST(TestGridCoordinates, TestNormalUseCase) {
 }
 
 TEST(TestGridCoordinates, TestNormalUseCaseWithReversedGridExtent) {
-    auto result = seismo::grid_coordinates(3, 0, 6, 4, 1, 4, 3);
+    auto result = seismo::grid_coordinates(3_meter, 0_meter, 6_meter, 4_meter, 1_meter, 4, 3);
     ASSERT_EQ(result.size(), 4 * 3);
-    std::unordered_set<position_t, boost::hash<position_t>> coordinates;
-    for (auto x : {0, 1, 2, 3}) {
-        for (auto y : {4, 5, 6}) {
-            coordinates.emplace(x, y, 1);
+    std::unordered_set<Position, boost::hash<Position>> coordinates;
+    for (auto x : {0_meter, 1_meter, 2_meter, 3_meter}) {
+        for (auto y : {4_meter, 5_meter, 6_meter}) {
+            coordinates.emplace(x, y, 1_meter);
         }
     }
     for (auto pos : result) {
@@ -463,17 +463,17 @@ TEST(TestBetween, TestInclusivityRight) {
 }
 
 TEST(TestBetween, TestNormalValueInside) {
-    bool result = math::between(0, 0.96, 1);
+    bool result = math::between(0., 0.96, 1.);
     EXPECT_TRUE(result);
 }
 
 TEST(TestBetween, TestNormalValueOutsideRight) {
-    bool result = math::between(0, 1.01, 1);
+    bool result = math::between(0., 1.01, 1.);
     EXPECT_FALSE(result);
 }
 
 TEST(TestBetween, TestNormalValueOutsideLeft) {
-    bool result = math::between(0, -0.01, 1);
+    bool result = math::between(0., -0.01, 1.);
     EXPECT_FALSE(result);
 }
 
