@@ -9,13 +9,13 @@
 class TestRayTracingBase : public ::testing::Test {
 public:
     TestRayTracingBase() :
-            vm{{{0, 100, 2000},
-                {100, 200, 2400},
-                {200, 300, 2650},
-                {300, 400, 2700},
-                {400, 500, 2925}},
-               3000,
-               3000},
+            vm{{{0_meter, 100_meter, 2000_meter_per_second},
+                {100_meter, 200_meter, 2400_meter_per_second},
+                {200_meter, 300_meter, 2650_meter_per_second},
+                {300_meter, 400_meter, 2700_meter_per_second},
+                {400_meter, 500_meter, 2925_meter_per_second}},
+               3000_meter,
+               3000_meter},
             krt(vm) {}
 
     VelocityModel vm;
@@ -25,7 +25,7 @@ public:
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerDownwards) {
     // This ray ends in a linear velocity gradient layer and travels downwards
     auto initial_state = init_state(0_meter, 0_meter, 100_meter, vm, 0_rad, 0_rad);
-    auto ray = krt.trace_ray(initial_state, "", 150).value();
+    auto ray = krt.trace_ray(initial_state, "", 150_meter).value();
     auto [x, y, z] = ray.last_position();
     EXPECT_EQ(x.get(), 0);
     EXPECT_EQ(y.get(), 0);
@@ -33,33 +33,33 @@ TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerDownwards)
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthConstantVelocityLayerUpwards) {
-    InverseVelocity p(-1 / vm.eval_at(0, 0, 199).value());
+    InverseVelocity p(-1 / vm.eval_at(0_meter, 0_meter, 199_meter).value().get());
     // This ray ends in a linear velocity gradient layer
     auto initial_state =
         make_state(0_meter, 0_meter, 199_meter, InverseVelocity(0), InverseVelocity(0), p);
-    auto ray = krt.trace_ray(initial_state, "", 150).value();
+    auto ray = krt.trace_ray(initial_state, "", 150_meter).value();
     auto [x, y, z] = ray.last_position();
     // px is very small due to numerical inaccuracies calc
     EXPECT_DOUBLE_EQ(x.get(), 0);
-    EXPECT_EQ(y.get(), 0);
-    EXPECT_EQ(z.get(), 150);
+    EXPECT_EQ(y, 0_meter);
+    EXPECT_EQ(z, 150_meter);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthLinearVelocityLayer) {
     // This ray ends in a linear velocity gradient layer
     auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, 0_rad, 0_rad);
-    double stop_depth = 50;
+    Meter stop_depth(50);
     auto ray = krt.trace_ray(initial_state, "", stop_depth).value();
     auto [x, y, z] = ray.last_position();
-    EXPECT_EQ(x.get(), 0);
-    EXPECT_EQ(y.get(), 0);
-    EXPECT_EQ(z.get(), stop_depth);
+    EXPECT_EQ(x, 0_meter);
+    EXPECT_EQ(y, 0_meter);
+    EXPECT_EQ(z, stop_depth);
 }
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthOneLayerBottomToTop) {
     // This ray ends in a linear velocity gradient layer
     auto initial_state = init_state(1_meter, 1_meter, 99_meter, vm, radians(180_deg), 0_rad);
-    auto ray = krt.trace_ray(initial_state, "", 50).value();
+    auto ray = krt.trace_ray(initial_state, "", 50_meter).value();
     auto [x, y, z] = ray.last_position();
     EXPECT_TRUE(Close(x.get(), 1.));
     EXPECT_DOUBLE_EQ(y.get(), 1.);
@@ -69,7 +69,7 @@ TEST_F(TestRayTracingBase, TestStopAtCertainDepthOneLayerBottomToTop) {
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayer) {
     // This ray ends in constant velocity layer
     auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, 0_rad, 0_rad);
-    auto ray = krt.trace_ray(initial_state, "T", 150).value();
+    auto ray = krt.trace_ray(initial_state, "T", 150_meter).value();
     auto [x, y, z] = ray.last_position();
     EXPECT_EQ(x.get(), 0);
     EXPECT_EQ(y.get(), 0);
@@ -78,7 +78,7 @@ TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayer) {
 
 TEST_F(TestRayTracingBase, TestStopAtCertainDepthMultiLayerWithNonVerticalRay) {
     auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, radians(15_deg), 0_rad);
-    auto ray = krt.trace_ray(initial_state, "T", 150).value();
+    auto ray = krt.trace_ray(initial_state, "T", 150_meter).value();
     auto [x, y, z] = ray.last_position();
     EXPECT_NE(x.get(), 0);
     EXPECT_EQ(y.get(), 0);
@@ -136,7 +136,7 @@ TEST_F(TestRayTracing, LeaveTopOfModel) {
                                         InverseVelocity(0), InverseVelocity(-0.005));
     EXPECT_THROW(krt.trace_ray(initial_state, "TRT"), std::runtime_error)
         << "Kinematic ray tracing not throwing when ray leaves top of model.";
-    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TRT"),
+    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1_hertz), "TRT"),
                  std::runtime_error)
         << "Dynamic ray tracing not throwing when beam leaves top of model";
 }
@@ -144,6 +144,6 @@ TEST_F(TestRayTracing, LeaveTopOfModel) {
 TEST_F(TestRayTracing, LeaveBottomOfModel) {
     auto initial_state = init_state(0_meter, 0_meter, 0_meter, vm, radians(10_deg), 0_rad);
     EXPECT_THROW(krt.trace_ray(initial_state, "TTTTTT"), std::runtime_error);
-    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1), "TTTTTT"),
+    EXPECT_THROW(krt.trace_beam(initial_state, 1_meter, hertz_to_angular(1_hertz), "TTTTTT"),
                  std::runtime_error);
 }
