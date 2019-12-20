@@ -76,7 +76,7 @@ public:
      * a source/receiver, it will not be evaluated in the stacking process.
      * @return
      */
-    DoubleBeamResult algorithm(std::vector<position_t> source_geometry, position_t target,
+    DoubleBeamResult algorithm(std::vector<Position> source_geometry, Position target,
                                const SeismoData& data, FractureParameters fracture_info,
                                Frequency source_frequency, Meter beam_width,
                                AngularFrequency beam_frequency, double window_length,

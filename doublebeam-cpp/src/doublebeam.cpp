@@ -9,22 +9,44 @@
 
 /**
  * Calculate horizontal slowness for wave scattered from fractures.
- * @param px X component of slowness vector.
- * @param py Y component of slowness vector.
+ * @param slow Slowness vector of incoming ray
  * @param phi_hat Unit vector normal to fracture plane. Since only vertical fracture planes are
  * considered, only x and y component of the vector is required.
  * @param fracture_spacing Distance between fracture planes.
  * @param frequency Frequency of wave.
  * @return X, Y component of slowness.
  */
-std::tuple<double, double> scattered_slowness(double px, double py, math::Vector2 phi_hat,
-                                              double fracture_spacing, Frequency frequency) {
+std::tuple<InverseVelocity, InverseVelocity> scattered_slowness(const Slowness& slow,
+                                                                const math::Vector2& phi_hat,
+                                                                double fracture_spacing,
+                                                                Frequency frequency) {
     // pass 0 as pz and phi_hat_z since formula only transforms horizontal slownesses and is only
     // valid for vertical fracture planes.
-    auto sig = math::sign(math::dot(px, py, 0, phi_hat.x, phi_hat.y, 0));
-    auto px_new = px - sig * phi_hat.x / (fracture_spacing * frequency.get());
-    auto py_new = py - sig * phi_hat.y / (fracture_spacing * frequency.get());
+    auto sig = math::sign(math::dot(slow.px.get(), slow.py.get(), 0, phi_hat.x, phi_hat.y, 0));
+    InverseVelocity px_new(slow.px.get() - sig * phi_hat.x / (fracture_spacing * frequency.get()));
+    InverseVelocity py_new(slow.py.get() - sig * phi_hat.y / (fracture_spacing * frequency.get()));
     return {px_new, py_new};
+}
+
+
+/**
+ * Calculate new slowness by scattering and the normalizing length of resulting slowness vector
+ * to incoming slowness vector.
+ * @param slowness Slowness vector of incoming ray
+ * @param fracture_normal Unit vector normal to fracture plane. Since only vertical fracture planes
+ * are considered, only x and y component of the vector is required.
+ * @param fracture_spacing Distance between fracture planes.
+ * @param frequency Frequency of wave.
+ * @return Scattered slowness vector
+ */
+Slowness calculate_new_slowness(const Slowness& slowness, const math::Vector2& fracture_normal,
+                                double fracture_spacing, Frequency frequency) {
+    const auto [px, py] =
+        scattered_slowness(slowness, fracture_normal, fracture_spacing, frequency);
+    // -pz to reflect beam upwards from target
+    const double length_factor =
+        math::length(slowness) / math::length(px.get(), py.get(), -slowness.pz.get());
+    return {px * length_factor, py * length_factor, -slowness.pz * length_factor};
 }
 
 
@@ -35,9 +57,9 @@ FractureParameters::FractureParameters(math::Vector2 phi_hat, int num_fracture_o
         orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat)),
         spacings(math::linspace(spacing_min, spacing_max, num_fracture_spacings)) {}
 
-std::vector<WaveType> direct_ray_code(position_t source, position_t receiver,
+std::vector<WaveType> direct_ray_code(Position source, Position receiver,
                                       const VelocityModel& model) {
-    auto n = model.number_of_interfaces_between(std::get<2>(source), std::get<2>(receiver));
+    auto n = model.number_of_interfaces_between(source.z, receiver.z);
     return std::vector<WaveType>(n, WaveType::Transmitted);
 }
 
@@ -221,7 +243,7 @@ RayState make_state(position_t pos, slowness_t slowness) {
                     TravelTime(0_second), Arclength(0_meter)};
 }
 
-DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, position_t target,
+DoubleBeamResult DoubleBeam::algorithm(std::vector<Position> source_geometry, Position target,
                                        const SeismoData& data, FractureParameters fracture_info,
                                        Frequency source_frequency, Meter beam_width,
                                        AngularFrequency beam_frequency, double window_length,
@@ -232,7 +254,7 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
     int source_beam_index = 0;
     for (const auto& source_beam_center : source_geometry) {
         std::cout << "Beam " << source_beam_index++ << std::endl;
-        slowness_t slowness = twopoint.trace(target, source_beam_center);
+        Slowness slowness = twopoint.trace(target, source_beam_center);
         // TODO add overload so declaring initial state is not required for ray tracing
         auto initial_state = make_state(target, slowness);
         auto a = std::chrono::high_resolution_clock::now();
@@ -246,9 +268,9 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
         // Since we traced the beam from the target upwards to the surface, we will have to flip
         // the direction of the slowness to be able to treat it as the incoming direction of the
         // beam at the fractures and then scatter.
-        std::get<0>(slowness) *= -1;
-        std::get<1>(slowness) *= -1;
-        std::get<2>(slowness) *= -1;
+        slowness.px *= -1;
+        slowness.py *= -1;
+        slowness.pz *= -1;
         int number_of_rec_beams_that_left_model = 0;
         for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
              ++spacing_index) {
@@ -256,14 +278,10 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<position_t> source_geometry, 
                  orientations_index < fracture_info.orientations.size(); ++orientations_index) {
                 //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
                 //                    orientations_index);
-                auto phi_hat = fracture_info.orientations[orientations_index];
-                auto [px, py] =
-                    scattered_slowness(std::get<0>(slowness), std::get<1>(slowness), phi_hat,
-                                       fracture_info.spacings[spacing_index], source_frequency);
                 // trace receiver beam in scattered direction
-                // -pz to reflect beam upwards from target
-                slowness_t new_slowness = math::scale_vector({px, py, -std::get<2>(slowness)},
-                                                             std::apply(math::length, slowness));
+                Slowness new_slowness =
+                    calculate_new_slowness(slowness, fracture_info.orientations[orientations_index],
+                                           fracture_info.spacings[spacing_index], source_frequency);
                 initial_state = make_state(target, new_slowness);
                 // reuse ray code since beam should pass through the same layers
                 a = std::chrono::high_resolution_clock::now();
