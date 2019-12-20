@@ -1,5 +1,6 @@
 #include <complex>
 
+#include <boost/range/adaptor/indexed.hpp>
 #include <fmt/format.h>
 
 #include "doublebeam.hpp"
@@ -272,16 +273,15 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<Position> source_geometry, Po
         slowness.py *= -1;
         slowness.pz *= -1;
         int number_of_rec_beams_that_left_model = 0;
-        for (auto spacing_index = 0U; spacing_index < fracture_info.spacings.size();
-             ++spacing_index) {
-            for (auto orientations_index = 0U;
-                 orientations_index < fracture_info.orientations.size(); ++orientations_index) {
+        namespace ba = boost::adaptors;
+        for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed(0)) {
+            for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed(0)) {
                 //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
                 //                    orientations_index);
                 // trace receiver beam in scattered direction
                 Slowness new_slowness =
-                    calculate_new_slowness(slowness, fracture_info.orientations[orientations_index],
-                                           fracture_info.spacings[spacing_index], source_frequency);
+                    calculate_new_slowness(slowness, fracture_orientation.value(),
+                                           fracture_spacing.value(), source_frequency);
                 initial_state = make_state(target, new_slowness);
                 // reuse ray code since beam should pass through the same layers
                 a = std::chrono::high_resolution_clock::now();
@@ -298,10 +298,10 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<Position> source_geometry, Po
                 auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
                                  max_stacking_distance);
                 if (not isfinite(tmp)) {
-                    std::cerr << "(" << spacing_index << ", " << orientations_index << ") = " << tmp
-                              << std::endl;
+                    std::cerr << "(" << fracture_spacing.index() << ", "
+                              << fracture_orientation.index() << ") = " << tmp << std::endl;
                 }
-                result.data(spacing_index, orientations_index) += tmp;
+                result.data(fracture_spacing.index(), fracture_orientation.index()) += tmp;
             }
         }
         std::cout << number_of_rec_beams_that_left_model << "/"
