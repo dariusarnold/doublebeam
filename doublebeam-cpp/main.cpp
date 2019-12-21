@@ -4,8 +4,6 @@
 #include "doublebeam.hpp"
 #include "eigen_helpers.hpp"
 #include "io.hpp"
-#include "printing.hpp"
-#include "raytracing.hpp"
 #include "twopoint.hpp"
 #include "units.hpp"
 #include "utils.hpp"
