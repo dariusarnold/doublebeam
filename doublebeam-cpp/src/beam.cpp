@@ -4,6 +4,7 @@
 #include <fmt/ostream.h>
 
 #include "beam.hpp"
+#include "utils.hpp"
 
 
 Beam::Beam(Meter beam_width, AngularFrequency beam_frequency) :
@@ -35,16 +36,16 @@ BeamSegment::BeamSegment(Eigen::Matrix2cd P_, Eigen::Matrix2cd Q_, RaySegment se
         Q(std::move(Q_)) {}
 
 size_t Beam::find_segment_index(Arclength s) const {
-    if (s.length.get() < 0) {
-        throw std::domain_error(fmt::format("Negative arclength not allowed: {}", s));
+    // search in reverse direction since beam evaluation is at the end of the ray so we most likely
+    // need the last segment.
+    auto segment = std::find_if(segments.rbegin(), segments.rend(), [=](const BeamSegment& seg) {
+        return seg.begin().arclength <= s;
+    });
+    if (segment != segments.rend()) {
+        return std::distance(segments.rbegin(), segment);
     }
-    for (size_t i = 0; i < size(); ++i) {
-        if (segments[i].begin().arclength.length.get() <= s.length.get() and
-            segments[i].end().arclength.length.get() >= s.length.get()) {
-            return i;
-        }
-    }
-    throw std::invalid_argument(fmt::format("{} beyond maximum {}.", s, last_arclength()));
+    throw std::invalid_argument(
+        fmt::format("{} is invalid for beam with max arclength of {}.", s, last_arclength()));
 }
 
 const Eigen::Matrix2cd& Beam::last_P() const {

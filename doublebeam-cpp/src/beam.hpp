@@ -122,8 +122,9 @@ public:
 
 private:
     /**
-     * Find index of the segment containing arclength s.
-     * @return Index for segment of beam where s(start) <= s <= s(end).
+     * Find index of the first segment starting from the end of the beam which's begin arclength is
+     * less than or equal to arclength s.
+     * @return Index for segment of beam where s(start) <= s.
      */
     [[nodiscard]] size_t find_segment_index(Arclength s) const;
 

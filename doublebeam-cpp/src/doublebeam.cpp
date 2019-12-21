@@ -111,12 +111,12 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     return {e1, e2};
 }
 
-std::complex<double> gb_amplitude(const Beam& beam) {
+std::complex<double> gb_amplitude(const Beam& beam, Arclength s) {
     // this calculates the amplitude at the end of the beam, assuming thats the point you want since
     // the beam reached the surface.
     // Since velocity is constant in one layer its factored out
     std::complex<double> det_Q_s0 = beam.get_Q(Arclength{0_meter}).determinant();
-    std::complex<double> det_Q_s = beam.get_Q(beam.last_arclength()).determinant();
+    std::complex<double> det_Q_s = beam.get_Q(s).determinant();
     return std::sqrt(det_Q_s0 / det_Q_s);
 }
 
@@ -151,7 +151,12 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, double x, double y, double z) {
     // Cerveny2001.
     auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
     auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
-    auto amp = gb_amplitude(beam);
+    Meter total_arclength = beam.last_arclength().length;
+    total_arclength += Meter(q3);
+    if (total_arclength < 0_meter) {
+        throw std::runtime_error("Negative arclength");
+    }
+    auto amp = gb_amplitude(beam, Arclength(total_arclength));
     std::complex<double> complex_traveltime;
     auto exp = gb_exp(beam, q1, q2, complex_traveltime);
     return {std::conj(amp * exp), complex_traveltime};
@@ -183,34 +188,43 @@ double squared_distance(const Position& x, const PositionWithIndex& pos) {
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length, double max_eval_distance) {
     std::complex<double> stacking_result(0, 0);
-    std::vector<BeamEvalResult> source_beam_values, receiver_beam_values;
+    std::vector<std::optional<BeamEvalResult>> source_beam_values, receiver_beam_values;
     source_beam_values.reserve(std::size(data.sources()));
     receiver_beam_values.reserve(std::size(data.receivers()));
     using namespace std::placeholders;
     auto a = std::chrono::high_resolution_clock::now();
+    double max_eval_distance_squared = std::pow(max_eval_distance, 2);
     std::transform(data.sources().begin(), data.sources().end(),
-                   std::back_inserter(source_beam_values),
-                   std::bind(eval_gauss_beam<Source>, source_beam, _1));
+                   std::back_inserter(source_beam_values), [&](const Source& source) {
+                       if (squared_distance(source_beam.last_position(), source) >
+                           max_eval_distance_squared) {
+                           return std::optional<BeamEvalResult>();
+                       }
+                       return std::optional<BeamEvalResult>(eval_gauss_beam(source_beam, source));
+                   });
     std::transform(data.receivers().begin(), data.receivers().end(),
-                   std::back_inserter(receiver_beam_values),
-                   std::bind(eval_gauss_beam<Receiver>, receiver_beam, _1));
+                   std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
+                       if (squared_distance(receiver_beam.last_position(), receiver) >
+                           max_eval_distance_squared) {
+                           return std::optional<BeamEvalResult>();
+                       }
+                       return std::optional<BeamEvalResult>(
+                           eval_gauss_beam(receiver_beam, receiver));
+                   });
     auto b = std::chrono::high_resolution_clock::now();
     evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-    double max_eval_distance_squared = std::pow(max_eval_distance, 2);
     namespace ba = boost::adaptors;
     for (const auto& source : data.sources() | ba::indexed()) {
-        if (squared_distance(source_beam.last_position(), source.value()) >
-            max_eval_distance_squared) {
+        if (not source_beam_values[source.index()].has_value()) {
             continue;
         }
         for (const auto& receiver : data.receivers() | ba::indexed()) {
-            if (squared_distance(receiver_beam.last_position(), receiver.value()) >
-                max_eval_distance_squared) {
+            if (not receiver_beam_values[receiver.index()].has_value()) {
                 continue;
             }
             double total_traveltime =
-                std::real(source_beam_values[source.index()].complex_traveltime +
-                          receiver_beam_values[receiver.index()].complex_traveltime);
+                std::real(source_beam_values[source.index()].value().complex_traveltime +
+                          receiver_beam_values[receiver.index()].value().complex_traveltime);
             if (total_traveltime + window_length > data.timestep() * data.num_samples()) {
                 //                std::cerr << total_traveltime << "\n";
                 continue;
@@ -226,8 +240,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                                             receiver_beam.frequency(), data.sampling_frequency());
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
-            stacking_result += source_beam_values[source.index()].gb_value *
-                               receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
+            stacking_result += source_beam_values[source.index()].value().gb_value *
+                               receiver_beam_values[receiver.index()].value().gb_value *
+                               seismogram_freq;
         }
     }
     return stacking_result;
