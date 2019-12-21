@@ -65,7 +65,7 @@ void convert_all_to_binary(const std::filesystem::path& shotdata_path,
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         std::cerr << "Specify path to shotdata folder as first positional argument and seismogram "
-                     "file extension as second positional argument.\n";
+                     "file extension (with leading dot) as second positional argument.\n";
         exit(-1);
     }
     std::ios::sync_with_stdio(false);
