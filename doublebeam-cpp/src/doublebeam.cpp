@@ -244,7 +244,7 @@ RayState make_state(position_t pos, slowness_t slowness) {
                     TravelTime(0_second), Arclength(0_meter)};
 }
 
-DoubleBeamResult DoubleBeam::algorithm(std::vector<Position> source_geometry, Position target,
+DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry, Position target,
                                        const SeismoData& data, FractureParameters fracture_info,
                                        Frequency source_frequency, Meter beam_width,
                                        AngularFrequency beam_frequency, double window_length,
