@@ -251,10 +251,9 @@ DoubleBeamResult DoubleBeam::algorithm(std::vector<Position> source_geometry, Po
                                        double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
-    std::cout << source_geometry.size() << " Source beam centers." << std::endl;
-    int source_beam_index = 0;
+    int source_beam_index = 1;
     for (const auto& source_beam_center : source_geometry) {
-        std::cout << "Beam " << source_beam_index++ << std::endl;
+        std::cout << "Beam " << source_beam_index++ << "/" << source_geometry.size() << std::endl;
         Slowness slowness = twopoint.trace(target, source_beam_center);
         // TODO add overload so declaring initial state is not required for ray tracing
         auto initial_state = make_state(target, slowness);
