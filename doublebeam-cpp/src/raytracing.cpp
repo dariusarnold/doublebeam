@@ -137,36 +137,6 @@ RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
 #define msg(x)
 #endif
 
-struct Velocities {
-    Velocity before;
-    Velocity after;
-};
-
-/**
- * Return which velocity the ray experienced before/after the interface crossing.
- * @param interface_velocities Velocity above/below interface.
- * @param ray_direction_down True if downgoing ray
- * @param wave_type which wavetype at the interface.
- * @return
- */
-Velocities interface_velocities(const VelocityModel::InterfaceVelocities& interface_velocities,
-                                bool ray_direction_down, WaveType wave_type) {
-    if (wave_type == WaveType::Reflected) {
-        if (ray_direction_down) {
-            return {interface_velocities.above, interface_velocities.above};
-        } else {
-            return {interface_velocities.below, interface_velocities.below};
-        }
-    } else {
-        // transmitted wave
-        if (ray_direction_down) {
-            return {interface_velocities.above, interface_velocities.below};
-        } else {
-            return {interface_velocities.below, interface_velocities.above};
-        }
-    }
-}
-
 
 class InterfacePropagator {
     using matrix_t = Eigen::Matrix2cd;
@@ -181,12 +151,11 @@ public:
      * @param old_state State before interface crossing (position, slowness, trave time).
      * @param new_state State after interface crossing (position, slowness, trave time).
      * @param layer_index Index of the layer the wave is in before the interface is crossed.
-     * @param model Velocity model.
      * @return New values for P, Q.
      */
     std::pair<Eigen::Matrix2cd, Eigen::Matrix2cd>
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
-              const RayState& old_state, const RayState& new_state, const VelocityModel& model) {
+              const RayState& old_state, const RayState& new_state) {
         msg(wave_type);
         // i_S is the acute angle of incidence, 0 <= i_s <= pi/2
         const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
@@ -204,11 +173,6 @@ public:
         // and sign gives the sign of its argument.
         auto epsilon = std::copysign(1., old_state.slowness.pz.get());
         msg(epsilon);
-        auto velocities =
-            interface_velocities(model.interface_velocities(old_state.position.z),
-                                 seismo::ray_direction_down(old_state.slowness), wave_type);
-        msg(velocities.before);
-        msg(velocities.after);
         // kappa is the angle between e_2 and i_2, 0 <= kappa <= 2pi.
         // i2 is the basis vector of the local Cartesian coordinate system with origin at Q.
         // i3 coincides with the unit vector n normal to the interface, i1 and i2 can be chosen
@@ -241,101 +205,14 @@ public:
         // Evaluate this since it is used two times and would be reevaluated otherwise
         matrix_t G_inverted = G.inverse();
         msg(G_inverted);
-        // TODO simplify by adapting for constant velocity layers
-        auto old_gradient = 0;
-        msg(old_gradient);
-        auto new_gradient = 0;
-        msg(new_gradient);
-        // eq. (4.4.53) from Cerveny2001
-        auto E = E_(velocities.before.get(), i_S, epsilon, old_gradient);
-        msg(E);
-        auto E_tilde = E_tilde_(wave_type, velocities.after.get(), i_R, epsilon, new_gradient);
-        msg(E_tilde);
-        auto u = u_(wave_type, velocities.before.get(), velocities.after.get(), i_S, i_R, epsilon);
-        msg(u);
-        auto D = D_();
-        // eq. (4.4.67) Cerveny2001
-        msg(D);
-        matrix_t P_tilde =
-            G_tilde.inverse() * ((G * P) + (E - E_tilde - u * D) * (G_inverted.transpose() * Q));
+        // simplified version for homogeneous layer with constant velocity and planar horizontal
+        // interfaces Cerveny2001 (4.8.10).
+        matrix_t P_tilde = G_tilde.inverse() * G * P;
         // eq. (4.4.64) from Cerveny2001
         msg(P_tilde);
         matrix_t Q_tilde = G_tilde.transpose() * G_inverted.transpose() * Q;
         msg(Q_tilde);
         return {P_tilde, Q_tilde};
-    }
-
-private:
-    /**
-     * Eq. 4.4.53 from Cerveny2001
-     * @param V
-     * @param i_S
-     * @param epsilon
-     * @param old_gradient
-     * @return
-     */
-    matrix_t E_(double V, double i_S, double epsilon, double old_gradient) const {
-        // TODO modify this to work with a more general velocity model
-        // dV_dzi means the derivative of the velocity after the z_i coordinate for V=V(z)
-        auto dV_dz1 = 0.;
-        auto dV_dz2 = 0.;
-        auto dV_dz3 = old_gradient;
-        auto E11 = -std::sin(i_S) / (V * V) *
-                   ((1 + std::pow(std::cos(i_S), 2)) * dV_dz1 -
-                    epsilon * std::cos(i_S) * std::sin(i_S) * dV_dz3);
-        auto E12 = -std::sin(i_S) / (V * V) * dV_dz2;
-        auto E22 = 0.;
-        return (matrix_t() << E11, E12, E12, E22).finished();
-    }
-
-    /**
-     * Eq. 4.4.54 from Cerveny2001
-     * @param wave_type
-     * @param V_tilde
-     * @param i_R
-     * @param epsilon
-     * @param new_gradient
-     * @return
-     */
-    matrix_t E_tilde_(WaveType wave_type, double V_tilde, double i_R, double epsilon,
-                      double new_gradient) const {
-        auto dV_tilde_dz1 = 0.;
-        auto dV_tilde_dz2 = 0.;
-        auto dV_tilde_dz3 = new_gradient;
-        auto minus_plus = wave_type == WaveType::Reflected ? -1. : 1.;
-        auto E11 = -std::sin(i_R) / (V_tilde * V_tilde) *
-                   ((1 + std::pow(cos(i_R), 2)) * dV_tilde_dz1 +
-                    minus_plus * epsilon * std::cos(i_R) * std::sin(i_R) * dV_tilde_dz3);
-        auto E12 = -std::sin(i_R) / (V_tilde * V_tilde) * dV_tilde_dz2;
-        auto E22 = 0.;
-        return (matrix_t() << E11, E12, E12, E22).finished();
-    }
-
-    /**
-     * Eq. 4.4.51 from Cerveny2001
-     * @param wave_type String specifying wave type, valid values are "T" for
-        transmitted and "R" for reflected.
-     * @param V Velocity before the interface, in m/s.
-     * @param V_tilde Velocity after the interface, in m/s.
-     * @param i_S Acute angle of incidence, 0 <= i_S <= pi/2.
-     * @param i_R Acute angle of reflection/transmission
-     * @param epsilon sign(p * n)
-     */
-    static double u_(WaveType wave_type, double V, double V_tilde, double i_S, double i_R,
-                     double epsilon) {
-        // TODO make this a function
-        auto minusplus = wave_type == WaveType::Reflected ? -1 : 1;
-        return epsilon * (std::cos(i_S) / V + minusplus * std::cos(i_R) / V_tilde);
-    }
-
-    /**
-     * Eq. 4.4.15 from Cerveny2001
-     * For the currently implemented velocity layer with horizontal interfaces only, this
-     * function is zero everywhere since it contains the second derivative of the interface
-     * function Sigma in the numerator. Sigma = Sigma(z3) for horizontal interfaces.
-     */
-    static matrix_t D_() {
-        return matrix_t::Zero();
     }
 };
 
@@ -385,7 +262,7 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
             auto wave_type = ray_code[segment_index];
             auto new_initial_state = ray.value()[segment_index + 1].begin();
             std::tie(P, Q) = ip.transform(P, Q_at_end_of_ray_segment, wave_type, segment.end(),
-                                          new_initial_state, model);
+                                          new_initial_state);
         }
         ++segment_index;
     }
