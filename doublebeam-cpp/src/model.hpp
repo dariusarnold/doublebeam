@@ -31,7 +31,7 @@ class VelocityModel {
     /**
      * Array of layers.
      */
-    std::vector<Layer> layers;
+    std::vector<Layer> layers_m;
 
     /**
      * Horizontal dimension of velocity model.
@@ -137,13 +137,13 @@ public:
      */
     std::pair<Meter, Meter> get_y_extent() const;
 
-    Meter x0() const;
+    Meter get_x0() const;
 
-    Meter x1() const;
+    Meter get_x1() const;
 
-    Meter y0() const;
+    Meter get_y0() const;
 
-    Meter y1() const;
+    Meter get_y1() const;
 
     /**
      * Get width of model along x direction

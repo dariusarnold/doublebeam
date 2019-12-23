@@ -25,7 +25,7 @@ std::vector<Meter> get_interface_depths(const std::vector<Layer>& layers) {
 VelocityModel::VelocityModel(const std::vector<Layer>& layers, Meter x1, Meter y1, Meter x0,
                              Meter y0) :
         m_interface_depths(get_interface_depths(layers)),
-        layers(layers),
+        layers_m(layers),
         x0_(x0),
         x1_(x1),
         y0_(y0),
@@ -92,7 +92,7 @@ bool operator==(const Layer& l1, const Layer& l2) {
 
 
 const Layer& VelocityModel::operator[](size_t index) const {
-    return layers[index];
+    return layers_m[index];
 }
 
 std::optional<size_t> VelocityModel::layer_index(Meter x, Meter y, Meter z) const {
@@ -101,7 +101,7 @@ std::optional<size_t> VelocityModel::layer_index(Meter x, Meter y, Meter z) cons
     }
     auto greater = std::upper_bound(m_interface_depths.begin(), m_interface_depths.end(), z);
     return std::min(std::distance(m_interface_depths.begin(), greater) - 1,
-                    static_cast<long int>(layers.size()) - 1);
+                    static_cast<long int>(layers_m.size()) - 1);
 }
 
 
@@ -115,7 +115,7 @@ std::optional<Velocity> VelocityModel::eval_at(Meter x, Meter y, Meter z) const 
     if (not index) {
         return {};
     }
-    return layers[index.value()].velocity;
+    return layers_m[index.value()].velocity;
 }
 
 std::optional<Velocity> VelocityModel::eval_at(const Position& position) const {
@@ -129,19 +129,19 @@ Meter layer_height(const Layer& layer) {
 VelocityModel::InterfaceVelocities VelocityModel::interface_velocities(Meter z) const {
     size_t index = layer_index(z).value();
     const Velocity outside_velocity(0);
-    auto half_depth = layers[index].top_depth + 0.5 * layer_height(layers[index]);
+    auto half_depth = layers_m[index].top_depth + 0.5 * layer_height(layers_m[index]);
     if (index == 0 and z < half_depth) {
-        return {outside_velocity, layers[index].velocity};
+        return {outside_velocity, layers_m[index].velocity};
     }
     if (index == num_layers() - 1 and z > half_depth) {
-        return {layers[index].velocity, outside_velocity};
+        return {layers_m[index].velocity, outside_velocity};
     }
     if (z < half_depth) {
         // interface above current layer
-        return {layers[index - 1].velocity, layers[index].velocity};
+        return {layers_m[index - 1].velocity, layers_m[index].velocity};
     }
     // interface below current layer
-    return {layers[index].velocity, layers[index + 1].velocity};
+    return {layers_m[index].velocity, layers_m[index + 1].velocity};
 }
 
 std::pair<Meter, Meter> VelocityModel::get_top_bottom() const {
@@ -149,7 +149,7 @@ std::pair<Meter, Meter> VelocityModel::get_top_bottom() const {
 }
 
 bool VelocityModel::operator==(const VelocityModel& other) const {
-    return layers == other.layers and x0_ == other.x0_ and x1_ == other.x1_ and y0_ == other.y0_ and
+    return layers_m == other.layers_m and x0_ == other.x0_ and x1_ == other.x1_ and y0_ == other.y0_ and
            y1_ == other.y1_;
 }
 
@@ -160,15 +160,15 @@ bool VelocityModel::in_model(Meter x, Meter y, Meter z) const {
 }
 
 std::vector<Layer>::const_iterator VelocityModel::begin() const {
-    return layers.begin();
+    return layers_m.begin();
 }
 
 std::vector<Layer>::const_iterator VelocityModel::end() const {
-    return layers.end();
+    return layers_m.end();
 }
 
 std::size_t VelocityModel::num_layers() const {
-    return layers.size();
+    return layers_m.size();
 }
 
 const std::vector<Meter>& VelocityModel::interface_depths() const {
@@ -177,7 +177,7 @@ const std::vector<Meter>& VelocityModel::interface_depths() const {
 
 Layer VelocityModel::get_layer(Meter x, Meter y, Meter z) const {
     auto index = layer_index(x, y, z);
-    return layers[index.value()];
+    return layers_m[index.value()];
 }
 
 std::pair<Meter, Meter> VelocityModel::get_x_extent() const {
@@ -188,19 +188,19 @@ std::pair<Meter, Meter> VelocityModel::get_y_extent() const {
     return {y0_, y1_};
 }
 
-Meter VelocityModel::x0() const {
+Meter VelocityModel::get_x0() const {
     return x0_;
 }
 
-Meter VelocityModel::x1() const {
+Meter VelocityModel::get_x1() const {
     return x1_;
 }
 
-Meter VelocityModel::y0() const {
+Meter VelocityModel::get_y0() const {
     return y0_;
 }
 
-Meter VelocityModel::y1() const {
+Meter VelocityModel::get_y1() const {
     return y1_;
 }
 
