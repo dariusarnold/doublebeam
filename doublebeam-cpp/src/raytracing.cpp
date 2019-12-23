@@ -188,13 +188,13 @@ public:
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
               const RayState& old_state, const RayState& new_state, const VelocityModel& model) {
         msg(wave_type);
-        auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
-                               old_state.slowness.pz.get(), 0, 0, 1);
+        const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
+                                     old_state.slowness.pz.get(), 0, 0, 1);
         msg(i_S);
-        auto i_R = wave_type == WaveType::Transmitted
-                       ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
-                                     new_state.slowness.pz.get(), 0, 0, 1)
-                       : i_S;
+        const auto i_R = wave_type == WaveType::Transmitted
+                             ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
+                                           new_state.slowness.pz.get(), 0, 0, 1)
+                             : i_S;
         msg(i_R);
         // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
         // horizontal interfaces (unit vector (0, 0, 1)).
@@ -207,8 +207,8 @@ public:
         msg(velocities.after);
         // TODO this kappa is only valid for simple velocity model v = v(z) and horizontal
         //  interfaces
-        auto kappa = 0.;
-        auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
+        const auto kappa = 0.;
+        const auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
         // right equations of (4.4.49) in Cerveny2001
         matrix_t G_orthogonal;
         G_orthogonal << cos_kappa, -sin_kappa, sin_kappa, cos_kappa;
