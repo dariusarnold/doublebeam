@@ -20,60 +20,60 @@ class NamedType : boost::totally_ordered<NamedType<T, Parameter>>,
                   boost::additive<NamedType<T, Parameter>>,
                   boost::multiplicative<NamedType<T, Parameter>, T> {
 public:
-    NamedType() : value(0.) {}
-    explicit NamedType(const T& value) : value(value) {}
-    explicit NamedType(T&& value) : value(std::move(value)) {}
+    NamedType() : value_m(0.) {}
+    explicit NamedType(const T& value) : value_m(value) {}
+    explicit NamedType(T&& value) : value_m(std::move(value)) {}
 
     T& get() {
-        return value;
+        return value_m;
     }
     const T& get() const {
-        return value;
+        return value_m;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const NamedType& quantity) {
-        return os << quantity.value;
+        return os << quantity.get();
     }
 
     friend std::istream& operator>>(std::istream& is, NamedType& quantity) {
-        is >> quantity.value;
+        is >> quantity.get();
         return is;
     }
 
     // comparison of strong types
     bool operator==(const NamedType& other) const {
-        return value == other.value;
+        return value_m == other.get();
     }
 
     bool operator<(const NamedType& other) const {
-        return value < other.value;
+        return value_m < other.get();
     }
 
     // addition/subtraction of strong types
     NamedType& operator+=(const NamedType& rhs) {
-        value += rhs.value;
+        value_m += rhs.get();
         return *this;
     }
 
     NamedType& operator-=(const NamedType& rhs) {
-        value -= rhs.value;
+        value_m -= rhs.get();
         return *this;
     }
 
     // division/multiplication by another scalar
     NamedType& operator*=(T factor) {
-        value *= factor;
+        value_m *= factor;
         return *this;
     }
 
     NamedType& operator/=(T factor) {
-        value /= factor;
+        value_m /= factor;
         return *this;
     }
 
     // unary negative/positive operator
     NamedType operator-() const {
-        return NamedType(-value);
+        return NamedType(-value_m);
     }
 
     NamedType& operator+() const {
@@ -89,7 +89,7 @@ public:
     }
 
 private:
-    T value;
+    T value_m;
 };
 
 /**
