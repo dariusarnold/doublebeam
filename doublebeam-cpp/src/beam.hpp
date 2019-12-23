@@ -61,7 +61,7 @@ public:
      * Get number of segments.
      * @return
      */
-    size_t size() const;
+    [[nodiscard]] size_t size() const;
 
     /**
      * Get last state of the beam, ie the state at the last interface crossing/last ray point.
