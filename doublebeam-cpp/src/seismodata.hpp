@@ -49,7 +49,7 @@ public:
             Seismogram(amplitudes.data(), amplitudes.size(), times.data(), times.size()) {}
 
     Seismogram(T* data_begin, size_t data_size, T* timesteps_begin, size_t timesteps_size) :
-            data(data_begin, data_size), timesteps(timesteps_begin, timesteps_size){};
+            data(data_begin, data_size), timesteps(timesteps_begin, timesteps_size) {}
 
     Seismogram(T* data_begin, T* data_end, T* timesteps_begin, T* timesteps_end) :
             data(data_begin, data_end), timesteps(timesteps_begin, timesteps_end) {}
