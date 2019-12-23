@@ -188,16 +188,20 @@ public:
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
               const RayState& old_state, const RayState& new_state, const VelocityModel& model) {
         msg(wave_type);
+        // i_S is the acute angle of incidence, 0 <= i_s <= pi/2
         const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
                                      old_state.slowness.pz.get(), 0, 0, 1);
         msg(i_S);
+        // i_r is the acute angle of reflection/transmission
         const auto i_R = wave_type == WaveType::Transmitted
                              ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
                                            new_state.slowness.pz.get(), 0, 0, 1)
                              : i_S;
         msg(i_R);
-        // epsilon is introduced by eq. 2.4.71, Cerveny2001. This formula is simplified for
-        // horizontal interfaces (unit vector (0, 0, 1)).
+        // epsilon is the orientation index introduced by eq. 2.4.71, Cerveny2001. This formula
+        // is simplified for horizontal interfaces (unit vector (0, 0, 1)). Base formula is
+        // eps = sign(dot(p, n)) where p is the slowness vector, n is the normal of the interface
+        // and sign gives the sign of its argument.
         auto epsilon = std::copysign(1., old_state.slowness.pz.get());
         msg(epsilon);
         auto velocities =
@@ -205,8 +209,15 @@ public:
                                  seismo::ray_direction_down(old_state.slowness), wave_type);
         msg(velocities.before);
         msg(velocities.after);
-        // TODO this kappa is only valid for simple velocity model v = v(z) and horizontal
-        //  interfaces
+        // kappa is the angle between e_2 and i_2, 0 <= kappa <= 2pi.
+        // i2 is the basis vector of the local Cartesian coordinate system with origin at Q.
+        // i3 coincides with the unit vector n normal to the interface, i1 and i2 can be chosen
+        // arbitrarily in the plane. In our case i2 will always be horizontal due to the plane
+        // interfaces.
+        // e2 is a basis vector of the ray centred coordinate system of the incident wave at Q.
+        // For the special case of a planar ray e2 will always be horizontal (see function
+        // get_ray_centred_unit_vectors). Since we can choose i_1, i_2 so that i is an orthogonal
+        // right handed coordinate system, chose i_2 to be parallel to e_2.
         const auto kappa = 0.;
         const auto cos_kappa = std::cos(kappa), sin_kappa = std::sin(kappa);
         // right equations of (4.4.49) in Cerveny2001
@@ -319,9 +330,9 @@ private:
 
     /**
      * Eq. 4.4.15 from Cerveny2001
-     * For the currently implemented velocity layer with horizontal interfaces only, this function
-     * is zero everywhere since it contains the second derivative of the interface function Sigma
-     * in the numerator. Sigma = Sigma(z3) for horizontal interfaces.
+     * For the currently implemented velocity layer with horizontal interfaces only, this
+     * function is zero everywhere since it contains the second derivative of the interface
+     * function Sigma in the numerator. Sigma = Sigma(z3) for horizontal interfaces.
      */
     static matrix_t D_() {
         return matrix_t::Zero();
@@ -367,8 +378,8 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
     for (const auto& segment : ray.value()) {
         beam.add_segment(P, Q, segment);
         if (not_at_last_ray_segment(segment_index, ray.value().size())) {
-            // if we are not at the last segment of the ray, transform dynamic ray tracing across
-            // interface (calculate new P0, Q0)
+            // if we are not at the last segment of the ray, transform dynamic ray tracing
+            // across interface (calculate new P0, Q0)
             Eigen::Matrix2cd Q_at_end_of_ray_segment =
                 Q + segment.layer_velocity().get() * segment.length().get() * P;
             auto wave_type = ray_code[segment_index];
