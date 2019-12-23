@@ -41,7 +41,8 @@ RayState make_state(Position position, Slowness slowness, TravelTime T) {
 
 RayTracingResult<RaySegment> RayTracer::trace_layer(const RayState& initial_state,
                                                     const Layer& layer) {
-    auto [position, slowness, time, arclength] = initial_state;
+    const auto& slowness = initial_state.slowness;
+    const auto& position = initial_state.position;
     const auto c = layer.velocity;
     bool stop_depth_was_reached = false;
     const Meter z_end = [&]() {
@@ -64,8 +65,9 @@ RayTracingResult<RaySegment> RayTracer::trace_layer(const RayState& initial_stat
 
         return {Status::OutOfBounds, {}};
     }
-    const Second t_end(time.time.get() + arclength_in_layer / layer.velocity.get());
-    const Meter s_end(arclength.length.get() + arclength_in_layer);
+    const Second t_end(initial_state.travel_time.time.get() +
+                       arclength_in_layer / layer.velocity.get());
+    const Meter s_end(initial_state.arclength.length.get() + arclength_in_layer);
     return {stop_depth_was_reached ? Status::StopDepthReached : Status::Success,
             RaySegment{initial_state,
                        RayState{Position{x_end, y_end, z_end}, Slowness{slowness},
