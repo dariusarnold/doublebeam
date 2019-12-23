@@ -3,8 +3,7 @@
 
 Plan& PlanCache::get_plan(std::vector<double>& in) {
     auto N = in.size();
-    auto plan =
-        std::find_if(plans.begin(), plans.end(), [N](const Plan& plan) { return plan.N == N; });
+    auto plan = std::find_if(plans.begin(), plans.end(), [N](const Plan& p) { return p.N == N; });
     if (plan != plans.end()) {
         return *plan;
     }
