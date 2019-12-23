@@ -137,6 +137,36 @@ RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
 #define msg(x)
 #endif
 
+struct Velocities {
+    Velocity before;
+    Velocity after;
+};
+
+/**
+ * Return which velocity the ray experienced before/after the interface crossing.
+ * @param interface_velocities Velocity above/below interface.
+ * @param ray_direction_down True if downgoing ray
+ * @param wave_type which wavetype at the interface.
+ * @return
+ */
+Velocities interface_velocities(const VelocityModel::InterfaceVelocities& interface_velocities,
+                                bool ray_direction_down, WaveType wave_type) {
+    if (wave_type == WaveType::Reflected) {
+        if (ray_direction_down) {
+            return {interface_velocities.above, interface_velocities.above};
+        } else {
+            return {interface_velocities.below, interface_velocities.below};
+        }
+    } else {
+        // transmitted wave
+        if (ray_direction_down) {
+            return {interface_velocities.above, interface_velocities.below};
+        } else {
+            return {interface_velocities.below, interface_velocities.above};
+        }
+    }
+}
+
 
 class InterfacePropagator {
     using matrix_t = Eigen::Matrix2cd;
@@ -173,19 +203,11 @@ public:
         // horizontal interfaces (unit vector (0, 0, 1)).
         auto epsilon = std::copysign(1., old_state.slowness.pz.get());
         msg(epsilon);
-        // for a downgoing transmitted ray the velocity above the interface is the before
-        // velocity and the velocity below the interface is the after velocity.
-        auto [V_top, V_bottom] = model.interface_velocities(old_state.position.z);
-        auto V_before = V_top, V_after = V_bottom;
-        if (wave_type == WaveType::Reflected) {
-            V_after = V_before;
-        } else {
-            if (not seismo::ray_direction_down(old_state.slowness.pz.get())) {
-                std::swap(V_before, V_after);
-            }
-        }
-        msg(V_after);
-        msg(V_before);
+        auto velocities =
+            interface_velocities(model.interface_velocities(old_state.position.z),
+                                 seismo::ray_direction_down(old_state.slowness), wave_type);
+        msg(velocities.before);
+        msg(velocities.after);
         // TODO this kappa is only valid for simple velocity model v = v(z) and horizontal
         //  interfaces
         auto kappa = 0.;
@@ -217,11 +239,11 @@ public:
         auto new_gradient = 0;
         msg(new_gradient);
         // eq. (4.4.53) from Cerveny2001
-        auto E = E_(V_before.get(), i_S, epsilon, old_gradient);
+        auto E = E_(velocities.before.get(), i_S, epsilon, old_gradient);
         msg(E);
-        auto E_tilde = E_tilde_(wave_type, V_after.get(), i_R, epsilon, new_gradient);
+        auto E_tilde = E_tilde_(wave_type, velocities.after.get(), i_R, epsilon, new_gradient);
         msg(E_tilde);
-        auto u = u_(wave_type, V_before.get(), V_after.get(), i_S, i_R, epsilon);
+        auto u = u_(wave_type, velocities.before.get(), velocities.after.get(), i_S, i_R, epsilon);
         msg(u);
         auto D = D_();
         // eq. (4.4.67) Cerveny2001
