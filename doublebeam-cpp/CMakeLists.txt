@@ -37,7 +37,7 @@ set(WARNINGS_GCC -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcas
         -Wshadow -Wextra-semi)
 
 set(WARNINGS_CLANG -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
-        -Wdouble-promotion -Woverloaded-shift-op-parentheses -Wshadow -Wextra-semi)
+        -Wdouble-promotion -Woverloaded-shift-op-parentheses -Wshadow -Wextra-semi -Wno-c++98-compat-extra-semi)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(WARNINGS ${WARNINGS_CLANG})
