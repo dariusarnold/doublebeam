@@ -187,9 +187,6 @@ public:
     std::pair<Eigen::Matrix2cd, Eigen::Matrix2cd>
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
               const RayState& old_state, const RayState& new_state, const VelocityModel& model) {
-        // TODO modify interface unit vector (params x2, y2, z2) for more general velocity model.
-        //  Here it is assumed the model consists only of horizontal layers.
-        msg(layer_index);
         msg(wave_type);
         auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
                                old_state.slowness.pz.get(), 0, 0, 1);
