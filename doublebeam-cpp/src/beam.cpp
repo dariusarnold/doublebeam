@@ -29,10 +29,10 @@ Eigen::Matrix2cd Beam::get_Q(Arclength s) const {
     return segments[segment_index].Q + v.get() * distance_in_layer * segments[segment_index].P;
 }
 
-BeamSegment::BeamSegment(Eigen::Matrix2cd P, Eigen::Matrix2cd Q, RaySegment segment) :
+BeamSegment::BeamSegment(Eigen::Matrix2cd P_, Eigen::Matrix2cd Q_, RaySegment segment) :
         RaySegment(segment.begin(), segment.end(), segment.layer_velocity()),
-        P(std::move(P)),
-        Q(std::move(Q)) {}
+        P(std::move(P_)),
+        Q(std::move(Q_)) {}
 
 size_t Beam::find_segment_index(Arclength s) const {
     if (s.length.get() < 0) {

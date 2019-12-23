@@ -51,10 +51,10 @@ Slowness calculate_new_slowness(const Slowness& slowness, const math::Vector2& f
 }
 
 
-FractureParameters::FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations,
+FractureParameters::FractureParameters(math::Vector2 phi_hat_, int num_fracture_orientations,
                                        double spacing_min, double spacing_max,
                                        int num_fracture_spacings) :
-        phi_hat(phi_hat),
+        phi_hat(phi_hat_),
         orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat)),
         spacings(math::linspace(spacing_min, spacing_max, num_fracture_spacings)) {}
 
@@ -64,7 +64,8 @@ std::vector<WaveType> direct_ray_code(Position source, Position receiver,
     return std::vector<WaveType>(n, WaveType::Transmitted);
 }
 
-DoubleBeam::DoubleBeam(const VelocityModel& model) : model(model), twopoint(model), tracer(model) {}
+DoubleBeam::DoubleBeam(const VelocityModel& model_) :
+        model(model_), twopoint(model_), tracer(model_) {}
 
 #define USEDEBUG
 #ifdef USEDEBUG
