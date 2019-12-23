@@ -32,8 +32,18 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
 find_package(FFTW REQUIRED)
 
 
-set(WARNINGS -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
-        -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation -Weffc++)
+set(WARNINGS_GCC -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
+        -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation -Weffc++
+        -Wshadow -Wextra-semi)
+
+set(WARNINGS_CLANG -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
+        -Wdouble-promotion -Woverloaded-shift-op-parentheses -Wshadow -Wextra-semi)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(WARNINGS ${WARNINGS_CLANG})
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(WARNINGS ${WARNINGS_GCC})
+endif()
 
 
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
