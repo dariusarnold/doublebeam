@@ -10,7 +10,7 @@ def to_complex(s: str) -> complex:
 
 
 def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacing: float,
-                                target_id: int, target_x: float, target_y: float):
+                                target_id: int, target_x: float, target_y: float, fname):
     """
     :param data: (N, M) array that contains scattering coefficient sigma. First
     axis gives angle samples, second axis gives fracture spacing.
@@ -42,8 +42,8 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     title = ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
     title.set_position((.5, .85))
     plt.show()
-    #plt.savefig("test.pdf", bbox_inches="tight")
-    #plt.savefig("test.png", bbox_inches="tight")
+    #plt.savefig("{fname.split('.')[0]}.pdf", bbox_inches="tight")
+    #plt.savefig(f"{fname.split('.')[0]}.png", bbox_inches="tight")
 
 
 def parse_file(filename: Path) -> np.ndarray:
@@ -60,9 +60,13 @@ def parse_file(filename: Path) -> np.ndarray:
 
 def main():
     if len(sys.argv) == 1:
-        sys.exit("Give path to result file as positional argument.")
-    data = parse_file(sys.argv[1])
-    plot_scattering_coefficient(np.abs(data), 50, 150, 0, 600, 600)
+        import tkinter.filedialog, tkinter
+        tkinter.Tk().withdraw()
+        fname = tkinter.filedialog.askopenfilename()
+    else:
+        fname = sys.argv[1]
+    data = parse_file(fname)#[:, 30:62]
+    plot_scattering_coefficient(np.abs(data), 100, 200, 0, 500, 500, fname)
 
 
 if __name__ == '__main__':
