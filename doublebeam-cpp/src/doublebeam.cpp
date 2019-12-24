@@ -302,8 +302,9 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                 auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
                                  max_stacking_distance);
                 if (not isfinite(tmp)) {
-                    std::cerr << "(" << fracture_spacing.index() << ", "
-                              << fracture_orientation.index() << ") = " << tmp << std::endl;
+                    throw(std::runtime_error(impl::Formatter()
+                                             << "(" << fracture_spacing.index() << ", "
+                                             << fracture_orientation.index() << ") = " << tmp));
                 }
                 result.data(fracture_spacing.index(), fracture_orientation.index()) += tmp;
             }
