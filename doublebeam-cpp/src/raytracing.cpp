@@ -156,7 +156,6 @@ public:
     std::pair<Eigen::Matrix2cd, Eigen::Matrix2cd>
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
               const RayState& old_state, const RayState& new_state) {
-        msg(wave_type);
         // i_S is the acute angle of incidence, 0 <= i_s <= pi/2
         const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
                                      old_state.slowness.pz.get(), 0, 0, 1);
