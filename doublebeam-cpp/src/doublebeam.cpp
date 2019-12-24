@@ -249,11 +249,11 @@ bool isfinite(const std::complex<double>& c) {
 }
 
 
-DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry, Position target,
-                                       const SeismoData& data, FractureParameters fracture_info,
-                                       Frequency source_frequency, Meter beam_width,
-                                       AngularFrequency beam_frequency, double window_length,
-                                       double max_stacking_distance) {
+DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
+                                       Position target, const SeismoData& data,
+                                       FractureParameters fracture_info, Frequency source_frequency,
+                                       Meter beam_width, AngularFrequency beam_frequency,
+                                       double window_length, double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
