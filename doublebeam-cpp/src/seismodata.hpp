@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <gsl/span>
+#include <boost/container_hash/hash.hpp>
 
 #include "units.hpp"
 
@@ -60,6 +61,19 @@ public:
 
     const gsl::span<T> data;
     const gsl::span<T> timesteps;
+
+    bool operator==(const Seismogram& other) const {
+        return data.data() == other.data.data() and timesteps.data() == other.timesteps.data() and
+               size() == other.size();
+    }
+
+    friend std::size_t hash_value(const Seismogram& seismogram) {
+        std::size_t seed = 0;
+        boost::hash_combine(seed, seismogram.data.data());
+        boost::hash_combine(seed, seismogram.timesteps.data());
+        boost::hash_combine(seed, seismogram.size());
+        return seed;
+    }
 };
 
 

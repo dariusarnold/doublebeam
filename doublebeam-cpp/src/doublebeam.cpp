@@ -181,6 +181,10 @@ double squared_distance(const Position& x, const PositionWithIndex& pos) {
            std::pow(x2.get() - pos.z, 2);
 }
 
+std::unordered_map<Seismogram<const double>, std::complex<double>,
+                   boost::hash<Seismogram<const double>>>
+    fft_cache;
+
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, double window_length, double max_eval_distance) {
     std::complex<double> stacking_result(0, 0);
@@ -230,16 +234,25 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             Seismogram seismogram = data.get_seismogram(source.value(), receiver.value(),
                                                         total_traveltime - window_length / 2,
                                                         total_traveltime + window_length / 2);
+            //            std::cout << seismogram << std::endl;
+            if (seismogram.size() == 0) {
+                std::cerr << "Total traveltime above seismogram length.";
+                continue;
+            }
             b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-            auto seismogram_freq =
-                math::fft_closest_frequency(seismogram.data.begin(), seismogram.data.end(),
-                                            receiver_beam.frequency(), data.sampling_frequency());
+            auto it = fft_cache.find(seismogram);
+            if (it == fft_cache.end()) {
+                auto seismogram_freq = math::fft_closest_frequency(
+                    seismogram.data.begin(), seismogram.data.end(), receiver_beam.frequency(),
+                    data.sampling_frequency());
+                fft_cache[seismogram] = seismogram_freq;
+            }
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
             stacking_result += source_beam_values[source.index()].value().gb_value *
                                receiver_beam_values[receiver.index()].value().gb_value *
-                               seismogram_freq;
+                               fft_cache[seismogram];
         }
     }
     return stacking_result;
