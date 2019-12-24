@@ -162,11 +162,6 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, double x, double y, double z) {
     return {std::conj(amp * exp), complex_traveltime};
 }
 
-template <typename T>
-BeamEvalResult eval_gauss_beam(const Beam& beam, T cartesian_position) {
-    return eval_gauss_beam(beam, cartesian_position.x, cartesian_position.y, cartesian_position.z);
-}
-
 
 DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
                                    size_t num_of_fracture_orientations) :
@@ -200,7 +195,8 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            max_eval_distance_squared) {
                            return std::optional<BeamEvalResult>();
                        }
-                       return std::optional<BeamEvalResult>(eval_gauss_beam(source_beam, source));
+                       return std::optional<BeamEvalResult>(
+                           eval_gauss_beam(source_beam, source.x, source.y, source.z));
                    });
     std::transform(data.receivers().begin(), data.receivers().end(),
                    std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
@@ -209,7 +205,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            return std::optional<BeamEvalResult>();
                        }
                        return std::optional<BeamEvalResult>(
-                           eval_gauss_beam(receiver_beam, receiver));
+                           eval_gauss_beam(receiver_beam, receiver.x, receiver.y, receiver.z));
                    });
     auto b = std::chrono::high_resolution_clock::now();
     evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
