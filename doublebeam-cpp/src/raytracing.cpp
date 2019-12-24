@@ -201,15 +201,12 @@ public:
         msg(G);
         matrix_t G_tilde = G_parallel_tilde * G_orthogonal_tilde;
         msg(G_tilde);
-        // Evaluate this since it is used two times and would be reevaluated otherwise
-        matrix_t G_inverted = G.inverse();
-        msg(G_inverted);
         // simplified version for homogeneous layer with constant velocity and planar horizontal
         // interfaces Cerveny2001 (4.8.10).
         matrix_t P_tilde = G_tilde.inverse() * G * P;
         // eq. (4.4.64) from Cerveny2001
         msg(P_tilde);
-        matrix_t Q_tilde = G_tilde.transpose() * G_inverted.transpose() * Q;
+        matrix_t Q_tilde = G_tilde.transpose() * G.inverse().transpose() * Q;
         msg(Q_tilde);
         return {P_tilde, Q_tilde};
     }
