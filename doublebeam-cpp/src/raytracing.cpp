@@ -132,7 +132,7 @@ RayTracingResult<Ray> RayTracer::trace_ray(const RayState& initial_state,
 
 #define USEDEBUG false
 #if USEDEBUG
-#define msg(x) std::cerr << #x << ": " << x << std::endl;
+#define msg(x) std::cout << #x << ": " << x << std::endl;
 #else
 #define msg(x)
 #endif
