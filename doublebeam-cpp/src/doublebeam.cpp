@@ -67,8 +67,8 @@ std::vector<WaveType> direct_ray_code(Position source, Position receiver,
 DoubleBeam::DoubleBeam(const VelocityModel& model_) :
         model(model_), twopoint(model_), tracer(model_) {}
 
-#define USEDEBUG
-#ifdef USEDEBUG
+#define USEDEBUG false
+#if USEDEBUG
 #define msg(x) std::cout << #x << ": " << x << std::endl;
 #else
 #define msg(x)
