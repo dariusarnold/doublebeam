@@ -287,9 +287,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
         // Since we traced the beam from the target upwards to the surface, we will have to flip
         // the direction of the slowness to be able to treat it as the incoming direction of the
         // beam at the fractures and then scatter.
-        slowness.px *= -1;
-        slowness.py *= -1;
-        slowness.pz *= -1;
+        slowness.flip_direction();
         int number_of_rec_beams_that_left_model = 0;
         namespace ba = boost::adaptors;
         for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed(0)) {

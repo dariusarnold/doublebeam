@@ -43,6 +43,15 @@ struct Slowness : boost::equality_comparable<Slowness> {
     InverseVelocity px;
     InverseVelocity py;
     InverseVelocity pz;
+
+    /**
+     * Change direction of slowness vector to point in the opposite direction.
+     */
+    inline void flip_direction() {
+        px *= -1;
+        py *= -1;
+        pz *= -1;
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, Slowness slowness);
