@@ -216,22 +216,22 @@ TEST(Testcumtrapz, TestDynamicRayTracingUseCaseByComparingWithPythonResult) {
 }
 
 TEST(TestAngle, Test90Degrees) {
-    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0), radians(90_deg).get());
-    EXPECT_DOUBLE_EQ(math::angle(1, 0, 0, 0, 1, 0, false), radians(90_deg).get());
+    EXPECT_EQ(math::angle(1, 0, 0, 0, 1, 0), radians(90_deg));
+    EXPECT_EQ(math::angle(1, 0, 0, 0, 1, 0, false), radians(90_deg));
 }
 
 TEST(TestAngle, TestParallel) {
-    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4), 0);
-    EXPECT_DOUBLE_EQ(math::angle(.8, .2, .4, .8, .2, .4, false), radians(180_deg).get());
+    EXPECT_EQ(math::angle(.8, .2, .4, .8, .2, .4), Radian(0));
+    EXPECT_EQ(math::angle(.8, .2, .4, .8, .2, .4, false), radians(180_deg));
 }
 
 TEST(TestAngle, TestFloatClippingForAcosLargerOne) {
-    EXPECT_DOUBLE_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
-                                 0.874469283050132, 0.262553720250597, 0.477968688795641),
-                     0);
-    EXPECT_DOUBLE_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
-                                 0.874469283050132, 0.262553720250597, 0.477968688795641, false),
-                     radians(180_deg).get());
+    EXPECT_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
+                          0.874469283050132, 0.262553720250597, 0.477968688795641),
+              Radian(0));
+    EXPECT_EQ(math::angle(0.874469283050132, 0.262553720250597, 0.477968688795641,
+                          0.874469283050132, 0.262553720250597, 0.477968688795641, false),
+              radians(180_deg));
 }
 
 TEST(TestAngle, OrderOfInputVectorsShouldntMatter) {
@@ -553,7 +553,8 @@ TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
         radians(270_deg).get());
     // test middle vector
     EXPECT_TRUE(Close(
-        math::angle(central_direction.x, central_direction.y, 0, vectors[1].x, vectors[1].y, 0),
+        math::angle(central_direction.x, central_direction.y, 0, vectors[1].x, vectors[1].y, 0)
+            .get(),
         radians(0_deg).get(), 0., 1.5e-8));
     // test right vector
     EXPECT_DOUBLE_EQ(
