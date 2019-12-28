@@ -36,11 +36,16 @@ class TestReceiverFileReading : public testing::Test {
 protected:
     std::filesystem::path p = current_source_path(__FILE__) / "data" / "sample_receiverfile";
     std::vector<Receiver> expected_result = {
-        {5272.000000, 3090.000000, 0.000000, 1}, {5249.959596, 3113.636364, 0.000000, 2},
-        {5227.919192, 3137.272727, 0.000000, 3}, {5205.878788, 3160.909091, 0.000000, 4},
-        {5183.838384, 3184.545455, 0.000000, 5}, {5161.797980, 3208.181818, 0.000000, 6},
-        {5139.757576, 3231.818182, 0.000000, 7}, {5117.717172, 3255.454545, 0.000000, 8},
-        {5095.676768, 3279.090909, 0.000000, 9}, {5073.636364, 3302.727273, 0.000000, 10}};
+        {5272.000000_meter, 3090.000000_meter, 0.000000_meter, 1},
+        {5249.959596_meter, 3113.636364_meter, 0.000000_meter, 2},
+        {5227.919192_meter, 3137.272727_meter, 0.000000_meter, 3},
+        {5205.878788_meter, 3160.909091_meter, 0.000000_meter, 4},
+        {5183.838384_meter, 3184.545455_meter, 0.000000_meter, 5},
+        {5161.797980_meter, 3208.181818_meter, 0.000000_meter, 6},
+        {5139.757576_meter, 3231.818182_meter, 0.000000_meter, 7},
+        {5117.717172_meter, 3255.454545_meter, 0.000000_meter, 8},
+        {5095.676768_meter, 3279.090909_meter, 0.000000_meter, 9},
+        {5073.636364_meter, 3302.727273_meter, 0.000000_meter, 10}};
     std::vector<Receiver> actual_result = read_receiverfile(p);
 };
 
@@ -64,7 +69,8 @@ TEST_F(TestReceiverFileReading, TestIfNonExisitingFileThrows) {
 class TestSourceFileReading : public testing::Test {
 protected:
     std::filesystem::path p = current_source_path(__FILE__) / "data" / "sample_sourcefile";
-    std::vector<Source> expected_result = {{11200, 5600, 10, 1}, {4260, 4407, 10, 2}};
+    std::vector<Source> expected_result = {{11200_meter, 5600_meter, 10_meter, 1},
+                                           {4260_meter, 4407_meter, 10_meter, 2}};
     std::vector<Source> actual_result = read_sourcefile(p);
 };
 

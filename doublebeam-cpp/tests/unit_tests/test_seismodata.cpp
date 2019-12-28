@@ -87,8 +87,8 @@ protected:
                 read_amplitude(project_dir / "shotdata" / "source_001" / "receiver_001.txt")) {}
 
     // mock source/receiver so first seismogram from first source is extracted
-    Source s{0, 0, 0, 1};
-    Receiver r{0, 0, 0, 1};
+    Source s{0_meter, 0_meter, 0_meter, 1};
+    Receiver r{0_meter, 0_meter, 0_meter, 1};
 
     // helper function to pass source receiver so first seismogram is returned.
     // First seismogram is the test case for cutting, this saves writing s, r in every test.
