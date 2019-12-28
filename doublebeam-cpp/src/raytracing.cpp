@@ -157,20 +157,23 @@ public:
     transform(const Eigen::Matrix2cd& P, const Eigen::Matrix2cd& Q, WaveType wave_type,
               const RayState& old_state, const RayState& new_state) {
         // i_S is the acute angle of incidence, 0 <= i_s <= pi/2
+        // To fullfill the range condition modify n (normal vector of interface) to point in the
+        // direction of p. Otherwise, if p would point down and n points up, i_S would be >90°.
+        double ez = std::copysign(1, old_state.slowness.pz.get());
         const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
-                                     old_state.slowness.pz.get(), 0, 0, 1);
+                                     old_state.slowness.pz.get(), 0, 0, ez);
         msg(degrees(i_S));
         // i_r is the acute angle of reflection/transmission
         const auto i_R = wave_type == WaveType::Transmitted
                              ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
-                                           new_state.slowness.pz.get(), 0, 0, 1)
+                                           new_state.slowness.pz.get(), 0, 0, ez)
                              : i_S;
         msg(degrees(i_R));
         // epsilon is the orientation index introduced by eq. 2.4.71, Cerveny2001. This formula
         // is simplified for horizontal interfaces (unit vector (0, 0, 1)). Base formula is
         // eps = sign(dot(p, n)) where p is the slowness vector, n is the normal of the interface
         // and sign gives the sign of its argument.
-        auto epsilon = std::copysign(1., old_state.slowness.pz.get());
+        auto epsilon = std::copysign(ez, old_state.slowness.pz.get());
         msg(epsilon);
         // kappa is the angle between e_2 and i_2, 0 <= kappa <= 2pi.
         // i2 is the basis vector of the local Cartesian coordinate system with origin at Q.
