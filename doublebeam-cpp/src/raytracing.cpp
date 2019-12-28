@@ -190,10 +190,11 @@ public:
         auto G_orthogonal_tilde = G_orthogonal;
         // left equations of (4.4.49) in Cerveny2001
         matrix_t G_parallel;
-        G_parallel << epsilon * std::cos(i_S), 0, 0, 1;
+        G_parallel << epsilon * std::cos(i_S.get()), 0, 0, 1;
         msg(G_parallel);
         matrix_t G_parallel_tilde;
-        G_parallel_tilde << (wave_type == WaveType::Transmitted ? 1 : -1) * epsilon * std::cos(i_R),
+        G_parallel_tilde << (wave_type == WaveType::Transmitted ? 1 : -1) * epsilon *
+                                std::cos(i_R.get()),
             0, 0, 1;
         msg(G_parallel_tilde);
         // equation (4.4.48) from Cerveny2001
