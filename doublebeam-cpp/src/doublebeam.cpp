@@ -154,8 +154,7 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     auto [q1, q2, q3] =
         math::dot(transformation_matrix,
                   std::make_tuple(position.x.get(), position.y.get(), position.z.get()));
-    Meter total_arclength = beam.last_arclength().length;
-    total_arclength += Meter(q3);
+    const Meter total_arclength = beam.last_arclength().length + Meter(q3);
     if (total_arclength < 0_meter) {
         throw std::runtime_error("Negative arclength");
     }
