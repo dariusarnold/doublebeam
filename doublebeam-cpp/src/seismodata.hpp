@@ -54,7 +54,7 @@ public:
     Seismogram(T* data_begin, T* data_end, T* timesteps_begin, T* timesteps_end) :
             data(data_begin, data_end), timesteps(timesteps_begin, timesteps_end) {}
 
-    size_t size() const {
+    [[nodiscard]] size_t size() const {
         return data.size();
     }
 
@@ -117,7 +117,7 @@ public:
      */
     Seismogram<double> get_seismogram(const Source& s, const Receiver& r);
 
-    Seismogram<const double> get_seismogram(const Source& s, const Receiver& r) const;
+    [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r) const;
 
     /**
      * Cut seismogram to time samples between time t0 and time t1.
@@ -130,48 +130,48 @@ public:
      */
     Seismogram<double> get_seismogram(const Source& s, const Receiver& r, double t0, double t1);
 
-    Seismogram<const double> get_seismogram(const Source& s, const Receiver& r, double t0,
-                                            double t1) const;
+    [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r,
+                                                          double t0, double t1) const;
 
     /**
      * Get access to list of sources.
      */
-    const std::vector<Source>& sources() const;
+    [[nodiscard]] const std::vector<Source>& sources() const;
     /**
      * Get access to list of receivers.
      * @return
      */
-    const std::vector<Receiver>& receivers() const;
+    [[nodiscard]] const std::vector<Receiver>& receivers() const;
 
     /**
      * Get number of receivers.
      * @return
      */
-    size_t num_receivers() const;
+    [[nodiscard]] size_t num_receivers() const;
 
     /**
      * Get number of sources.
      * @return
      */
-    size_t num_sources() const;
+    [[nodiscard]] size_t num_sources() const;
 
     /**
      * Get number of samples in a seismogram.
      * @return
      */
-    size_t num_samples() const;
+    [[nodiscard]] size_t num_samples() const;
 
     /**
      * Get time difference between two samples, ie. the sampling period.
      * @return
      */
-    double timestep() const;
+    [[nodiscard]] double timestep() const;
 
     /**
      * Return sampling frequency in rad/s.
      * This assumes all seismograms are sampled with the same timestep.
      */
-    AngularFrequency sampling_frequency() const;
+    [[nodiscard]] AngularFrequency sampling_frequency() const;
 
 private:
     Seismograms seismograms;
