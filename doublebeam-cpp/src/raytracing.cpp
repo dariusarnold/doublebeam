@@ -159,13 +159,13 @@ public:
         // i_S is the acute angle of incidence, 0 <= i_s <= pi/2
         const auto i_S = math::angle(old_state.slowness.px.get(), old_state.slowness.py.get(),
                                      old_state.slowness.pz.get(), 0, 0, 1);
-        msg(i_S);
+        msg(degrees(i_S));
         // i_r is the acute angle of reflection/transmission
         const auto i_R = wave_type == WaveType::Transmitted
                              ? math::angle(new_state.slowness.px.get(), new_state.slowness.py.get(),
                                            new_state.slowness.pz.get(), 0, 0, 1)
                              : i_S;
-        msg(i_R);
+        msg(degrees(i_R));
         // epsilon is the orientation index introduced by eq. 2.4.71, Cerveny2001. This formula
         // is simplified for horizontal interfaces (unit vector (0, 0, 1)). Base formula is
         // eps = sign(dot(p, n)) where p is the slowness vector, n is the normal of the interface
