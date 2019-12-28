@@ -12,11 +12,10 @@
 #include "units.hpp"
 
 
-struct PositionWithIndex {
-    PositionWithIndex(double xx, double yy, double zz, size_t ind) :
-            x(xx), y(yy), z(zz), index(ind) {}
+struct PositionWithIndex : Position {
+    PositionWithIndex(Meter xx, Meter yy, Meter zz, size_t ind) :
+            Position(xx, yy, zz), index(ind) {}
 
-    double x, y, z;
     // index of source in source file or of receiver in receiver file.
     size_t index;
     /**
@@ -28,13 +27,13 @@ struct PositionWithIndex {
 };
 
 struct Source : public PositionWithIndex {
-    Source(double xx, double yy, double zz, size_t ind) : PositionWithIndex(xx, yy, zz, ind) {}
+    Source(Meter xx, Meter yy, Meter zz, size_t ind) : PositionWithIndex(xx, yy, zz, ind) {}
 
     friend std::ostream& operator<<(std::ostream& os, const Source& s);
 };
 
 struct Receiver : public PositionWithIndex {
-    Receiver(double xx, double yy, double zz, size_t ind) : PositionWithIndex(xx, yy, zz, ind) {}
+    Receiver(Meter xx, Meter yy, Meter zz, size_t ind) : PositionWithIndex(xx, yy, zz, ind) {}
 
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };

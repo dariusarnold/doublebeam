@@ -25,7 +25,7 @@ std::vector<Receiver> read_receiverfile(std::filesystem::path path) {
     size_t index;
     std::vector<Receiver> receivers;
     receivers.reserve(n);
-    double x, y, z;
+    Meter x, y, z;
     while (file >> index >> x >> y >> z) {
         receivers.emplace_back(x, y, z, index);
     }
@@ -74,9 +74,9 @@ std::vector<Source> read_sourcefile(std::filesystem::path path) {
     for (auto it = sources_begin; it != sources_end; ++it) {
         auto match = *it;
         size_t index = std::stoll(match[1]);
-        double x = std::stod(match[2]);
-        double y = std::stod(match[3]);
-        double z = std::stod(match[4]);
+        Meter x(std::stod(match[2]));
+        Meter y(std::stod(match[3]));
+        Meter z(std::stod(match[4]));
         sources.emplace_back(x, y, z, index);
     }
     if (sources.size() != nsrc) {

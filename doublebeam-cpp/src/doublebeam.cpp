@@ -140,7 +140,7 @@ struct BeamEvalResult {
     std::complex<double> complex_traveltime;
 };
 
-BeamEvalResult eval_gauss_beam(const Beam& beam, double x, double y, double z) {
+BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     using namespace std::complex_literals;
     auto [e1, e2] = get_ray_centred_unit_vectors(beam);
     auto [e1x, e1y, e1z] = e1;
@@ -151,7 +151,9 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, double x, double y, double z) {
     // We want to convert from general Cartesian system to ray centred, use right eq. 4.1.31 from
     // Cerveny2001.
     auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
-    auto [q1, q2, q3] = math::dot(transformation_matrix, std::make_tuple(x, y, z));
+    auto [q1, q2, q3] =
+        math::dot(transformation_matrix,
+                  std::make_tuple(position.x.get(), position.y.get(), position.z.get()));
     Meter total_arclength = beam.last_arclength().length;
     total_arclength += Meter(q3);
     if (total_arclength < 0_meter) {
@@ -177,8 +179,8 @@ double beamt = 0;
 
 double squared_distance(const Position& x, const PositionWithIndex& pos) {
     auto [x0, x1, x2] = x;
-    return std::pow(x0.get() - pos.x, 2) + std::pow(x1.get() - pos.y, 2) +
-           std::pow(x2.get() - pos.z, 2);
+    return std::pow(x0.get() - pos.x.get(), 2) + std::pow(x1.get() - pos.y.get(), 2) +
+           std::pow(x2.get() - pos.z.get(), 2);
 }
 
 std::unordered_map<Seismogram<const double>, std::complex<double>,
@@ -200,8 +202,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            max_eval_distance_squared) {
                            return std::optional<BeamEvalResult>();
                        }
-                       return std::optional<BeamEvalResult>(
-                           eval_gauss_beam(source_beam, source.x, source.y, source.z));
+                       return std::optional<BeamEvalResult>(eval_gauss_beam(source_beam, source));
                    });
     std::transform(data.receivers().begin(), data.receivers().end(),
                    std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
@@ -210,7 +211,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            return std::optional<BeamEvalResult>();
                        }
                        return std::optional<BeamEvalResult>(
-                           eval_gauss_beam(receiver_beam, receiver.x, receiver.y, receiver.z));
+                           eval_gauss_beam(receiver_beam, receiver));
                    });
     auto b = std::chrono::high_resolution_clock::now();
     evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
