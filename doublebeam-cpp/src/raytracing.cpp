@@ -244,8 +244,8 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
     Eigen::Matrix2cd P;
     P << 1j / v0.get(), 0, 0, 1j / v0.get();
     Eigen::Matrix2cd Q;
-    Q << beam_frequency.get() * beam_width.get() * beam_width.get() / v0.get(), 0, 0,
-        beam_frequency.get() * beam_width.get() * beam_width.get() / v0.get();
+    Q << beam_frequency.get() * std::pow(beam_width.get(), 2) / v0.get(), 0, 0,
+        beam_frequency.get() * std::pow(beam_width.get(), 2) / v0.get();
     Beam beam(beam_width, beam_frequency);
     std::ptrdiff_t segment_index = 0;
     for (const auto& segment : ray.value()) {
