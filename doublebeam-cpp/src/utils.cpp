@@ -73,13 +73,13 @@ namespace seismo {
 } // namespace seismo
 
 namespace math {
-    double angle(double x1, double y1, double z1, double x2, double y2, double z2, bool acute) {
-        double angle = std::acos(std::clamp(
-            dot(x1, y1, z1, x2, y2, z2) / (length(x1, y1, z1) * length(x2, y2, z2)), -1., 1.));
+    Radian angle(double x1, double y1, double z1, double x2, double y2, double z2, bool acute) {
+        Radian angle(std::acos(std::clamp(
+            dot(x1, y1, z1, x2, y2, z2) / (length(x1, y1, z1) * length(x2, y2, z2)), -1., 1.)));
         if (acute) {
             return angle;
         }
-        return M_PI - angle;
+        return Radian(M_PI) - angle;
     }
 
     double length(double x, double y, double z) {
