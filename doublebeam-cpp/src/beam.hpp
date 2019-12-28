@@ -120,6 +120,11 @@ public:
      */
     [[nodiscard]] Eigen::Matrix2cd get_Q(Arclength s) const;
 
+    /**
+     * Get matrix Q at specified arclength s.
+     */
+    [[nodiscard]] const Eigen::Matrix2cd& get_P(Arclength s) const;
+
 private:
     /**
      * Find index of the first segment starting from the end of the beam which's begin arclength is

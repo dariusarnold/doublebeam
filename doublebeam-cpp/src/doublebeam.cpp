@@ -120,12 +120,12 @@ std::complex<double> gb_amplitude(const Beam& beam, Arclength s) {
     return std::sqrt(det_Q_s0 / det_Q_s);
 }
 
-std::complex<double> gb_exp(const Beam& beam, double q1, double q2,
+std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,
                             std::complex<double>& complex_traveltime) {
     using namespace std::complex_literals;
     Eigen::Vector2d q{q1, q2};
-    auto Q = beam.last_Q();
-    auto M_s = beam.last_P() * Q.inverse();
+    auto Q = beam.get_Q(s);
+    auto M_s = beam.get_P(s) * Q.inverse();
     complex_traveltime = beam.traveltime().get() + 0.5 * (q.transpose() * M_s * q)[0];
     return std::exp(1i * beam.frequency().get() * complex_traveltime);
 }
@@ -160,7 +160,7 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     }
     auto amp = gb_amplitude(beam, Arclength(total_arclength));
     std::complex<double> complex_traveltime;
-    auto exp = gb_exp(beam, q1, q2, complex_traveltime);
+    auto exp = gb_exp(beam, q1, q2, Arclength(total_arclength), complex_traveltime);
     return {std::conj(amp * exp), complex_traveltime};
 }
 
