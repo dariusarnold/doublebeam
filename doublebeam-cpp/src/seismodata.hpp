@@ -39,6 +39,7 @@ struct Receiver : public PositionWithIndex {
     friend std::ostream& operator<<(std::ostream& os, const Receiver& r);
 };
 
+
 /**
  * Seismogram class can represent full seismogram or partial (cut out).
  */
@@ -77,6 +78,10 @@ public:
 };
 
 
+/**
+ * Holds all seismic data.
+ * Holds amplitudes, timesteps, source and receiver positions.
+ */
 struct Seismograms {
     /**
      * Read all seismograms, sources and receivers from folder.
@@ -86,8 +91,12 @@ struct Seismograms {
                 const std::string& source_file_name = "sources.txt",
                 const std::string& receiver_file_name = "receivers.txt");
 
+    // Vector of all source positions read from source file
     std::vector<Source> sources;
+    // Vector of all receiver positions read from receiver file
     std::vector<Receiver> receivers;
+
+    // KDTrees of sources/receivers for fast lookup of sources/receivers near beam surface point.
     KDTree<Source> source_kd_tree;
     KDTree<Receiver> receiver_kd_tree;
 
@@ -106,6 +115,12 @@ private:
     void read_all_seismograms(const std::filesystem::path& project_folder);
 };
 
+
+/**
+ * Provides operations on seismic data such as retrieving the seismogram for a source/receiver
+ * combination, getting all sources/receivers close to a certain point or cutting seismograms
+ * between two timesteps.
+ */
 class SeismoData {
 public:
     SeismoData(const std::filesystem::path& project_folder,
