@@ -9,6 +9,7 @@
 #include <gsl/span>
 #include <boost/container_hash/hash.hpp>
 
+#include "kdtree.hpp"
 #include "units.hpp"
 
 
@@ -87,6 +88,9 @@ struct Seismograms {
 
     std::vector<Source> sources;
     std::vector<Receiver> receivers;
+    KDTree<Source> source_kd_tree;
+    KDTree<Receiver> receiver_kd_tree;
+
     // All amplitude data in one vector, ordered first by source, then by receiver.
     // For S sources and R receivers, will contain S*R seismograms.
     // First R seismograms will belong to source 1, the following R seismograms to source 2 and so
@@ -172,6 +176,16 @@ public:
      * This assumes all seismograms are sampled with the same timestep.
      */
     [[nodiscard]] AngularFrequency sampling_frequency() const;
+
+    /**
+     * Get Sources within radius around position.
+     */
+    KDTreeSearchResults<Source> get_sources(const Position& position, Meter radius) const;
+    /**
+     * Get Receivers within radius around position.
+     */
+    KDTreeSearchResults<Receiver> get_receivers(const Position& position, Meter radius) const;
+
 
 private:
     Seismograms seismograms;
