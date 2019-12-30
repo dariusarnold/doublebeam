@@ -157,7 +157,7 @@ class KDTree {
 
 public:
     explicit KDTree(const std::vector<PosType>& positions_) :
-            positions(KDTreeAdaptor(positions_)), tree(3, KDTreeAdaptor(positions_)) {
+            positions(positions_), tree(3, positions) {
         tree.buildIndex();
     }
 
