@@ -576,7 +576,7 @@ namespace math {
                               AngularFrequency sampling_frequency);
 
     /**
-     *
+     * Calculate one frequency bin from fft of range [begin, end).
      * @tparam Iterator Iterator with base scalar type, must be real, complex input is not
      * supported.
      * @param begin Start of sequence.
@@ -600,6 +600,7 @@ namespace math {
     }
 
     /**
+     * Calculate one frequency bin from fft of values in Container.
      * Overload taking a container instead of iterators.
      * @tparam Container
      * @param data
