@@ -32,10 +32,16 @@ DEFINE_STRONG_TYPE(Degree, double);
 DEFINE_TYPE_LITERAL(Degree, _deg);
 
 
+/**
+ * Convert degree to radians.
+ */
 inline Radian radians(Degree degree) {
     return Radian(degree.get() * M_PI / 180.);
 }
 
+/**
+ * Convert radians to degree.
+ */
 inline Degree degrees(Radian radians) {
     return Degree(radians.get() * 180. / M_PI);
 }
@@ -44,15 +50,20 @@ inline Degree degrees(Radian radians) {
 DEFINE_STRONG_TYPE(Frequency, double);
 DEFINE_TYPE_LITERAL(Frequency, _hertz);
 
-
 DEFINE_STRONG_TYPE(AngularFrequency, double);
 DEFINE_TYPE_LITERAL(AngularFrequency, _rad_per_sec);
 DEFINE_TYPE_LITERAL_WITH_FACTOR(AngularFrequency, _angular_from_hertz, 2 * M_PIl);
 
-
+/**
+ * Convert Hertz value to angular frequency.
+ */
 inline AngularFrequency hertz_to_angular(Frequency freq) {
     return AngularFrequency(2 * M_PI * freq.get());
 }
+
+/*
+ * Convert angular frequency to Hertz.
+ */
 inline Frequency angular_to_hertz(AngularFrequency ang) {
     return Frequency(ang.get() / (2 * M_PI));
 }
