@@ -79,6 +79,55 @@ TEST_F(DynamicRaytracingBase, DynamicRayTracingAndKinematicRayTracingShouldResul
 }
 
 
+/**
+ * Test if index of segment is found correctly from arclength.
+ */
+struct BeamIndexData {
+    Arclength s;
+    size_t expected_index;
+    friend std::ostream& operator<<(std::ostream& os, const BeamIndexData& x) {
+        return os << "BeamIndexData(" << x.s << ", index=" << x.expected_index << ")";
+    }
+};
+
+class BeamIndexTest : public DynamicRaytracingBase,
+                      public testing::WithParamInterface<BeamIndexData> {
+protected:
+    BeamIndexTest() :
+            gauss_beam(rt.trace_beam(initial_state, 10_meter, hertz_to_angular(10_hertz), "TTTT")
+                           .value()) {}
+    RayState initial_state =
+        init_state(0_meter, 0_meter, 0_meter, model, radians(5_deg), radians(0_deg));
+    // Arclengths of beam segment
+    // begin - end
+    // 0 - 100.38198375433474
+    //  - 201.06411125891393
+    //  - 301.86609181830454
+    //  - 402.73176829037379
+    //  - 503.69773966239507
+    Beam gauss_beam;
+};
+
+TEST_P(BeamIndexTest, CompareExpectedAndActualIndex) {
+    auto [s, index] = GetParam();
+    // Since the index finding function is private we test if the velocity is retrieved correctly.
+    EXPECT_EQ(gauss_beam.velocity(s), gauss_beam[index].layer_velocity());
+}
+
+INSTANTIATE_TEST_SUITE_P(TestArclengthOfZero, BeamIndexTest,
+                         testing::Values(BeamIndexData{Arclength(0_meter), 0}));
+
+INSTANTIATE_TEST_SUITE_P(TestArclengthBeyondArclengthAtBeamEnd, BeamIndexTest,
+                         testing::Values(BeamIndexData{Arclength(6000_meter), 4}));
+
+INSTANTIATE_TEST_SUITE_P(TestBeamIndexing, BeamIndexTest,
+                         testing::Values(BeamIndexData{Arclength(50_meter), 0},
+                                         BeamIndexData{Arclength(150_meter), 1},
+                                         BeamIndexData{Arclength(250_meter), 2},
+                                         BeamIndexData{Arclength(350_meter), 3},
+                                         BeamIndexData{Arclength(450_meter), 4}));
+
+
 template <typename T, typename = void>
 struct is_container : std::false_type {};
 
