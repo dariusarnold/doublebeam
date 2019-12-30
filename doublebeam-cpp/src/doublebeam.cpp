@@ -111,13 +111,16 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     return {e1, e2};
 }
 
+/**
+ * Calculate beam amplitude at s.
+ * @param beam
+ * @param s
+ * @return Non normalized amplitde of Gauss beam.
+ */
 std::complex<double> gb_amplitude(const Beam& beam, Arclength s) {
-    // this calculates the amplitude at the end of the beam, assuming thats the point you want since
-    // the beam reached the surface.
-    // Since velocity is constant in one layer its factored out
-    std::complex<double> det_Q_s0 = beam.get_Q(Arclength{0_meter}).determinant();
     std::complex<double> det_Q_s = beam.get_Q(s).determinant();
-    return std::sqrt(det_Q_s0 / det_Q_s);
+    Velocity vs = beam.velocity(s);
+    return std::sqrt(vs.get() / det_Q_s);
 }
 
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,

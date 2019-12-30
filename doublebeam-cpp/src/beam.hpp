@@ -91,6 +91,11 @@ public:
     [[nodiscard]] Second traveltime() const;
 
     /**
+     * Get velocity of the layer at arclength s.
+     */
+    [[nodiscard]] Velocity velocity(Arclength s) const;
+
+    /**
      * Enable range based for loop over beam segments.
      * @return
      */

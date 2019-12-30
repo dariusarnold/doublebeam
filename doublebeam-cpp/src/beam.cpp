@@ -108,3 +108,8 @@ Arclength Beam::last_arclength() const {
 Second Beam::traveltime() const {
     return last_state().travel_time.time;
 }
+
+Velocity Beam::velocity(Arclength s) const {
+    auto index = find_segment_index(s);
+    return segments[index].layer_velocity();
+}
