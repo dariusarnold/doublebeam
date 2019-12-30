@@ -79,6 +79,8 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
                          const std::string& receiver_file_name) :
         sources(read_sourcefile(project_folder / source_file_name)),
         receivers(read_receiverfile(project_folder / receiver_file_name)),
+        source_kd_tree(sources),
+        receiver_kd_tree(receivers),
         data(),
         timesteps(),
         common_timestep(-1) {
@@ -147,6 +149,15 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
         }
         ++source_index;
     }
+}
+
+KDTreeSearchResults<Source> SeismoData::get_sources(const Position& position, Meter radius) const {
+    return seismograms.source_kd_tree.get_positions(position, radius);
+}
+
+KDTreeSearchResults<Receiver> SeismoData::get_receivers(const Position& position,
+                                                        Meter radius) const {
+    return seismograms.receiver_kd_tree.get_positions(position, radius);
 }
 
 size_t SeismoData::num_receivers() const {
