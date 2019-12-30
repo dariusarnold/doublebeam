@@ -47,7 +47,9 @@ size_t Beam::find_segment_index(Arclength s) const {
         return seg.begin().arclength <= s;
     });
     if (segment != segments.rend()) {
-        return std::distance(segments.rbegin(), segment);
+        // minus one because rend points one past the end and the found segment would be at the
+        // actual beginning of the vector which always has distance 1 to the rend but index 0.
+        return std::distance(segment, segments.rend()) - 1;;
     }
     throw std::invalid_argument(
         fmt::format("{} is invalid for beam with max arclength of {}.", s, last_arclength()));
