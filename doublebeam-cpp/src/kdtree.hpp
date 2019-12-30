@@ -173,7 +173,7 @@ public:
         // Transfer to array since nanoflann expects [] indexable type
         std::array<double, 3> c{center.x.get(), center.y.get(), center.z.get()};
         KDTreeSearchResults results(tree.dataset.positions());
-        tree.radiusSearch(c.data(), radius.get(), results, search_unsorted);
+        tree.radiusSearch(c.data(), radius.get()*radius.get(), results, search_unsorted);
         return results;
     }
 
