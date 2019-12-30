@@ -7,8 +7,8 @@
 #include <fmt/format.h>
 #include <nanoflann.hpp>
 
-#include "units.hpp"
 #include "raytracing_types.hpp"
+#include "units.hpp"
 
 
 /**
@@ -105,6 +105,9 @@ private:
 /**
  * KDTree class that wraps the adaptor and provides a search method to iterate over results
  * instead of returning indices.
+ * Currently the results of a radius search are immutable and can only be observed. Changing this
+ * would require to store non-const references and overload begin/end+operator[] with const and non
+ * const versions and implement a non const version of the search results iterator.
  * @tparam PosType Type of Position object, can be a derived class.
  */
 template <typename PosType>
