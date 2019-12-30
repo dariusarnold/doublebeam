@@ -27,6 +27,12 @@ class KDTreeSearchResults {
      */
     class SearchResultsIterator {
     public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = PosType;
+        using pointer = const PosType*;
+        using reference = const PosType&;
+        using iterator_category = std::forward_iterator_tag;
+
         SearchResultsIterator(std::vector<search_result>::const_iterator it,
                               const std::vector<PosType>& pos) :
                 matches_iterator(it), positions(pos) {}
@@ -36,15 +42,25 @@ class KDTreeSearchResults {
             return *this;
         }
 
-        bool operator!=(const SearchResultsIterator& other) {
+        SearchResultsIterator operator++(int) const {
+            SearchResultsIterator copy(*this);
+            ++copy;
+            return copy;
+        }
+
+        bool operator!=(const SearchResultsIterator& other) const {
             return matches_iterator != other.matches_iterator;
+        }
+
+        bool operator==(const SearchResultsIterator& other) const {
+            return matches_iterator == other.matches_iterator;
         }
 
         /**
          * Dereference iterator to position.
          * @return Current position in matches.
          */
-        const PosType& operator*() {
+        const PosType& operator*() const {
             return positions[matches_iterator->first];
         }
 
@@ -56,21 +72,24 @@ class KDTreeSearchResults {
 public:
     explicit KDTreeSearchResults(const std::vector<PosType>& pos) : positions(pos) {}
 
+    using iterator = SearchResultsIterator;
+    using const_iterator = SearchResultsIterator;
+
     // implicitly convert to reference so this class can be passed to radiusSearch instead of
     // the member.
     operator std::vector<search_result>&() {
         return matches;
     }
 
-    const PosType& operator[](size_t index) {
+    const PosType& operator[](size_t index) const {
         return positions[matches[index].first];
     }
 
-    SearchResultsIterator begin() {
+    SearchResultsIterator begin() const {
         return SearchResultsIterator(matches.begin(), positions);
     }
 
-    SearchResultsIterator end() {
+    SearchResultsIterator end() const {
         return SearchResultsIterator(matches.end(), positions);
     }
 
