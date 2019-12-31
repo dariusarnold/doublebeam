@@ -152,3 +152,9 @@ INSTANTIATE_TEST_SUITE_P(TestCuttingGeneralCaseMedium, TestCutting,
 
 INSTANTIATE_TEST_SUITE_P(TestCuttingGeneralCaseLarge, TestCutting,
                          testing::Values(TestCuttingData(0.8, 1.2, 200, 301)));
+
+INSTANTIATE_TEST_SUITE_P(TestIfCuttingBeyondEndReturnsEmptySeismogram, TestCutting,
+                         testing::Values(TestCuttingData(4.001, 5, 0, 0)));
+
+INSTANTIATE_TEST_SUITE_P(TestIfCuttingBeforeBeginReturnsEmptySeismogram, TestCutting,
+                         testing::Values(TestCuttingData(-0.1, -0.05, 0, 0)));
