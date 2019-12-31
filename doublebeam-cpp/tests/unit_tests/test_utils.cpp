@@ -442,6 +442,14 @@ TEST(TestGoertzel, TestSingleRealInputValue) {
     EXPECT_EQ(result, expected_result);
 }
 
+TEST(TestGoertzel, TestSingleRealInputValueWithSpan) {
+    std::vector<double> input{42};
+    gsl::span<double> input_span(input.data(), input.size());
+    std::complex<double> expected_result{42, 0};
+    auto result = math::goertzel(input_span, 0);
+    EXPECT_EQ(result, expected_result);
+}
+
 TEST(TestGoertzel, TestTwoRealInputValue) {
     std::vector<double> input{42, 24};
     std::vector<std::complex<double>> expected_result{{66, 0}, {18, 0}};
