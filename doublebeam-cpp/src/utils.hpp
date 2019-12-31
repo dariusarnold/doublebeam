@@ -529,12 +529,15 @@ namespace math {
         if (N == 0) {
             throw std::invalid_argument("Data for Goertzel algorithm is empty.");
         }
+        // This will be a float type
+        using type = typename std::iterator_traits<Iter>::value_type;
+        if (N == 1) {
+            return std::complex<type>(*begin, 0.);
+        }
         if (target_frequency_bin > N) {
             throw std::invalid_argument(impl::Formatter()
                                         << "Invalid input bin " << target_frequency_bin << ".");
         }
-        // This will be a float type
-        using type = typename std::iterator_traits<Iter>::value_type;
         const type N_float(N);
         const type pi{M_PIl};
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
