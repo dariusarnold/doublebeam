@@ -34,6 +34,9 @@ Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Recei
                                                     double t1) const {
     auto seismo = get_seismogram(s, r);
     ptrdiff_t begin_offset = std::ceil(t0 / timestep());
+    if (begin_offset > static_cast<ptrdiff_t>(seismo.size())) {
+        return Seismogram(seismo.data.data(), 0UL, seismo.timesteps.data(), 0UL);
+    }
     // +1 because end should point to one past the end.
     ptrdiff_t end_offset = std::floor(t1 / timestep()) + 1;
     begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
