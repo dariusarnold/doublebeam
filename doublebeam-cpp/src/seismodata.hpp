@@ -126,6 +126,7 @@ public:
     SeismoData(const std::filesystem::path& project_folder,
                const std::string& source_file_name = "sources.txt",
                const std::string& receiver_file_name = "receivers.txt");
+
     /**
      * Return specific seismogram given from shot at source recorded at receiver.
      * Won't check if source or receiver are at the correct positions. Use only sources and
@@ -134,8 +135,6 @@ public:
      * @param r
      * @return
      */
-    Seismogram<double> get_seismogram(const Source& s, const Receiver& r);
-
     [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r) const;
 
     /**
@@ -147,8 +146,6 @@ public:
      * @param t1 end time
      * @return Part of seismogram containing only the amplitude samples between t0 and t1.
      */
-    Seismogram<double> get_seismogram(const Source& s, const Receiver& r, double t0, double t1);
-
     [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r,
                                                           double t0, double t1) const;
 

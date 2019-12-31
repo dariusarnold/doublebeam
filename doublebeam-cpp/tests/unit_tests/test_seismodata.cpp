@@ -92,7 +92,7 @@ protected:
 
     // helper function to pass source receiver so first seismogram is returned.
     // First seismogram is the test case for cutting, this saves writing s, r in every test.
-    Seismogram<double> get_seismogram(double t0, double t1) {
+    Seismogram<const double> get_seismogram(double t0, double t1) {
         return seismo_data.get_seismogram(s, r, t0, t1);
     }
 };
@@ -117,8 +117,8 @@ TEST_P(TestCutting, TestKeepingFullSeismogram) {
     auto out = get_seismogram(t0, t1);
     ASSERT_EQ(out.data.size(), out.timesteps.size()) << "Timesteps and data cut differently";
     ASSERT_EQ(out.size(), expected_size) << "Wrong size for cut seismogram.";
-    gsl::span<double> expected_amplitudes(amplitudes.data() + index0, expected_size);
-    gsl::span<double> expected_timesteps(timesteps.data() + index0, expected_size);
+    gsl::span<const double> expected_amplitudes(amplitudes.data() + index0, expected_size);
+    gsl::span<const double> expected_timesteps(timesteps.data() + index0, expected_size);
     EXPECT_EQ(out.data, expected_amplitudes) << "Wrong values for amplitude cut.";
     EXPECT_EQ(out.timesteps, expected_timesteps) << "Wrong values for timestep cut.";
 }
