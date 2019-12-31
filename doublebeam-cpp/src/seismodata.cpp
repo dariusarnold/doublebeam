@@ -40,13 +40,11 @@ Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Recei
 Seismogram<double> SeismoData::get_seismogram(const Source& s, const Receiver& r, double t0,
                                               double t1) {
     auto seismo = get_seismogram(s, r);
-    t0 = std::max(seismograms.timesteps[0], t0);
-    t1 = std::min(seismograms.timesteps.back(), t1);
-
-    size_t begin_offset = std::ceil(t0 / timestep());
-    size_t end_offset = std::floor(t1 / timestep()) + 1;
-    begin_offset = std::min(seismo.size() - 1, begin_offset);
-    end_offset = std::min(seismo.size(), end_offset);
+    ptrdiff_t begin_offset = std::ceil(t0 / timestep());
+    // +1 because end should point to one past the end.
+    ptrdiff_t end_offset = std::floor(t1 / timestep()) + 1;
+    begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
+    end_offset = std::clamp(end_offset, 0L, static_cast<ptrdiff_t>(seismo.size()));
     return Seismogram(seismo.data.data() + begin_offset, seismo.data.data() + end_offset,
                       seismo.timesteps.data() + begin_offset, seismo.timesteps.data() + end_offset);
 }
@@ -54,13 +52,11 @@ Seismogram<double> SeismoData::get_seismogram(const Source& s, const Receiver& r
 Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Receiver& r, double t0,
                                                     double t1) const {
     auto seismo = get_seismogram(s, r);
-    t0 = std::max(seismograms.timesteps[0], t0);
-    t1 = std::min(seismograms.timesteps.back(), t1);
-
-    size_t begin_offset = std::ceil(t0 / timestep());
-    size_t end_offset = std::floor(t1 / timestep()) + 1;
-    begin_offset = std::min(seismo.size() - 1, begin_offset);
-    end_offset = std::min(seismo.size(), end_offset);
+    ptrdiff_t begin_offset = std::ceil(t0 / timestep());
+    // +1 because end should point to one past the end.
+    ptrdiff_t end_offset = std::floor(t1 / timestep()) + 1;
+    begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
+    end_offset = std::clamp(end_offset, 0L, static_cast<ptrdiff_t>(seismo.size()));
     return Seismogram(seismo.data.data() + begin_offset, seismo.data.data() + end_offset,
                       seismo.timesteps.data() + begin_offset, seismo.timesteps.data() + end_offset);
 }
