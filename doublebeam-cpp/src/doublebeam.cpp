@@ -143,6 +143,15 @@ struct BeamEvalResult {
     std::complex<double> complex_traveltime;
 };
 
+
+Position operator-(const Position& a, const Position& b) {
+    return Position(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+position_t make_tuple(const Position& position) {
+    return {position.x.get(), position.y.get(), position.z.get()};
+}
+
 BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     using namespace std::complex_literals;
     auto [e1, e2] = get_ray_centred_unit_vectors(beam);
@@ -155,8 +164,7 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     // Cerveny2001.
     auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
     auto [q1, q2, q3] =
-        math::dot(transformation_matrix,
-                  std::make_tuple(position.x.get(), position.y.get(), position.z.get()));
+        math::dot(transformation_matrix, make_tuple(position - beam.last_position()));
     const Meter total_arclength = beam.last_arclength().length + Meter(q3);
     if (total_arclength < 0_meter) {
         throw std::runtime_error("Negative arclength");
