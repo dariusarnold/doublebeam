@@ -216,14 +216,14 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
             double total_traveltime =
                 std::real(source_beam_values[source.index()].complex_traveltime +
                           receiver_beam_values[receiver.index()].complex_traveltime);
+            if (total_traveltime - window_length / 2 > data.time_length()) {
+                // evaluation position to far away from beam surface point
+                continue;
+            }
             a = std::chrono::high_resolution_clock::now();
             Seismogram seismogram = data.get_seismogram(source.value(), receiver.value(),
                                                         total_traveltime - window_length / 2,
                                                         total_traveltime + window_length / 2);
-            if (seismogram.size() == 0) {
-                std::cerr << "Total traveltime above seismogram length.";
-                continue;
-            }
             b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto it = fft_cache.find(seismogram);

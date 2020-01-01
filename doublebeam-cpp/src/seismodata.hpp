@@ -199,6 +199,12 @@ public:
     KDTreeSearchResults<Receiver> get_receivers(const Position& position, Meter radius) const;
 
 
+    /**
+     * Get length of seismogram time series.
+     * @return
+     */
+    double time_length() const;
+
 private:
     Seismograms seismograms;
 };

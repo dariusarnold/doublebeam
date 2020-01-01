@@ -159,3 +159,7 @@ size_t SeismoData::num_samples() const {
 double SeismoData::timestep() const {
     return seismograms.common_timestep;
 }
+
+double SeismoData::time_length() const {
+    return seismograms.timesteps.back() - seismograms.timesteps.front();
+}
