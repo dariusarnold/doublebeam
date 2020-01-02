@@ -4,14 +4,24 @@
 #include <complex>
 #include <vector>
 
+#include <gsl/span>
+
 #include "fft.hpp"
 #include "printing.hpp"
 
-TEST(TestFFT, TestEmptyInput) {
+TEST(TestFFT, TestEmptyInputVector) {
     std::vector<double> in;
     FFT fft;
     std::vector<std::complex<double>> out;
     ASSERT_NO_THROW(out = fft.execute(in));
+    ASSERT_EQ(out.size(), 0);
+}
+
+TEST(TestFFT, TestEmptyInputRange) {
+    std::vector<double> in;
+    FFT fft;
+    FFT::cvector_align out;
+    ASSERT_NO_THROW(out = fft.execute(gsl::make_span(in)));
     ASSERT_EQ(out.size(), 0);
 }
 
@@ -33,6 +43,19 @@ TEST_P(TestFFT, TestIfForwardTransformReturnsCorrectOutputByComparingWithNumpyRe
     auto result = fft.execute(in);
     std::cout.precision(17);
     ASSERT_EQ(result.size(), expected.size()) << "Different size for expected and actual result.";
+    for (auto i = 0; i < result.size(); ++i) {
+        EXPECT_TRUE(AlmostEqual(result[i].real(), expected[i].real(), 14))
+            << "Different real values at index " << i;
+        EXPECT_TRUE(AlmostEqual(result[i].imag(), expected[i].imag(), 14))
+            << "Different imaginary values at index " << i;
+    }
+}
+
+TEST_P(TestFFT, TestWithRanges) {
+    auto [in, expected] = GetParam();
+    auto result = fft.execute(gsl::make_span(in));
+    std::cout.precision(17);
+    ASSERT_EQ(result.size(), expected.size());
     for (auto i = 0; i < result.size(); ++i) {
         EXPECT_TRUE(AlmostEqual(result[i].real(), expected[i].real(), 14))
             << "Different real values at index " << i;

@@ -5,9 +5,9 @@
 #include <complex>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <new>
 #include <vector>
-#include <memory>
 
 #include <fftw3.h>
 
@@ -38,6 +38,7 @@ struct Allocator {
 
 struct Plan {
     Plan(std::vector<double>& in);
+    Plan(gsl::span<const double> in);
     std::vector<std::complex<double>, Allocator<std::complex<double>>>& execute();
 
     size_t N;
@@ -61,7 +62,17 @@ public:
      * @param in
      * @return
      */
-    Plan& get_plan(std::vector<double>& in);
+    template <typename Sequence>
+    Plan& get_plan(Sequence& in) {
+        size_t N = in.size();
+        auto plan =
+            std::find_if(plans.begin(), plans.end(), [N](const Plan& p) { return p.N == N; });
+        if (plan != plans.end()) {
+            return *plan;
+        }
+        return plans.emplace_back(in);
+    }
+
 
 private:
     // since I dont expect to have many different plans, a vector should be enough and a map is
@@ -75,7 +86,10 @@ public:
     FFT(size_t initial_cache_size = 2) : plans(initial_cache_size) {}
     using cdouble = std::complex<double>;
     using cvector = std::vector<cdouble>;
+    using cvector_align = std::vector<cdouble, Allocator<cdouble>>;
     cvector execute(std::vector<double>& in);
+    cvector_align execute(gsl::span<const double> in);
+
 private:
     PlanCache plans;
 };
