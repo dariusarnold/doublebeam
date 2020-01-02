@@ -264,7 +264,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
     for (const auto& source_beam_center : source_geometry) {
-        std::cout << "Beam " << source_beam_index++ << "/" << source_geometry.size() << std::endl;
+        fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
         Slowness slowness = twopoint.trace(target, source_beam_center);
         // TODO add overload so declaring initial state is not required for ray tracing
         auto initial_state = make_state(target, slowness);
@@ -274,7 +274,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
         auto b = std::chrono::high_resolution_clock::now();
         beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
         if (source_beam.status == Status::OutOfBounds) {
-            throw std::logic_error("Source beam left model.");
+            throw std::logic_error("Source beam left model.\n");
         }
         // Since we traced the beam from the target upwards to the surface, we will have to flip
         // the direction of the slowness to be able to treat it as the incoming direction of the
@@ -313,13 +313,13 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                 result.data(fracture_spacing.index(), fracture_orientation.index()) += tmp;
             }
         }
-        std::cout << number_of_rec_beams_that_left_model << "/"
-                  << fracture_info.spacings.size() * fracture_info.orientations.size()
-                  << " receiver beams left the model.\n";
+        fmt::print("{}/{} receiver beams left the model.\n", number_of_rec_beams_that_left_model,
+                   fracture_info.spacings.size() * fracture_info.orientations.size());
     }
-    std::cout << "Beams: " << beamt * 1E-9 << " s\nFFT: " << fftt * 1E-9
-              << " s\nBeam eval: " << evalt * 1E-9 << " s\ncut : " << cutt * 1E-9 << "s\n";
-    std::cout << "amplitude: " << amplt * 1E-9 << " s\nexp: " << expt * 1E-9
-              << " s\nunit vec: " << unit_vect * 1E-9 << " s\nrestt: " << restt * 1E-9;
+    fmt::print(
+        "Beams: {} s\nFFT: {} s\nBeam eval: {} s\ncuting seismograms: {} s\nGB amplitude: {} "
+        "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",
+        beamt * 1E-9, fftt * 1E-9, evalt * 1E-9, cutt * 1E-9, amplt * 1E-9, expt * 1E-9,
+        unit_vect * 1E-9, restt * 1E-9);
     return result;
 }
