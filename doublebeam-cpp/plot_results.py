@@ -1,8 +1,9 @@
+import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
 
 def to_complex(s: str) -> complex:
@@ -41,9 +42,9 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
     title = ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
     title.set_position((.5, .85))
-    plt.show()
-    #plt.savefig("{fname.split('.')[0]}.pdf", bbox_inches="tight")
-    #plt.savefig(f"{fname.split('.')[0]}.png", bbox_inches="tight")
+    #plt.show()
+    #plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
+    plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
 
 
 def parse_file(filename: Path) -> np.ndarray:
@@ -58,15 +59,32 @@ def parse_file(filename: Path) -> np.ndarray:
     return np.array(data, dtype=np.complex128)
 
 
+def find_last_result(dir : Path) -> Path:
+    """
+    Find last result.txt in directory and return path to it.
+    """
+    # use a natural ordering for strings
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split(r"([0-9]+)", str(key))]
+    dir_content = sorted(dir.glob("result*.txt"), key=alphanum_key)
+    return dir_content[-1]
+
+
 def main():
     if len(sys.argv) == 1:
+        # no arguments, open file picker
         import tkinter.filedialog, tkinter
         tkinter.Tk().withdraw()
         fname = tkinter.filedialog.askopenfilename()
     else:
-        fname = sys.argv[1]
-    data = parse_file(fname)#[:, 30:62]
-    plot_scattering_coefficient(np.abs(data), 100, 200, 0, 500, 500, fname)
+        # pathname as argument
+        fname = Path(sys.argv[1])
+    if fname.is_dir():
+        # if directory, find last result and plot that
+        fname = find_last_result(fname)
+        print(f"Plotting {fname}")
+    data = parse_file(fname)
+    plot_scattering_coefficient(np.abs(data), 100, 300, 0, 500, 500, fname)
 
 
 if __name__ == '__main__':
