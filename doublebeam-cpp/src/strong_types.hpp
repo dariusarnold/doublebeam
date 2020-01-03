@@ -81,7 +81,7 @@ public:
     }
 
     friend NamedType abs(const NamedType& quantity) {
-        return NamedType{std::abs(quantity.value)};
+        return NamedType{std::abs(quantity.value_m)};
     }
 
     friend bool isnan(const NamedType& quantity) {
