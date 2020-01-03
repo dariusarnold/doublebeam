@@ -510,7 +510,20 @@ namespace math {
      * @param num
      * @return
      */
-    std::vector<double> linspace(double start, double stop, size_t num = 50);
+    template <typename T>
+    std::vector<T> linspace(T start, T stop, size_t num = 50) {
+        if (num == 0) {
+            return {};
+        }
+        if (num == 1) {
+            return {start};
+        }
+        auto distance = (stop - start) / (num - 1);
+        std::vector<T> result(num);
+        size_t i = 0;
+        std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance; });
+        return result;
+    }
 
 
     /**

@@ -207,11 +207,11 @@ struct FractureParams {
                 continue;
             }
             if (contains(line, "spacing_min")) {
-                spacings_min = extract_double(line);
+                spacings_min = Meter(extract_double(line));
                 continue;
             }
             if (contains(line, "spacing_max")) {
-                spacings_max = extract_double(line);
+                spacings_max = Meter(extract_double(line));
                 continue;
             }
             if (contains(line, "num_spacings")) {
@@ -223,7 +223,7 @@ struct FractureParams {
     }
     math::Vector2 phi_hat;
     int num_orientations;
-    double spacings_min, spacings_max;
+    Meter spacings_min, spacings_max;
     int num_spacings;
 };
 
@@ -232,28 +232,28 @@ struct BeamParams {
         std::string line;
         while (std::getline(config_file, line)) {
             if (contains(line, "width")) {
-                width = extract_double(line);
+                width = Meter(extract_double(line));
                 continue;
             }
             if (contains(line, "frequency")) {
-                frequency = extract_double(line);
+                frequency = AngularFrequency(2 * M_PI * extract_double(line));
                 continue;
             }
             if (contains(line, "window_length")) {
-                window_length = extract_double(line);
+                window_length = Second(extract_double(line));
                 continue;
             }
             if (contains(line, "max_stacking_distance")) {
-                max_stacking_distance = extract_double(line);
+                max_stacking_distance = Meter(extract_double(line));
                 continue;
             }
             break;
         }
     }
-    double width;
-    double frequency;
-    double window_length;
-    double max_stacking_distance;
+    Meter width;
+    AngularFrequency frequency;
+    Second window_length;
+    Meter max_stacking_distance;
 };
 
 struct VelocityModelParams {

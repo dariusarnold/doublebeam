@@ -109,7 +109,7 @@ struct Seismograms {
     std::vector<double> timesteps;
 
     // Distance between two time samples.
-    double common_timestep;
+    Second common_timestep;
 
 private:
     void read_all_seismograms(const std::filesystem::path& project_folder);
@@ -147,7 +147,7 @@ public:
      * @return Part of seismogram containing only the amplitude samples between t0 and t1.
      */
     [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r,
-                                                          double t0, double t1) const;
+                                                          Second t0, Second t1) const;
 
     /**
      * Get access to list of sources.
@@ -181,7 +181,7 @@ public:
      * Get time difference between two samples, ie. the sampling period.
      * @return
      */
-    [[nodiscard]] double timestep() const;
+    [[nodiscard]] Second timestep() const;
 
     /**
      * Return sampling frequency in rad/s.
@@ -203,7 +203,7 @@ public:
      * Get length of seismogram time series.
      * @return
      */
-    double time_length() const;
+    Second time_length() const;
 
 private:
     Seismograms seismograms;

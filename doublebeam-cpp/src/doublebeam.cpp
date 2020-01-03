@@ -20,13 +20,15 @@
  */
 std::tuple<InverseVelocity, InverseVelocity> scattered_slowness(const Slowness& slow,
                                                                 const math::Vector2& phi_hat,
-                                                                double fracture_spacing,
+                                                                Meter fracture_spacing,
                                                                 Frequency frequency) {
     // pass 0 as pz and phi_hat_z since formula only transforms horizontal slownesses and is only
     // valid for vertical fracture planes.
     auto sig = math::sign(math::dot(slow.px.get(), slow.py.get(), 0, phi_hat.x, phi_hat.y, 0));
-    InverseVelocity px_new(slow.px.get() - sig * phi_hat.x / (fracture_spacing * frequency.get()));
-    InverseVelocity py_new(slow.py.get() - sig * phi_hat.y / (fracture_spacing * frequency.get()));
+    InverseVelocity px_new(slow.px.get() -
+                           sig * phi_hat.x / (fracture_spacing.get() * frequency.get()));
+    InverseVelocity py_new(slow.py.get() -
+                           sig * phi_hat.y / (fracture_spacing.get() * frequency.get()));
     return {px_new, py_new};
 }
 
@@ -42,7 +44,7 @@ std::tuple<InverseVelocity, InverseVelocity> scattered_slowness(const Slowness& 
  * @return Scattered slowness vector
  */
 Slowness calculate_new_slowness(const Slowness& slowness, const math::Vector2& fracture_normal,
-                                double fracture_spacing, Frequency frequency) {
+                                Meter fracture_spacing, Frequency frequency) {
     const auto [px, py] =
         scattered_slowness(slowness, fracture_normal, fracture_spacing, frequency);
     auto p = math::length(slowness);
@@ -57,7 +59,7 @@ Slowness calculate_new_slowness(const Slowness& slowness, const math::Vector2& f
 
 
 FractureParameters::FractureParameters(math::Vector2 phi_hat_, int num_fracture_orientations,
-                                       double spacing_min, double spacing_max,
+                                       Meter spacing_min, Meter spacing_max,
                                        int num_fracture_spacings) :
         phi_hat(phi_hat_),
         orientations(math::generate_vector_arc(num_fracture_orientations, phi_hat)),
@@ -203,14 +205,13 @@ std::unordered_map<Seismogram<const double>, std::complex<double>,
     fft_cache;
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
-                           const SeismoData& data, double window_length, double max_eval_distance) {
+                           const SeismoData& data, Second window_length, Meter max_eval_distance) {
     std::complex<double> stacking_result(0, 0);
     std::vector<BeamEvalResult> source_beam_values, receiver_beam_values;
     // get all sources/receivers within max eval distance around surface point
     auto a = std::chrono::high_resolution_clock::now();
-    auto sources_in_range = data.get_sources(source_beam.last_position(), Meter(max_eval_distance));
-    auto receivers_in_range =
-        data.get_receivers(receiver_beam.last_position(), Meter(max_eval_distance));
+    auto sources_in_range = data.get_sources(source_beam.last_position(), max_eval_distance);
+    auto receivers_in_range = data.get_receivers(receiver_beam.last_position(), max_eval_distance);
     source_beam_values.reserve(std::size(sources_in_range));
     receiver_beam_values.reserve(std::size(receivers_in_range));
     // pre compute gauss beam for sources/receivers to avoid multiple evaluation
@@ -226,9 +227,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     namespace ba = boost::adaptors;
     for (const auto& source : sources_in_range | ba::indexed()) {
         for (const auto& receiver : receivers_in_range | ba::indexed()) {
-            double total_traveltime =
+            Second total_traveltime(
                 std::real(source_beam_values[source.index()].complex_traveltime +
-                          receiver_beam_values[receiver.index()].complex_traveltime);
+                          receiver_beam_values[receiver.index()].complex_traveltime));
             if (total_traveltime - window_length / 2 > data.time_length()) {
                 // evaluation position to far away from beam surface point
                 continue;
@@ -263,8 +264,8 @@ bool isfinite(const std::complex<double>& c) {
 DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
                                        Position target, const SeismoData& data,
                                        FractureParameters fracture_info, Meter beam_width,
-                                       AngularFrequency beam_frequency, double window_length,
-                                       double max_stacking_distance) {
+                                       AngularFrequency beam_frequency, Second window_length,
+                                       Meter max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;

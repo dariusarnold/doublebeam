@@ -106,21 +106,6 @@ namespace math {
         return v;
     }
 
-
-    std::vector<double> linspace(double start, double stop, size_t num) {
-        if (num == 0) {
-            return {};
-        }
-        if (num == 1) {
-            return {start};
-        }
-        auto distance = (stop - start) / (num - 1);
-        std::vector<double> result(num);
-        size_t i = 0;
-        std::generate(result.begin(), result.end(), [&]() { return start + i++ * distance; });
-        return result;
-    }
-
     std::tuple<double, double, double> cross(double x1, double y1, double z1, double x2, double y2,
                                              double z2) {
         auto x = y1 * z2 - z1 * y2;

@@ -15,8 +15,8 @@
 
 class FractureParameters {
 public:
-    FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations, double spacing_min,
-                       double spacing_max, int num_fracture_spacings);
+    FractureParameters(math::Vector2 phi_hat, int num_fracture_orientations, Meter spacing_min,
+                       Meter spacing_max, int num_fracture_spacings);
     /**
      * Central fracture orientation vector (unit vector perpendicular to fracture plane).
      * This vector is horizontal (has only x, y component) since only vertical fractures are
@@ -34,7 +34,7 @@ public:
      * Array of possible fracture spacings.
      * DB algorithm scans over this array and calculates scattered slowness for every entry.
      */
-    std::vector<double> spacings;
+    std::vector<Meter> spacings;
 };
 
 struct DoubleBeamResult {
@@ -78,7 +78,7 @@ public:
     DoubleBeamResult algorithm(const std::vector<Position>& source_geometry, Position target,
                                const SeismoData& data, FractureParameters fracture_info,
                                Meter beam_width, AngularFrequency beam_frequency,
-                               double window_length, double max_stacking_distance);
+                               Second window_length, Meter max_stacking_distance);
 
 private:
     const VelocityModel& model;

@@ -30,15 +30,15 @@ Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Recei
                       seismograms.timesteps.data(), num_samples());
 }
 
-Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Receiver& r, double t0,
-                                                    double t1) const {
+Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Receiver& r, Second t0,
+                                                    Second t1) const {
     auto seismo = get_seismogram(s, r);
-    ptrdiff_t begin_offset = std::ceil(t0 / timestep());
+    ptrdiff_t begin_offset = std::ceil(t0.get() / timestep().get());
     if (begin_offset > static_cast<ptrdiff_t>(seismo.size())) {
         return Seismogram(seismo.data.data(), 0UL, seismo.timesteps.data(), 0UL);
     }
     // +1 because end should point to one past the end.
-    ptrdiff_t end_offset = std::floor(t1 / timestep()) + 1;
+    ptrdiff_t end_offset = std::floor(t1.get() / timestep().get()) + 1;
     begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
     end_offset = std::clamp(end_offset, 0L, static_cast<ptrdiff_t>(seismo.size()));
     return Seismogram(seismo.data.data() + begin_offset, seismo.data.data() + end_offset,
@@ -65,7 +65,7 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
         timesteps(),
         common_timestep(-1) {
     read_all_seismograms(project_folder);
-    common_timestep = timesteps[1] - timesteps[0];
+    common_timestep = Second(timesteps[1] - timesteps[0]);
 }
 
 
@@ -149,17 +149,17 @@ size_t SeismoData::num_sources() const {
 }
 
 AngularFrequency SeismoData::sampling_frequency() const {
-    return AngularFrequency(2 * M_PI / timestep());
+    return AngularFrequency(2 * M_PI / timestep().get());
 }
 
 size_t SeismoData::num_samples() const {
     return seismograms.timesteps.size();
 }
 
-double SeismoData::timestep() const {
+Second SeismoData::timestep() const {
     return seismograms.common_timestep;
 }
 
-double SeismoData::time_length() const {
-    return seismograms.timesteps.back() - seismograms.timesteps.front();
+Second SeismoData::time_length() const {
+    return Second{seismograms.timesteps.back() - seismograms.timesteps.front()};
 }
