@@ -45,10 +45,14 @@ Slowness calculate_new_slowness(const Slowness& slowness, const math::Vector2& f
                                 double fracture_spacing, Frequency frequency) {
     const auto [px, py] =
         scattered_slowness(slowness, fracture_normal, fracture_spacing, frequency);
+    auto p = math::length(slowness);
+    // scale px and py so that the whole slowness vector has length 1/c while keeping pz constant
+    // p^2 = a*px^2 + a*py^2 + pz^2     where a is the scaling factor
+    // a = (p^2 - pz^2) / (px^2 + py^2)
+    const double length_factor = std::sqrt((std::pow(p, 2) - std::pow(slowness.pz.get(), 2)) /
+                                           (px.get() * px.get() + py.get() * py.get()));
     // -pz to reflect beam upwards from target
-    const double length_factor =
-        math::length(slowness) / math::length(px.get(), py.get(), -slowness.pz.get());
-    return {px * length_factor, py * length_factor, -slowness.pz * length_factor};
+    return {px * length_factor, py * length_factor, -slowness.pz};
 }
 
 
