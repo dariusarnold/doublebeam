@@ -194,12 +194,6 @@ double fftt = 0;
 double evalt = 0;
 double beamt = 0;
 
-double squared_distance(const Position& x, const PositionWithIndex& pos) {
-    auto [x0, x1, x2] = x;
-    return std::pow(x0.get() - pos.x.get(), 2) + std::pow(x1.get() - pos.y.get(), 2) +
-           std::pow(x2.get() - pos.z.get(), 2);
-}
-
 std::unordered_map<Seismogram<const double>, std::complex<double>,
                    boost::hash<Seismogram<const double>>>
     fft_cache;
