@@ -378,6 +378,23 @@ TEST(TestGoertzel, TestFloatNumbers) {
     }
 }
 
+/**
+ * Test if the correct frequency bin is returned
+ */
+TEST(TestGoertzel, TestFrequency) {
+    std::vector<double> input{0, 1, 2, 3, 2, 1, 0};
+    // this data was calculated using numpy fft
+    // np.fft.fftfreq(7)*2*np.pi    # gives frequencies of bins in rad
+    // array([ 0.                ,  0.8975979010256552,  1.7951958020513104,
+    //        2.6927937030769655, -2.6927937030769655, -1.7951958020513104,
+    //       -0.8975979010256552])
+    auto val = math::fft_closest_frequency(input, 2_rad_per_sec, AngularFrequency(2 * M_PI));
+    std::complex<double> expected_result(0.1920214716300963, 0.24078730940376436);
+    EXPECT_TRUE(Close(val.real(), expected_result.real()));
+    EXPECT_TRUE(Close(val.imag(), expected_result.imag()));
+}
+
+
 TEST(TestGoertzel, TestEmptyDataThrows) {
     std::vector<double> empty;
     ASSERT_THROW(math::goertzel(empty, 0), std::invalid_argument);
