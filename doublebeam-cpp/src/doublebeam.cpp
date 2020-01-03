@@ -258,9 +258,9 @@ bool isfinite(const std::complex<double>& c) {
 
 DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
                                        Position target, const SeismoData& data,
-                                       FractureParameters fracture_info, Frequency source_frequency,
-                                       Meter beam_width, AngularFrequency beam_frequency,
-                                       double window_length, double max_stacking_distance) {
+                                       FractureParameters fracture_info, Meter beam_width,
+                                       AngularFrequency beam_frequency, double window_length,
+                                       double max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
@@ -289,9 +289,9 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                 //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
                 //                    orientations_index);
                 // trace receiver beam in scattered direction
-                Slowness new_slowness =
-                    calculate_new_slowness(slowness, fracture_orientation.value(),
-                                           fracture_spacing.value(), source_frequency);
+                Slowness new_slowness = calculate_new_slowness(
+                    slowness, fracture_orientation.value(), fracture_spacing.value(),
+                    angular_to_hertz(beam_frequency));
                 initial_state = make_state(target, new_slowness);
                 // reuse ray code since beam should pass through the same layers
                 a = std::chrono::high_resolution_clock::now();

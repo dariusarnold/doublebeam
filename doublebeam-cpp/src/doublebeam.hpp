@@ -66,7 +66,6 @@ public:
      * @param target Target position in the subsurface.
      * @param data Contains seismograms.
      * @param fracture_info Fracture information
-     * @param source_frequency Frequency of source wavelet
      * @param beam_width Width of Gauss beam
      * @param beam_frequency Frequency for Gauss beam
      * @param window_length Window length for cutting seismic data. The real part of the added
@@ -78,9 +77,8 @@ public:
      */
     DoubleBeamResult algorithm(const std::vector<Position>& source_geometry, Position target,
                                const SeismoData& data, FractureParameters fracture_info,
-                               Frequency source_frequency, Meter beam_width,
-                               AngularFrequency beam_frequency, double window_length,
-                               double max_stacking_distance);
+                               Meter beam_width, AngularFrequency beam_frequency,
+                               double window_length, double max_stacking_distance);
 
 private:
     const VelocityModel& model;

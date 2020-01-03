@@ -277,15 +277,10 @@ struct SeismoDataParams {
                 path = extract_path(line);
                 continue;
             }
-            if (contains(line, "source_frequency")) {
-                source_frequency = Frequency(extract_double(line));
-                continue;
-            }
             break;
         }
     }
     std::filesystem::path path;
-    Frequency source_frequency;
 };
 
 struct TargetParams {
