@@ -34,7 +34,7 @@ TEST_P(TestProjectLoading, TestCorrectnessOfLoadedProject) {
     SeismoData s(project_dir);
     ASSERT_EQ(s.receivers().size(), 3);
     ASSERT_EQ(s.sources().size(), 2);
-    ASSERT_DOUBLE_EQ(s.timestep(), 0.004);
+    ASSERT_DOUBLE_EQ(s.timestep().get(), 0.004);
     // loading source and receiver file is already tested.
 }
 
@@ -93,7 +93,7 @@ protected:
     // helper function to pass source receiver so first seismogram is returned.
     // First seismogram is the test case for cutting, this saves writing s, r in every test.
     Seismogram<const double> get_seismogram(double t0, double t1) {
-        return seismo_data.get_seismogram(s, r, t0, t1);
+        return seismo_data.get_seismogram(s, r, Second(t0), Second(t1));
     }
 };
 
