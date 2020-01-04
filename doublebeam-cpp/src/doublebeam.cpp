@@ -122,12 +122,14 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
  * Calculate beam amplitude at s.
  * @param beam
  * @param s
- * @return Non normalized amplitde of Gauss beam.
+ * @return Normalized amplitde of Gauss beam.
  */
 std::complex<double> gb_amplitude(const Beam& beam, Arclength s) {
     std::complex<double> det_Q_s = beam.get_Q(s).determinant();
+    std::complex<double> det_Q_s0 = beam.get_Q(Arclength(0_meter)).determinant();
     Velocity vs = beam.velocity(s);
-    return std::sqrt(vs.get() / det_Q_s);
+    Velocity vs0 = beam.velocity(Arclength(0_meter));
+    return std::sqrt((vs.get() * det_Q_s0) / (vs0.get() * det_Q_s));
 }
 
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,
