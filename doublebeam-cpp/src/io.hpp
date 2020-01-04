@@ -6,6 +6,8 @@
 #include <vector>
 
 #include <gsl/span>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "raytracing_types.hpp"
 #include "seismodata.hpp"
@@ -187,7 +189,13 @@ struct SourceBeamCenterParams {
     Meter x0, x1, y0, y1, z;
     int num_x, num_y;
 
-    //    SourceBeamCenterParams(std::ifstream& config_file) {}
+    friend std::ostream& operator<<(std::ostream& os, const SourceBeamCenterParams& sbc_params) {
+        fmt::print(os, "[source beam centers]\n");
+        fmt::print(os, "x0 = {}\nx1 = {}\n y0 = {}\ny1 = {}\nz = {}\nnum_x = {}\nnum_y = {}\n\n",
+                   sbc_params.x0.get(), sbc_params.x1.get(), sbc_params.y0.get(),
+                   sbc_params.y1.get(), sbc_params.z.get(), sbc_params.num_x, sbc_params.num_y);
+        return os;
+    }
 };
 
 struct FractureParams {
@@ -225,6 +233,16 @@ struct FractureParams {
     int num_orientations;
     Meter spacings_min, spacings_max;
     int num_spacings;
+
+    friend std::ostream& operator<<(std::ostream& os, const FractureParams& params) {
+        fmt::print(os, "[fractures]\n");
+        fmt::print(os,
+                   "phi_hat_x = {}\nphi_hat_y = {}\nnum_orientations = {}\nspacing_min = "
+                   "{}\nspacing_max = {}\nnum_spacings = {}\n\n",
+                   params.phi_hat.x, params.phi_hat.y, params.num_orientations,
+                   params.spacings_min.get(), params.spacings_max.get(), params.num_spacings);
+        return os;
+    }
 };
 
 struct BeamParams {
@@ -254,6 +272,15 @@ struct BeamParams {
     AngularFrequency frequency;
     Second window_length;
     Meter max_stacking_distance;
+
+    friend std::ostream& operator<<(std::ostream& os, const BeamParams& beam_params) {
+        fmt::print(os, "[beam]\n");
+        fmt::print(os,
+                   "width = {}\nfrequency = {}\nwindow_length = {}\nmax_stacking_distance = {}\n\n",
+                   beam_params.width.get(), angular_to_hertz(beam_params.frequency).get(),
+                   beam_params.window_length.get(), beam_params.max_stacking_distance.get());
+        return os;
+    }
 };
 
 struct VelocityModelParams {
@@ -267,6 +294,12 @@ struct VelocityModelParams {
         }
     }
     std::filesystem::path path;
+
+    friend std::ostream& operator<<(std::ostream& os, const VelocityModelParams& vm_params) {
+        fmt::print(os, "[model]\n");
+        fmt::print(os, "file = {}\n\n", vm_params.path.string());
+        return os;
+    }
 };
 
 struct SeismoDataParams {
@@ -281,6 +314,12 @@ struct SeismoDataParams {
         }
     }
     std::filesystem::path path;
+
+    friend std::ostream& operator<<(std::ostream& os, const SeismoDataParams& data_params) {
+        fmt::print(os, "[data]\n");
+        fmt::print(os, "file = {}\n\n", data_params.path.string());
+        return os;
+    }
 };
 
 struct TargetParams {
@@ -305,6 +344,13 @@ struct TargetParams {
         position = {Meter(x), Meter(y), Meter(z)};
     }
     Position position;
+
+    friend std::ostream& operator<<(std::ostream& os, const TargetParams& target_params) {
+        fmt::print(os, "[target]\n");
+        fmt::print(os, "x = {}\ny = {}\nz = {}\n\n", target_params.position.x.get(),
+                   target_params.position.y.get(), target_params.position.z.get());
+        return os;
+    }
 };
 
 struct DoubleBeamOptions {
@@ -314,6 +360,12 @@ struct DoubleBeamOptions {
     SourceBeamCenterParams sbc_params{};
     FractureParams fracture_params{};
     BeamParams beam_params{};
+
+    inline friend std::ostream& operator<<(std::ostream& os, const DoubleBeamOptions& options) {
+        os << options.model_params << options.seismo_data_params << options.target
+           << options.sbc_params << options.fracture_params << options.beam_params;
+        return os;
+    }
 };
 
 inline DoubleBeamOptions read_config_file(const std::filesystem::path& config_path) {

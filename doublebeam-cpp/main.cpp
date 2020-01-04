@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
     std::ofstream file{result_path};
     if (file.is_open()) {
         file << result.data;
+        file << "\n\n" << options;
     }
     return 0;
 }

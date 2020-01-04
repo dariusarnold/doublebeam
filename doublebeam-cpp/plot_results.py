@@ -54,6 +54,9 @@ def parse_file(filename: Path) -> np.ndarray:
     for line in lines:
         if line.startswith("#"):
             continue
+        if line == "\n":
+            # stop parsing on empty line
+            break
         row = [to_complex(x) for x in line.split()]
         data.append(row)
     return np.array(data, dtype=np.complex128)
