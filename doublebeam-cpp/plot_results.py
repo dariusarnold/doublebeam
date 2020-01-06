@@ -121,7 +121,7 @@ def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
                       extract_fracture_params(config), extract_beam_params(config))
 
     values = []
-    for line in data[result_index + len("[result]\n"):-1].split("\n"):
+    for line in data[result_index + len("[result]\n"):].split("\n"):
         row = [to_complex(x) for x in line.split()]
         values.append(row)
     return options, np.array(values, dtype=np.complex128)
