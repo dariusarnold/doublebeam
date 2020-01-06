@@ -98,7 +98,7 @@ private:
  * @param BaseType Underlying type of the thing which the strong type is holding.
  */
 #define DEFINE_STRONG_TYPE(NameOfType, BaseType)                                                   \
-    using NameOfType = NamedType<BaseType, struct PhantomType##NameOfType>;
+    using NameOfType = NamedType<BaseType, struct PhantomType##NameOfType>
 
 /**
  * Helper macro to create user defined literals for a custom type.
@@ -111,7 +111,9 @@ private:
     }                                                                                              \
     inline NameOfType operator""##Suffix(unsigned long long param) {                               \
         return NameOfType(param);                                                                  \
-    }
+    }                                                                                              \
+    static_assert(true, "DEFINE_TYPE_LITERAL requires a semicolon after the macro.")
+
 
 /**
  * Helper macro to create user defined literals for a custom type that multiply input parameter by a
@@ -126,7 +128,8 @@ private:
     }                                                                                              \
     inline NameOfType operator""##Suffix(unsigned long long param) {                               \
         return NameOfType(param * Factor);                                                         \
-    }
+    }                                                                                              \
+    static_assert(true, "DEFINE_TYPE_LITERAL_WITH_FACTOR requires a semicolon after the macro.")
 
 
 /** Examples of the macro usages:
