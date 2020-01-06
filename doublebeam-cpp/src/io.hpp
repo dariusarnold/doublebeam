@@ -317,7 +317,7 @@ struct SeismoDataParams {
 
     friend std::ostream& operator<<(std::ostream& os, const SeismoDataParams& data_params) {
         fmt::print(os, "[data]\n");
-        fmt::print(os, "file = {}\n\n", data_params.path.string());
+        fmt::print(os, "path = {}\n\n", data_params.data_path.string());
         return os;
     }
 };
