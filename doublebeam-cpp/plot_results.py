@@ -177,11 +177,14 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
                                  fr"max stack. dist. $= {options.beam_params.max_stacking_distance:.0f}$ m",
                                  f"{options.source_beam_centers.num_x}x{options.source_beam_centers.num_y} source beam centers:",
                                  fr"    $x = {options.source_beam_centers.x0:.0f}$ ... ${options.source_beam_centers.x1:.0f}$ m",
-                                 fr"    $y = {options.source_beam_centers.y0:.0f}$ ... ${options.source_beam_centers.y1:.0f}$ m"))
+                                 fr"    $y = {options.source_beam_centers.y0:.0f}$ ... ${options.source_beam_centers.y1:.0f}$ m"
+                                 ))
+    path_textbox_content = "\n".join((f"{options.data.model_path}",
+                                      f"{options.data.data_path}"))
     box_properties = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0., 0.15, textbox_content, transform=ax.transAxes, fontsize=10, verticalalignment="top",
             bbox=box_properties)
-
+    ax.text(-0.1, 1, path_textbox_content, transform=ax.transAxes, fontsize=7)
     ticks = list(cbar.get_ticks())
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
     title = ax.set_title(f"Target x = {options.target.x} m, y = {options.target.y} m")
