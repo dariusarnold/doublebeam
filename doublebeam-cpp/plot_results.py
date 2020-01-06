@@ -154,6 +154,9 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     ax.set_rticks(major_ticks_radius)
     major_ticks_angle = np.linspace(0, np.pi, 5)
     ax.set_xticks(major_ticks_angle)
+    # add label to radial axis
+    rlabel_pos = ax.get_rlabel_position()
+    ax.text(np.radians(rlabel_pos-40), ax.get_rmax()/1.45, "Fracture spacing (m)", rotation=0, ha="center", va="center" )
     ax.grid(color="white")
     # limit to half circle
     ax.set_thetamax(180)
