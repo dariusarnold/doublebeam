@@ -17,8 +17,6 @@ num_x = 10
 num_y = 10
 
 [fractures]
-phi_hat_x = 1
-phi_hat_y = 0
 num_orientations = 61
 spacing_min = 100
 spacing_max = 300

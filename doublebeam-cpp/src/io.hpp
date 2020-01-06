@@ -202,14 +202,6 @@ struct FractureParams {
     inline void init_from_file(std::ifstream& config_file) {
         std::string line;
         while (std::getline(config_file, line)) {
-            if (contains(line, "phi_hat_x")) {
-                phi_hat.x = extract_double(line);
-                continue;
-            }
-            if (contains(line, "phi_hat_y")) {
-                phi_hat.y = extract_double(line);
-                continue;
-            }
             if (contains(line, "num_orientations")) {
                 num_orientations = extract_int(line);
                 continue;
@@ -229,7 +221,7 @@ struct FractureParams {
             break;
         }
     }
-    math::Vector2 phi_hat;
+    math::Vector2 phi_hat{1, 0};
     int num_orientations;
     Meter spacings_min, spacings_max;
     int num_spacings;
