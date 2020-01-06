@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     }
     auto options = read_config_file(std::filesystem::path(argv[1]));
     std::ios_base::sync_with_stdio(false);
-    auto vm = read_velocity_file(options.model_params.path);
+    auto vm = read_velocity_file(options.seismo_data_params.velocity_model_path);
     auto db = DoubleBeam(vm);
     auto source_beam_centres = seismo::grid_coordinates(
         options.sbc_params.x0, options.sbc_params.x1, options.sbc_params.y0, options.sbc_params.y1,
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         options.fracture_params.phi_hat, options.fracture_params.num_orientations,
         options.fracture_params.spacings_min, options.fracture_params.spacings_max,
         options.fracture_params.num_spacings);
-    auto data = SeismoData(options.seismo_data_params.path);
+    auto data = SeismoData(options.seismo_data_params.data_path);
     auto a = std::chrono::high_resolution_clock::now();
     auto result =
         db.algorithm(source_beam_centres, options.target.position, data, fractures,

@@ -1,33 +1,31 @@
-[model]
-file = /home/darius/masterarbeit/thomas/velocity_model.txt
-
 [data]
-path = /home/darius/masterarbeit/thomas/
+path = /home/darius/masterarbeit/parx/
+model = /home/darius/masterarbeit/parx/velocity_model.txt
 
 [target]
-x = 600
-y = 600
-z = 420
+x = 500
+y = 500
+z = 500
 
 [source beam centers]
 x0 = 0
-x1 = 1200
+x1 = 1000
 y0 = 0
-y1 = 1200
+y1 = 1000
 z = 0
-num_x = 20
-num_y = 20
+num_x = 10
+num_y = 10
 
 [fractures]
 phi_hat_x = 1
 phi_hat_y = 0
 num_orientations = 61
-spacing_min = 50
-spacing_max = 150
+spacing_min = 100
+spacing_max = 300
 num_spacings = 41
 
 [beam]
 width = 100
-frequency = 20
-window_length = 0.12
+frequency = 10
+window_length = 0.06
 max_stacking_distance = 150

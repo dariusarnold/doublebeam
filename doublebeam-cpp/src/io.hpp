@@ -283,41 +283,28 @@ struct BeamParams {
     }
 };
 
-struct VelocityModelParams {
-    inline void init_from_file(std::ifstream& config_file) {
-        std::string line;
-        while (std::getline(config_file, line)) {
-            if (contains(line, "file")) {
-                path = extract_path(line);
-                break;
-            }
-        }
-    }
-    std::filesystem::path path;
-
-    friend std::ostream& operator<<(std::ostream& os, const VelocityModelParams& vm_params) {
-        fmt::print(os, "[model]\n");
-        fmt::print(os, "file = {}\n\n", vm_params.path.string());
-        return os;
-    }
-};
-
 struct SeismoDataParams {
     inline void init_from_file(std::ifstream& config_file) {
         std::string line;
         while (std::getline(config_file, line)) {
             if (contains(line, "path")) {
-                path = extract_path(line);
+                data_path = extract_path(line);
+                continue;
+            }
+            if (contains(line, "model")) {
+                velocity_model_path = extract_path(line);
                 continue;
             }
             break;
         }
     }
-    std::filesystem::path path;
+    std::filesystem::path data_path;
+    std::filesystem::path velocity_model_path;
 
     friend std::ostream& operator<<(std::ostream& os, const SeismoDataParams& data_params) {
         fmt::print(os, "[data]\n");
-        fmt::print(os, "path = {}\n\n", data_params.data_path.string());
+        fmt::print(os, "path = {}\n", data_params.data_path.string());
+        fmt::print(os, "model = {}\n\n", data_params.velocity_model_path.string());
         return os;
     }
 };
@@ -353,8 +340,11 @@ struct TargetParams {
     }
 };
 
+/*
+ * I am sorry about the mess of this. Especially parsing the options is dirty and brittle.
+ * I should have used a library for this instead of DIY.
+ */
 struct DoubleBeamOptions {
-    VelocityModelParams model_params{};
     SeismoDataParams seismo_data_params{};
     TargetParams target{};
     SourceBeamCenterParams sbc_params{};
@@ -362,7 +352,7 @@ struct DoubleBeamOptions {
     BeamParams beam_params{};
 
     inline friend std::ostream& operator<<(std::ostream& os, const DoubleBeamOptions& options) {
-        os << options.model_params << options.seismo_data_params << options.target
+        os << options.seismo_data_params << options.target
            << options.sbc_params << options.fracture_params << options.beam_params;
         return os;
     }
@@ -376,9 +366,6 @@ inline DoubleBeamOptions read_config_file(const std::filesystem::path& config_pa
     std::string line;
     DoubleBeamOptions options;
     while (std::getline(config_file, line)) {
-        if (contains(line, "[model]")) {
-            options.model_params.init_from_file(config_file);
-        }
         if (contains(line, "[data]")) {
             options.seismo_data_params.init_from_file(config_file);
         }
