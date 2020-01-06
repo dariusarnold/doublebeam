@@ -165,6 +165,17 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     ax.set_ylim(options.fracture_params.spacing_min, options.fracture_params.spacing_max)
     cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15, format="%.1E")
     cbar.set_label(r"$|\sigma|$")
+    textbox_content = "\n".join((fr"$\omega = {options.beam_params.frequency}$ Hz",
+                                 fr"$w = {options.beam_params.width} $ m",
+                                 fr"window $= {options.beam_params.window_length}$ s",
+                                 fr"max stack. dist. $= {options.beam_params.max_stacking_distance:.0f}$ m",
+                                 f"{options.source_beam_centers.num_x}x{options.source_beam_centers.num_y} source beam centers:",
+                                 fr"    $x = {options.source_beam_centers.x0:.0f}$ ... ${options.source_beam_centers.x1:.0f}$ m",
+                                 fr"    $y = {options.source_beam_centers.y0:.0f}$ ... ${options.source_beam_centers.y1:.0f}$ m"))
+    box_properties = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0., 0.15, textbox_content, transform=ax.transAxes, fontsize=10, verticalalignment="top",
+            bbox=box_properties)
+
     ticks = list(cbar.get_ticks())
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
     title = ax.set_title(f"Target x = {options.target.x} m, y = {options.target.y} m")
