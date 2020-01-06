@@ -1,9 +1,11 @@
 import re
 import sys
 from pathlib import Path
+from typing import List, Tuple
+import configparser
+
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
 
 
 def to_complex(s: str) -> complex:
@@ -11,7 +13,7 @@ def to_complex(s: str) -> complex:
 
 
 def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacing: float,
-                                target_id: int, target_x: float, target_y: float, fname):
+                                target_x: float, target_y: float, fname):
     """
     :param data: (N, M) array that contains scattering coefficient sigma. First
     axis gives angle samples, second axis gives fracture spacing.
@@ -40,26 +42,126 @@ def plot_scattering_coefficient(data: np.ndarray, min_spacing: float, max_spacin
     cbar.set_label(r"$|\sigma|$")
     ticks = list(cbar.get_ticks())
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
-    title = ax.set_title(f"Target {target_id}: x = {target_x} m, y = {target_y} m")
+    title = ax.set_title(f"Target x = {target_x} m, y = {target_y} m")
     title.set_position((.5, .85))
     #plt.show()
     #plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
     plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
 
 
-def parse_file(filename: Path) -> np.ndarray:
+class Position:
+
+    def __init__(self, x: float, y: float, z: float):
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+class DataParameters:
+
+    def __init__(self, data_path: Path, velocity_model_path: Path):
+        self.data_path = data_path
+        self.model_path = velocity_model_path
+
+
+class SourceBeamCenters:
+
+    class Rectangle:
+        def __init__(self, top_left: Position, bottom_right: Position):
+            self.top_left = top_left
+            self.bottom_right = bottom_right
+
+    def __init__(self, x0: float, x1: float, y0: float, y1: float, num_x: int, num_y: int):
+        self.rectanlge = SourceBeamCenters.Rectangle(Position(x0, y0, 0), Position(x1, y1, 0))
+        self.num_x = num_x
+        self.num_y = num_y
+
+
+class FractureParameters:
+
+    def __init__(self, num_orientations: int, spacing_min: float, spacing_max: float, num_spacings):
+        self.num_orientations = num_orientations
+        self.spacing_min = spacing_min
+        self.spacing_max = spacing_max
+        self.num_spacings = num_spacings
+
+
+class BeamParameters:
+
+    def __init__(self, width: float, frequency_hz: float, window_length: float, max_stacking_distance: float):
+        self.width = width
+        self.frequency = frequency_hz
+        self.window_length = window_length
+        self.max_stacking_distance = max_stacking_distance
+
+
+class Options:
+
+    def __init__(self, data_params: DataParameters, target: Position, source_beam_centers: SourceBeamCenters,
+                 fracture_params: FractureParameters, beam_params: BeamParameters):
+        self.data = data_params
+        self.target = target
+        self.source_beam_centers = source_beam_centers
+        self.fracture_params = fracture_params
+        self.beam_params = beam_params
+
+
+def extract_target(config: configparser.ConfigParser) -> Position:
+    x = config["target"].getfloat("x")
+    y = config["target"].getfloat("y")
+    z = config["target"].getfloat("z")
+    return Position(x, y, z)
+
+
+def extract_data(config: configparser.ConfigParser) -> DataParameters:
+    data_path = Path(config["data"]["path"])
+    model_path = Path(config["data"]["model"])
+    return DataParameters(data_path, model_path)
+
+
+def extract_source_beam_center_params(config: configparser.ConfigParser) -> SourceBeamCenters:
+    sbc_config_part = config["source beam centers"]
+    x0 = sbc_config_part.getfloat("x0")
+    x1 = sbc_config_part.getfloat("x1")
+    y0 = sbc_config_part.getfloat("y0")
+    y1 = sbc_config_part.getfloat("y1")
+    num_x = sbc_config_part.getint("num_x")
+    num_y = sbc_config_part.getint("num_y")
+    return SourceBeamCenters(x0, x1, y0, y1, num_x, num_y)
+
+
+def extract_fracture_params(config: configparser.ConfigParser) -> FractureParameters:
+    frac_conf_part = config["fractures"]
+    num_orientations = frac_conf_part.getint("num_orientations")
+    spacing_min = frac_conf_part.getfloat("spacing_min")
+    spacing_max = frac_conf_part.getfloat("spacing_max")
+    num_spacings = frac_conf_part.getint("num_spacings")
+    return FractureParameters(num_orientations, spacing_min, spacing_max, num_spacings)
+
+
+def extract_beam_params(config: configparser.ConfigParser) -> BeamParameters:
+    width = config["beam"].getfloat("width")
+    freq = config["beam"].getfloat("frequency")
+    window_length = config["beam"].getfloat("window_length")
+    max_stacking_distance = config["beam"].getfloat("max_stacking_distance")
+    return BeamParameters(width, freq, window_length, max_stacking_distance)
+
+
+def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
     with open(filename) as f:
-        lines = f.readlines()
-    data = []
-    for line in lines:
-        if line.startswith("#"):
-            continue
-        if line == "\n":
-            # stop parsing on empty line
-            break
+        data = f.read()
+    # after [result] section the file contains the results of the doublebeam algorithm (stacking amplitude sigma)
+    result_index = data.index("[result]")
+    config = configparser.ConfigParser()
+    config.read_string(data[0:result_index])
+    options = Options(extract_data(config), extract_target(config), extract_source_beam_center_params(config),
+                      extract_fracture_params(config), extract_beam_params(config))
+
+    values = []
+    for line in data[result_index+len("[result]\n"):-1].split("\n"):
         row = [to_complex(x) for x in line.split()]
-        data.append(row)
-    return np.array(data, dtype=np.complex128)
+        values.append(row)
+    return options, np.array(values, dtype=np.complex128)
 
 
 def find_last_result(dir : Path) -> Path:
@@ -86,8 +188,9 @@ def main():
         # if directory, find last result and plot that
         fname = find_last_result(fname)
         print(f"Plotting {fname}")
-    data = parse_file(fname)
-    plot_scattering_coefficient(np.abs(data), 100, 300, 0, 500, 500, fname)
+    options, data = parse_file(fname)
+    plot_scattering_coefficient(np.abs(data), options.fracture_params.spacing_min, options.fracture_params.spacing_max,
+                                options.target.x, options.target.y, fname)
 
 
 if __name__ == '__main__':
