@@ -552,7 +552,7 @@ namespace math {
                                         << "Invalid input bin " << target_frequency_bin << ".");
         }
         const type N_float(N);
-        const type pi{M_PIl};
+        const type pi{M_PI};
         const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
         // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
         // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].

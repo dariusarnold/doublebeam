@@ -1,6 +1,8 @@
 #ifndef DOUBLEBEAM_CPP_UNITS_HPP
 #define DOUBLEBEAM_CPP_UNITS_HPP
 
+// define macro to get access to constants in Mac clang
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "strong_types.hpp"
