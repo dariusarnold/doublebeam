@@ -191,7 +191,7 @@ struct SourceBeamCenterParams {
 
     friend std::ostream& operator<<(std::ostream& os, const SourceBeamCenterParams& sbc_params) {
         fmt::print(os, "[source beam centers]\n");
-        fmt::print(os, "x0 = {}\nx1 = {}\n y0 = {}\ny1 = {}\nz = {}\nnum_x = {}\nnum_y = {}\n\n",
+        fmt::print(os, "x0 = {}\nx1 = {}\ny0 = {}\ny1 = {}\nz = {}\nnum_x = {}\nnum_y = {}\n\n",
                    sbc_params.x0.get(), sbc_params.x1.get(), sbc_params.y0.get(),
                    sbc_params.y1.get(), sbc_params.z.get(), sbc_params.num_x, sbc_params.num_y);
         return os;
