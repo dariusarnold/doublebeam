@@ -112,14 +112,14 @@ def extract_beam_params(config: configparser.ConfigParser) -> BeamParameters:
 def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
     with open(filename) as f:
         data = f.read()
-    # after [result] section the file contains the results of the doublebeam algorithm (stacking amplitude sigma)
     result_index = data.index("[result]")
+    # header contains parameters used to create the results
     config = configparser.ConfigParser()
     config.read_string(data[0:result_index])
     options = Options(extract_data(config), extract_target(config),
                       extract_source_beam_center_params(config),
                       extract_fracture_params(config), extract_beam_params(config))
-
+    # after [result] section the file contains the results of the doublebeam algorithm (stacking amplitude sigma)
     values = []
     for line in data[result_index + len("[result]\n"):].split("\n"):
         row = [to_complex(x) for x in line.split()]
