@@ -1,12 +1,7 @@
 #include <chrono>
-#include <complex>
 
 #include "doublebeam.hpp"
-#include "eigen_helpers.hpp"
 #include "io.hpp"
-#include "twopoint.hpp"
-#include "units.hpp"
-#include "utils.hpp"
 
 
 int main(int argc, char* argv[]) {
