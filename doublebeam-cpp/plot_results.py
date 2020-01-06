@@ -12,7 +12,6 @@ def to_complex(s: str) -> complex:
     return complex(*[float(x) for x in s[1:-1].split(",")])
 
 
-
 class Position:
 
     def __init__(self, x: float, y: float, z: float):
@@ -49,7 +48,8 @@ class FractureParameters:
 
 class BeamParameters:
 
-    def __init__(self, width: float, frequency_hz: float, window_length: float, max_stacking_distance: float):
+    def __init__(self, width: float, frequency_hz: float, window_length: float,
+                 max_stacking_distance: float):
         self.width = width
         self.frequency = frequency_hz
         self.window_length = window_length
@@ -58,7 +58,8 @@ class BeamParameters:
 
 class Options:
 
-    def __init__(self, data_params: DataParameters, target: Position, source_beam_centers: SourceBeamCenters,
+    def __init__(self, data_params: DataParameters, target: Position,
+                 source_beam_centers: SourceBeamCenters,
                  fracture_params: FractureParameters, beam_params: BeamParameters):
         self.data = data_params
         self.target = target
@@ -115,17 +116,18 @@ def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
     result_index = data.index("[result]")
     config = configparser.ConfigParser()
     config.read_string(data[0:result_index])
-    options = Options(extract_data(config), extract_target(config), extract_source_beam_center_params(config),
+    options = Options(extract_data(config), extract_target(config),
+                      extract_source_beam_center_params(config),
                       extract_fracture_params(config), extract_beam_params(config))
 
     values = []
-    for line in data[result_index+len("[result]\n"):-1].split("\n"):
+    for line in data[result_index + len("[result]\n"):-1].split("\n"):
         row = [to_complex(x) for x in line.split()]
         values.append(row)
     return options, np.array(values, dtype=np.complex128)
 
 
-def find_last_result(dir : Path) -> Path:
+def find_last_result(dir: Path) -> Path:
     """
     Find last result.txt in directory and return path to it.
     """
@@ -147,16 +149,20 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     fig, ax = plt.subplots(subplot_kw={"polar": True}, figsize=(6, 6), dpi=210)
     angles = np.radians(np.linspace(0, 180, data.shape[1] + 1))
     # +1 otherwise last column of data will be ignored
-    radii = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max, data.shape[0] + 1)
+    radii = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max,
+                        data.shape[0] + 1)
     im = ax.pcolormesh(angles, radii, data)
     # add grid
-    major_ticks_radius = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max, 5)
+    major_ticks_radius = np.linspace(options.fracture_params.spacing_min,
+                                     options.fracture_params.spacing_max, 5)
     ax.set_rticks(major_ticks_radius)
     major_ticks_angle = np.linspace(0, np.pi, 5)
     ax.set_xticks(major_ticks_angle)
     # add label to radial axis
     rlabel_pos = ax.get_rlabel_position()
-    ax.text(np.radians(rlabel_pos-40), ax.get_rmax()/1.45, "Fracture spacing (m)", rotation=0, ha="center", va="center" )
+    ax.text(np.radians(rlabel_pos - 40), ax.get_rmax() / 1.45, "Fracture spacing (m)", rotation=0,
+            ha="center",
+            va="center")
     ax.grid(color="white")
     # limit to half circle
     ax.set_thetamax(180)
@@ -180,10 +186,9 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
     title = ax.set_title(f"Target x = {options.target.x} m, y = {options.target.y} m")
     title.set_position((.5, .85))
-    #plt.show()
-    #plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
+    # plt.show()
+    # plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
     plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
-
 
 
 def main():
