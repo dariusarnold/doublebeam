@@ -29,14 +29,11 @@ class DataParameters:
 
 
 class SourceBeamCenters:
-
-    class Rectangle:
-        def __init__(self, top_left: Position, bottom_right: Position):
-            self.top_left = top_left
-            self.bottom_right = bottom_right
-
     def __init__(self, x0: float, x1: float, y0: float, y1: float, num_x: int, num_y: int):
-        self.rectanlge = SourceBeamCenters.Rectangle(Position(x0, y0, 0), Position(x1, y1, 0))
+        self.x0 = x0
+        self.x1 = x1
+        self.y0 = y0
+        self.y1 = y1
         self.num_x = num_x
         self.num_y = num_y
 
