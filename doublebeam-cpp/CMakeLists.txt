@@ -74,6 +74,11 @@ add_subdirectory(external)
 # load unit tests
 add_subdirectory(tests)
 
+set(FFTW_LINK_DIR CACHE PATH "Link directory of fftw, to be used on mac where findFFTW was not working.")
+if (APPLE)
+    target_link_directories(doublebeam_lib PUBLIC ${FFTW_LINK_DIR})
+endif()
+
 
 # Check if all headers are standalone includable.
 # Currently this is only tested when cmake is called, since I haven't found a way to export this as a target.
