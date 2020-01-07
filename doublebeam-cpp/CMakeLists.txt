@@ -50,7 +50,7 @@ target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
 # Set ENABLE_LTO to false to disable link time optimization, disabling the compiler
 # from optimizing across translation units. This results in lower linking times,
 # but might increase runtime of the program.
-set(ENABLE_LTO true)
+option(ENABLE_LTO "Set to false to disable link time optimization." true)
 if (ENABLE_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT supported OUTPUT error LANGUAGES CXX)
