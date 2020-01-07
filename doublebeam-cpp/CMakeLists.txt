@@ -51,8 +51,10 @@ target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
 # from optimizing across translation units. This results in lower linking times,
 # but might increase runtime of the program.
 set(ENABLE_LTO true)
-include(CheckIPOSupported)
-check_ipo_supported(RESULT supported OUTPUT error LANGUAGES CXX)
+if (ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT supported OUTPUT error LANGUAGES CXX)
+endif()
 if (ENABLE_LTO AND supported)
     message(STATUS "IPO/LTO enabled")
     set_property(TARGET doublebeam_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
