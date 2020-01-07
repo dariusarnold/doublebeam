@@ -16,11 +16,11 @@ find_package(fmt REQUIRED)
 find_package(FFTW REQUIRED)
 
 
-set(WARNINGS_GCC -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
+set(WARNINGS_GCC -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
         -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation -Weffc++
         -Wshadow -Wextra-semi)
 
-set(WARNINGS_CLANG -Werror -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
+set(WARNINGS_CLANG -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
         -Wdouble-promotion -Woverloaded-shift-op-parentheses -Wshadow -Wextra-semi -Wno-c++98-compat-extra-semi)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
