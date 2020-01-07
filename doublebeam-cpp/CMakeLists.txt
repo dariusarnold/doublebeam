@@ -4,31 +4,15 @@ project(doublebeam_cpp CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/findFFTW")
+
 
 # set boost path with BOOST_ROOT if not globally installed
 find_package(Boost REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(nanoflann REQUIRED)
 find_package(fmt REQUIRED)
-
-# the following is taken from https://github.com/egpbos/findFFTW
-configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download)
-if (result)
-    message(FATAL_ERROR "CMake step for findFFTW failed: ${result}")
-else ()
-    message("CMake step for findFFTW completed (${result}).")
-endif ()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download)
-if (result)
-    message(FATAL_ERROR "Build step for findFFTW failed: ${result}")
-endif ()
-set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
 find_package(FFTW REQUIRED)
 
 
