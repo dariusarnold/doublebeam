@@ -13,7 +13,7 @@ find_package(Boost REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(nanoflann REQUIRED)
 find_package(fmt REQUIRED)
-find_package(FFTW REQUIRED)
+find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
 
 
 set(WARNINGS_GCC -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
