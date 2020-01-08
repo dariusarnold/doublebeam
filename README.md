@@ -1,10 +1,17 @@
 # Double gaussian beam
 
-TODO: short introduction
+Find out fracture orientation and spacing from seismic data.
 
 ## Setup
 
-TODO: add conda environment file
+Required libraries and their Debian package names if applicable.
+
+- fmt (libfmt-dev)
+- Eigen3 (libeigen3-dev)
+- FFTW3 (libfftw3-dev)
+- Microsoft Guideline Support Library (libmsgsl-dev)
+- Boost (libboost-dev)
+- nanoflann
 
 ## Inputs
 
