@@ -246,7 +246,8 @@ RayTracingResult<Beam> RayTracer::trace_beam(const RayState& initial_state, Mete
     auto v0 = model.eval_at(position).value();
     // initial values for P, Q
     Eigen::Matrix2cd P;
-    P << 1j / v0.get(), 0, 0, 1j / v0.get();
+    using namespace std::complex_literals;
+    P << 1i / v0.get(), 0, 0, 1i / v0.get();
     Eigen::Matrix2cd Q;
     Q << beam_frequency.get() * std::pow(beam_width.get(), 2) / v0.get(), 0, 0,
         beam_frequency.get() * std::pow(beam_width.get(), 2) / v0.get();
