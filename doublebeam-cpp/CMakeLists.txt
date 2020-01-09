@@ -12,7 +12,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/fi
 find_package(Boost REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(nanoflann REQUIRED)
-find_package(fmt REQUIRED)
+find_package(fmt 5 REQUIRED)
 find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
 
 
