@@ -11,10 +11,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/fi
 # set boost path with BOOST_ROOT if not globally installed
 find_package(Boost REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-find_package(nanoflann REQUIRED)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
 
+message("Setting up nanoflann.")
+execute_process(COMMAND git submodule update --init -- external/nanoflann
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(external/nanoflann EXCLUDE_FROM_ALL)
 
 set(WARNINGS_GCC -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
         -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation -Weffc++
@@ -29,12 +32,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(WARNINGS ${WARNINGS_GCC})
 endif()
 
-
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/ray.cpp src/beam.cpp src/printing.cpp src/io.cpp src/seismodata.cpp
         src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp src/raytracing_types.cpp src/kdtree.cpp src/kdtree.hpp)
 target_link_libraries(doublebeam_lib PRIVATE Boost::boost stdc++fs FFTW::Float FFTW::Double fmt::fmt nanoflann::nanoflann)
-target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy)
+target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_include_directories(doublebeam_lib PRIVATE FFTW_INCLUDE_DIRS)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})

@@ -11,7 +11,6 @@ Required libraries and their Debian package names if applicable.
 - FFTW3 (libfftw3-dev)
 - Microsoft Guideline Support Library (libmsgsl-dev)
 - Boost (libboost-dev)
-- nanoflann
 
 ## Inputs
 
