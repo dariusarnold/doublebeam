@@ -101,12 +101,7 @@ struct RayState {
 bool operator==(const RayState& ray_state1, const RayState& ray_state2);
 bool operator!=(const RayState& ray_state1, const RayState& ray_state2);
 
-
 std::ostream& operator<<(std::ostream& os, RayState ray_state);
-
-using position_t = std::tuple<double, double, double>;
-
-using slowness_t = std::tuple<double, double, double>;
 
 using complex = std::complex<double>;
 

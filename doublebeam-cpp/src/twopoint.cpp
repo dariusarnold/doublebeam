@@ -39,12 +39,6 @@ TwoPointRayTracing::array_t::value_type nansum(const TwoPointRayTracing::array_t
     return sum;
 }
 
-
-std::string stringify(position_t pos) {
-    auto [x, y, z] = pos;
-    return "(" + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z) + ")";
-}
-
 // eq. A3
 template <typename A>
 TwoPointRayTracing::array_t X_tilde(double q, const A& epsilon_tilde, const A& h_tilde) {

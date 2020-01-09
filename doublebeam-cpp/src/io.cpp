@@ -5,14 +5,6 @@
 #include "io.hpp"
 #include "utils.hpp"
 
-std::istream& operator>>(std::istream& is, position_t& pos) {
-    // skip first column (receiver number)
-    int i;
-    is >> i;
-    // get x, y, z position
-    is >> std::get<0>(pos) >> std::get<1>(pos) >> std::get<2>(pos);
-    return is;
-}
 
 std::vector<Receiver> read_receiverfile(std::filesystem::path path) {
     std::ifstream file{path};

@@ -26,7 +26,7 @@ RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radia
 /**
  * Overload for init_state taking tuple of x, y, z coordinate.
  */
-RayState init_state(position_t position, const VelocityModel& model, Radian theta, Radian phi,
+RayState init_state(std::tuple<double, double, double> position, const VelocityModel& model, Radian theta, Radian phi,
                     TravelTime T = TravelTime(0_second));
 
 /**

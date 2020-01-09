@@ -157,7 +157,7 @@ Position operator-(const Position& a, const Position& b) {
     return Position(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-position_t make_tuple(const Position& position) {
+std::tuple<double, double, double> make_tuple(const Position& position) {
     return {position.x.get(), position.y.get(), position.z.get()};
 }
 
