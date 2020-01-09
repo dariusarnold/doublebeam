@@ -81,8 +81,8 @@ DoubleBeam::DoubleBeam(const VelocityModel& model_) :
 #define msg(x)
 #endif
 
-using vector_t = std::tuple<double, double, double>;
 struct UnitVectors {
+    using vector_t = Eigen::RowVector3d;
     vector_t e1, e2;
 };
 
@@ -109,12 +109,13 @@ UnitVectors get_ray_centred_unit_vectors(const Beam& beam) {
     // Select unit vector perpendicular to ray plane. While Cerveny2001 mentions selecting e2 to be
     // perpendicular at the initial point, we can also select it at the last point (as done here)
     // since e2 will be constant (as said by Cerveny2001 as well).
-    auto e2 = math::cross(0, 0, 1, px.get(), py.get(), 0);
+    const UnitVectors::vector_t z_axis = (UnitVectors::vector_t() << 0, 0, 1).finished();
+    Eigen::Vector3d e2 = z_axis.cross(Eigen::Vector3d(px.get(), py.get(), 0));
     // find other unit vector
-    auto e1 = math::cross(-px.get(), -py.get(), -pz.get(), std::get<0>(e2), std::get<1>(e2),
-                          std::get<2>(e2));
-    e2 = std::apply(math::normalize, e2);
-    e1 = std::apply(math::normalize, e1);
+    const UnitVectors::vector_t p(px.get(), py.get(), pz.get());
+    UnitVectors::vector_t e1 = -1 * p.cross(e2);
+    e1.normalize();
+    e2.normalize();
     return {e1, e2};
 }
 
@@ -152,35 +153,31 @@ struct BeamEvalResult {
     std::complex<double> complex_traveltime;
 };
 
-
 Position operator-(const Position& a, const Position& b) {
     return Position(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-std::tuple<double, double, double> make_tuple(const Position& position) {
+Eigen::Vector3d make_vector(const Position& position) {
     return {position.x.get(), position.y.get(), position.z.get()};
 }
 
 BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
     using namespace std::complex_literals;
     auto [e1, e2] = get_ray_centred_unit_vectors(beam);
-    auto [e1x, e1y, e1z] = e1;
-    auto [e2x, e2y, e2z] = e2;
-    auto e3 = math::cross(e1x, e1y, e1z, e2x, e2y, e2z);
-    e3 = math::scale_vector(e3, 1);
-    auto [e3x, e3y, e3z] = e3;
+    UnitVectors::vector_t e3 = e1.cross(e2);
+    e3.normalize();
     // We want to convert from general Cartesian system to ray centred, use right eq. 4.1.31 from
     // Cerveny2001.
-    auto transformation_matrix = std::make_tuple(e1x, e1y, e1z, e2x, e2y, e2z, e3x, e3y, e3z);
-    auto [q1, q2, q3] =
-        math::dot(transformation_matrix, make_tuple(position - beam.last_position()));
-    const Meter total_arclength = beam.last_arclength().length + Meter(q3);
+    Eigen::Matrix3d transformation_matrix;
+    transformation_matrix << e1, e2, e3;
+    const Eigen::Vector3d q = transformation_matrix * make_vector(position - beam.last_position());
+    const Meter total_arclength = beam.last_arclength().length + Meter(q[2]);
     if (total_arclength < 0_meter) {
         throw std::runtime_error("Negative arclength");
     }
     auto amp = gb_amplitude(beam, Arclength(total_arclength));
     std::complex<double> complex_traveltime;
-    auto exp = gb_exp(beam, q1, q2, Arclength(total_arclength), complex_traveltime);
+    auto exp = gb_exp(beam, q[0], q[1], Arclength(total_arclength), complex_traveltime);
     return {std::conj(amp * exp), complex_traveltime};
 }
 
