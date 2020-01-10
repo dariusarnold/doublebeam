@@ -260,6 +260,8 @@ namespace math {
 
     /**
      * Round value to given number of digits after the decimal dot.
+     * Due to floating point precision the resulting value is not guarantueed to have only places
+     * digits after the decimal dot.
      * @tparam D Floating point type.
      * @tparam I Integral type.
      * @param value Value to round.
