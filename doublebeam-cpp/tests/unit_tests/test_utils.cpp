@@ -420,9 +420,17 @@ TEST(TestGoertzel, TestDoubleNumbers) {
     }
 }
 
-TEST(TestGoertzel, TestClosestFrequency) {
+
+struct TestClosestFrequencyData {
+    Frequency freq;
+    size_t expected_bin;
+};
+
+using namespace std::complex_literals;
+
+class TestClosestFrequency : public testing::TestWithParam<TestClosestFrequencyData> {
+protected:
     std::vector<double> input{0, 1, 2, 3, 2, 1, 0};
-    using namespace std::complex_literals;
     //
     std::vector<std::complex<double>> expected_result{9. + 0i,
                                                       -4.5489173395223084 + -2.1906431337674093i,
@@ -433,24 +441,27 @@ TEST(TestGoertzel, TestClosestFrequency) {
                                                       -4.5489173395223013,
                                                       2.1906431337674155i};
     double sample_rate_s = 0.04;
-    AngularFrequency sampling_frequency(2 * M_PI / sample_rate_s);
+    AngularFrequency sampling_frequency{2 * M_PI / sample_rate_s};
     // assuming input is sampled with sampling rate of 0.04 seconds this would give us
     // 0., 3.57142857, 7.14285714, 10.71428571 as the frequency bins (Hz) of the result.
-    EXPECT_EQ(math::fft_closest_frequency(input, 0._rad_per_sec, sampling_frequency),
-              expected_result[0]);
-    EXPECT_EQ(
-        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 1.5), sampling_frequency),
-        expected_result[0]);
-    EXPECT_EQ(
-        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 2.5), sampling_frequency),
-        expected_result[1]);
-    EXPECT_EQ(
-        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 5.5), sampling_frequency),
-        expected_result[2]);
-    EXPECT_EQ(
-        math::fft_closest_frequency(input, AngularFrequency(2 * M_PI * 11.), sampling_frequency),
-        expected_result[3]);
+};
+
+
+TEST_P(TestClosestFrequency, TestIfCorrectBinIsCalculated) {
+    auto [frequency, bin] = GetParam();
+    EXPECT_EQ(math::fft_closest_frequency(input, hertz_to_angular(frequency), sampling_frequency),
+              expected_result[bin]) << "Error for frequency " << frequency << " hz.";
 }
+
+INSTANTIATE_TEST_CASE_P(NormalTests, TestClosestFrequency,
+                        testing::Values(TestClosestFrequencyData{0_hertz, 0},
+                                        TestClosestFrequencyData{1.5_hertz, 0},
+                                        TestClosestFrequencyData{1.78_hertz,0},
+                                        TestClosestFrequencyData{2.5_hertz, 1},
+                                        TestClosestFrequencyData{5.5_hertz, 2},
+                                        TestClosestFrequencyData{11_hertz, 3}));
+
+
 
 TEST(TestGoertzel, TestSingleRealInputValue) {
     std::vector<double> input{42};
