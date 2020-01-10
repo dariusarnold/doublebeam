@@ -580,13 +580,14 @@ namespace math {
                                                           long long target_frequency_bin) {
         return goertzel(data.begin(), data.end(), target_frequency_bin);
     }
-
     /**
-     * Calculate frequency bin closest to target frequency.
-     * @param N Number of data points in time domain signal.
-     * @param target_frequency
-     * @param sampling_frequency
-     * @return
+     * Calculate bin closest to target frequency for a signal with a given sample frequency and
+     * number of points N
+     * @param N Number of points in time signal.
+     * @param target_frequency Desired frequency. Bin index closest to this frequency will be found.
+     * @param sampling_frequency Sampling frequency of time domain signal.
+     * @return Bin index closest to target frequency. Indices start with 0 and go up to
+     * floor(N/2) + 1 for a real signal.
      */
     size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
                               AngularFrequency sampling_frequency);
@@ -649,17 +650,6 @@ namespace math {
         return between(a.get(), x.get(), b.get());
     }
 
-    /**
-     * Calculate bin closest to target frequency. for a signal with a given sample frequency and
-     * number of points N
-     * @param N Number of points in time signal.
-     * @param target_frequency Desired frequency. Bin index closest to this frequency will be found.
-     * @param sampling_frequency Sampling frequency of time domain signal.
-     * @return Bin index closest to target frequency. Indices start with 0 and go up to
-     * floor(N/2) + 1 for a real signal.
-     */
-    size_t calc_frequency_bin(size_t N, AngularFrequency target_frequency,
-                              AngularFrequency sampling_frequency);
 
     /**
      * Return sign of x.
