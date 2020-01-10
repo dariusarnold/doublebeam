@@ -50,7 +50,7 @@ namespace seismo {
         }
     }
 
-    std::vector<WaveType> make_ray_code(const std::string s) {
+    std::vector<WaveType> make_ray_code(std::string_view s) {
         std::vector<WaveType> ray_code;
         for (char c : s) {
             ray_code.push_back(to_wavetype(c));

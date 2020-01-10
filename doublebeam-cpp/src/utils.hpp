@@ -6,6 +6,7 @@
 #include <tuple>
 #include <type_traits>
 #include <vector>
+#include <string_view>
 
 #include "raytracing_types.hpp"
 #include "seismodata.hpp"
@@ -126,7 +127,7 @@ namespace seismo {
      * @param s String of T, R, where T specifies the transmitted wave and R the reflected wave.
      * @return Ray code.
      */
-    std::vector<WaveType> make_ray_code(const std::string s);
+    std::vector<WaveType> make_ray_code(std::string_view s);
 
     /**
      * Transform a ray code to a sequence of layer indices.
