@@ -507,66 +507,6 @@ TEST(TestBetween, TestNormalInclusivityBothSides) {
     EXPECT_TRUE(result);
 }
 
-TEST(TestMatrixInverse, TestCase1) {
-    auto [i11, i12, i13, i21, i22, i23, i31, i32, i33] =
-        math::inv(1., 2., 0., 3., 0., 7., 0., 6., 5.);
-    auto [e11, e12, e13, e21, e22, e23, e31, e32, e33] =
-        std::make_tuple(0.5833333333333333333, 0.13888888888888888889, -0.19444444444444444443,
-                        0.20833333333333333335, -0.069444444444444444444, 0.097222222222222222216,
-                        -0.25, 0.083333333333333333333, 0.083333333333333333333);
-    // I think this can be done better but I dont know how since get expects a constant expression
-    // index.
-    EXPECT_FLOAT_EQ(i11, e11);
-    EXPECT_FLOAT_EQ(i12, e12);
-    EXPECT_FLOAT_EQ(i13, e13);
-    EXPECT_FLOAT_EQ(i21, e21);
-    EXPECT_FLOAT_EQ(i22, e22);
-    EXPECT_FLOAT_EQ(i23, e23);
-    EXPECT_FLOAT_EQ(i31, e31);
-    EXPECT_FLOAT_EQ(i32, e32);
-    EXPECT_FLOAT_EQ(i33, e33);
-}
-
-TEST(TestVectorScaling, TestMakingVectorLonger) {
-    auto [x, y, z] = math::scale_vector({1, 0, 0}, 2.5);
-    EXPECT_DOUBLE_EQ(x, 2.5);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 0);
-}
-
-TEST(TestVectorScaling, TestMakingVectorShorter) {
-    auto [x, y, z] = math::scale_vector({1, 0, 0}, .55);
-    EXPECT_DOUBLE_EQ(x, .55);
-    EXPECT_EQ(y, 0);
-    EXPECT_EQ(z, 0);
-}
-
-struct TestCrossProdcutData {
-    std::tuple<double, double, double> vector1;
-    std::tuple<double, double, double> vector2;
-    std::tuple<double, double, double> result_vector;
-};
-
-class TestCrossProduct : public testing::TestWithParam<TestCrossProdcutData> {};
-
-TEST_P(TestCrossProduct, TestByComparingWithGivenValidResult) {
-    auto data = GetParam();
-    auto [x1, y1, z1] = data.vector1;
-    auto [x2, y2, z2] = data.vector2;
-    auto [result_x, result_y, result_z] = data.result_vector;
-    auto [x, y, z] = math::cross(x1, y1, z1, x2, y2, z2);
-
-    EXPECT_EQ(x, result_x);
-    EXPECT_EQ(y, result_y);
-    EXPECT_EQ(z, result_z);
-}
-
-INSTANTIATE_TEST_SUITE_P(TestUnitVectors, TestCrossProduct,
-                         testing::Values(TestCrossProdcutData{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
-                                         TestCrossProdcutData{{0, 1, 0}, {1, 0, 0}, {0, 0, -1}},
-                                         TestCrossProdcutData{{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}));
-
-
 TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
     math::Vector2 central_direction{1, 1};
     auto number_of_vectors_to_generate = 3;
