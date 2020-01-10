@@ -73,6 +73,22 @@ namespace impl {
         using type = typename get_type_helper<std::is_arithmetic_v<T>, T>::type;
     };
 
+    template <typename T, typename = void>
+    struct is_container : std::false_type {};
+
+    template <typename T>
+    struct is_container<T, std::conditional_t<false,
+        std::void_t<decltype(std::declval<T>().begin()),
+            decltype(std::declval<T>().end())>,
+        void>> : public std::true_type {};
+
+    template <typename T, typename = void>
+    struct is_iterator : std::false_type {};
+
+    template <typename T>
+    struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
+        : std::true_type {};
+
 } // namespace impl
 
 
@@ -254,23 +270,6 @@ namespace math {
         return std::floor(value * std::pow(10, places) + 0.5) / std::pow(10, places);
     }
 
-
-    template <typename T, typename = void>
-    struct is_container : std::false_type {};
-
-    template <typename T>
-    struct is_container<T, std::conditional_t<false,
-                                              std::void_t<decltype(std::declval<T>().begin()),
-                                                          decltype(std::declval<T>().end())>,
-                                              void>> : public std::true_type {};
-
-    template <typename T, typename = void>
-    struct is_iterator : std::false_type {};
-
-    template <typename T>
-    struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
-            : std::true_type {};
-
     /**
      * Cumulatively integrate y using the composite trapezoidal rule, where distance is the equal
      * spacing between values of y.
@@ -282,7 +281,7 @@ namespace math {
      * given, result will have one less element than y.
      * @return Vector of cumulative integration results of y.
      */
-    template <typename Iterator, std::enable_if_t<is_iterator<Iterator>::value, int> = 0>
+    template <typename Iterator, std::enable_if_t<impl::is_iterator<Iterator>::value, int> = 0>
     std::vector<double>
     cumtrapz(Iterator ybegin, Iterator yend, typename Iterator::value_type distance = 1.,
              typename Iterator::value_type initial =
@@ -319,7 +318,7 @@ namespace math {
      * @param initial
      * @return
      */
-    template <typename Sequence, std::enable_if_t<is_container<Sequence>::value, int> = 0>
+    template <typename Sequence, std::enable_if_t<impl::is_container<Sequence>::value, int> = 0>
     std::vector<typename Sequence::value_type>
     cumtrapz(const Sequence& y, typename Sequence::value_type distance = 1.,
              typename Sequence::value_type initial =
@@ -339,7 +338,7 @@ namespace math {
      * given, result will have one less element than y.
      * @return Vector of cumulative integration results of y(x).
      */
-    template <typename Iterator, std::enable_if_t<is_iterator<Iterator>::value, int> = 0>
+    template <typename Iterator, std::enable_if_t<impl::is_iterator<Iterator>::value, int> = 0>
     std::vector<double>
     cumtrapz(Iterator ybegin, Iterator yend, Iterator xbegin, Iterator xend,
              typename Iterator::value_type initial =
@@ -382,8 +381,8 @@ namespace math {
      * @return
      */
     template <typename Sequence1, typename Sequence2,
-              std::enable_if_t<is_container<Sequence1>::value, int> = 0,
-              std::enable_if_t<is_container<Sequence2>::value, int> = 0>
+              std::enable_if_t<impl::is_container<Sequence1>::value, int> = 0,
+              std::enable_if_t<impl::is_container<Sequence2>::value, int> = 0>
     std::vector<double>
     cumtrapz(const Sequence1& y, const Sequence2& x,
              typename Sequence1::value_type initial =
