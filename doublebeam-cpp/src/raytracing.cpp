@@ -217,16 +217,6 @@ public:
 };
 
 
-/**
- * Calculate distance between point a and b.
- */
-Meter distance(const Position& a, const Position& b) {
-    auto [ax, ay, az] = a;
-    auto [bx, by, bz] = b;
-    return Meter(std::sqrt(std::pow(ax.get() - bx.get(), 2) + std::pow(ay.get() - by.get(), 2) +
-                           std::pow(az.get() - bz.get(), 2)));
-}
-
 bool not_at_last_ray_segment(size_t segment_index, size_t ray_size) {
     return segment_index < ray_size - 1;
 }

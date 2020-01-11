@@ -29,6 +29,14 @@ struct Position : boost::equality_comparable<Position> {
 };
 
 /**
+ * Calculate distance between point a and b.
+ */
+inline Meter distance(const Position& a, const Position& b) {
+    return Meter(std::sqrt(std::pow(a.x.get() - b.x.get(), 2) + std::pow(a.y.get() - b.y.get(), 2) +
+                           std::pow(a.z.get() - b.z.get(), 2)));
+}
+
+/**
  * Position is only equality comparable (!=, ==)
  */
 bool operator==(const Position& position1, const Position& position2);
