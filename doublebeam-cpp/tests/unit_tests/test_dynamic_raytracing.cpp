@@ -6,6 +6,7 @@
 #include "eigen_helpers.hpp"
 #include "model.hpp"
 #include "raytracing.hpp"
+#include "twopoint.hpp"
 #include "utils.hpp"
 
 
@@ -225,3 +226,27 @@ TEST_F(DynamicRaytracingBase, TestIfFailingCaseWorks) {
     EXPECT_EQ(rt.trace_beam(initial_state, 10_meter, hertz_to_angular(45_hertz), "TTTT").status,
               Status::OutOfBounds);
 }
+
+
+class TestPositionReached : public DynamicRaytracingBase,
+                            public testing::WithParamInterface<Position> {
+protected:
+    TwoPointRayTracing two_point{model};
+    Position start_position{5000_meter, 5000_meter, 420_meter};
+};
+
+TEST_P(TestPositionReached, TestIfDynamicRayTracingReachesTargetPosition) {
+    auto target_position = GetParam();
+    auto slowness = two_point.trace(start_position, target_position);
+    auto beam = rt.trace_beam(start_position, slowness, 1_meter, 1_rad_per_sec, "TTTT");
+    ASSERT_EQ(beam.status, Status::Success);
+    EXPECT_LE(distance(beam.value().last_position(), target_position), 0.1_meter);
+}
+
+
+// Dont go to model border since errors can occur when tracing directly to border where
+// end point is just outside of model (by 10e-15 or so).
+INSTANTIATE_TEST_SUITE_P(TestPointsAtSurface, TestPositionReached,
+                         testing::ValuesIn(seismo::grid_coordinates(1_meter, 9999_meter,
+                                                                    1_meter, 9999_meter,
+                                                                    0_meter, 100, 100)));
