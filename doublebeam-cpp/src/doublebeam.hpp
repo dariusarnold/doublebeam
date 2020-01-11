@@ -81,6 +81,13 @@ public:
                                Second window_length, Meter max_stacking_distance);
 
 private:
+    Eigen::ArrayXXcd calc_sigma_for_sbc(const Position& source_beam_center, const Position& target,
+                                        const FractureParameters& fracture_info,
+                                        const SeismoData& data, Meter beam_width,
+                                        AngularFrequency beam_frequency,
+                                        const std::vector<WaveType>& ray_code, Second window_length,
+                                        Meter max_stacking_distance);
+
     const VelocityModel& model;
     TwoPointRayTracing twopoint;
     RayTracer tracer;

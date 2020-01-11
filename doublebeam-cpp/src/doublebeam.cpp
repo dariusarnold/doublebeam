@@ -263,58 +263,73 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     int source_beam_index = 1;
     for (const auto& source_beam_center : source_geometry) {
         fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
-        Slowness slowness = twopoint.trace(target, source_beam_center);
-        auto a = std::chrono::high_resolution_clock::now();
-        auto source_beam =
-            tracer.trace_beam(target, slowness, beam_width, beam_frequency, ray_code);
-        auto b = std::chrono::high_resolution_clock::now();
-        beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-        if (source_beam.status == Status::OutOfBounds) {
-            throw std::logic_error("Source beam left model.\n");
-        }
-        // Since we traced the beam from the target upwards to the surface, we will have to flip
-        // the direction of the slowness to be able to treat it as the incoming direction of the
-        // beam at the fractures and then scatter.
-        slowness.flip_direction();
-        int number_of_rec_beams_that_left_model = 0;
-        namespace ba = boost::adaptors;
-        for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed(0)) {
-            for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed(0)) {
-                //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
-                //                    orientations_index);
-                // trace receiver beam in scattered direction
-                Slowness new_slowness = calculate_new_slowness(
-                    slowness, fracture_orientation.value(), fracture_spacing.value(),
-                    angular_to_hertz(beam_frequency));
-                // reuse ray code since beam should pass through the same layers
-                a = std::chrono::high_resolution_clock::now();
-                auto receiver_beam =
-                    tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
-                b = std::chrono::high_resolution_clock::now();
-                beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-                if (receiver_beam.status == Status::OutOfBounds) {
-                    // beam didn't reach surface, skip
-                    number_of_rec_beams_that_left_model++;
-                    continue;
-                }
-                // iteration over sources and receivers
-                auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
-                                 max_stacking_distance);
-                if (not isfinite(tmp)) {
-                    throw(std::runtime_error(impl::Formatter()
-                                             << "(" << fracture_spacing.index() << ", "
-                                             << fracture_orientation.index() << ") = " << tmp));
-                }
-                result.data(fracture_spacing.index(), fracture_orientation.index()) += tmp;
-            }
-        }
-        fmt::print("{}/{} receiver beams left the model.\n", number_of_rec_beams_that_left_model,
-                   fracture_info.spacings.size() * fracture_info.orientations.size());
+        result.data +=
+            calc_sigma_for_sbc(source_beam_center, target, fracture_info, data, beam_width,
+                               beam_frequency, ray_code, window_length, max_stacking_distance);
     }
     fmt::print(
         "Beams: {} s\nFFT: {} s\nBeam eval: {} s\ncuting seismograms: {} s\nGB amplitude: {} "
         "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",
         beamt * 1E-9, fftt * 1E-9, evalt * 1E-9, cutt * 1E-9, amplt * 1E-9, expt * 1E-9,
         unit_vect * 1E-9, restt * 1E-9);
+    return result;
+}
+
+Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center,
+                                                const Position& target,
+                                                const FractureParameters& fracture_info,
+                                                const SeismoData& data, Meter beam_width,
+                                                AngularFrequency beam_frequency,
+                                                const std::vector<WaveType>& ray_code,
+                                                Second window_length, Meter max_stacking_distance) {
+    Eigen::ArrayXXcd result =
+        Eigen::ArrayXXcd::Zero(fracture_info.spacings.size(), fracture_info.orientations.size());
+    Slowness slowness = twopoint.trace(target, source_beam_center);
+    auto a = std::chrono::high_resolution_clock::now();
+    auto source_beam = tracer.trace_beam(target, slowness, beam_width, beam_frequency, ray_code);
+    auto b = std::chrono::high_resolution_clock::now();
+    beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+    if (source_beam.status == Status::OutOfBounds) {
+        throw std::logic_error("Source beam left model.\n");
+    }
+    // Since we traced the beam from the target upwards to the surface, we will have to flip
+    // the direction of the slowness to be able to treat it as the incoming direction of the
+    // beam at the fractures and then scatter.
+    slowness.flip_direction();
+    int number_of_rec_beams_that_left_model = 0;
+    namespace ba = boost::adaptors;
+    for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed(0)) {
+        for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed(0)) {
+            //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
+            //                    orientations_index);
+            // trace receiver beam in scattered direction
+            Slowness new_slowness =
+                calculate_new_slowness(slowness, fracture_orientation.value(),
+                                       fracture_spacing.value(), angular_to_hertz(beam_frequency));
+            // reuse ray code since beam should pass through the same layers
+            a = std::chrono::high_resolution_clock::now();
+            auto receiver_beam =
+                tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
+            b = std::chrono::high_resolution_clock::now();
+            beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
+            if (receiver_beam.status == Status::OutOfBounds) {
+                // beam didn't reach surface, skip
+                number_of_rec_beams_that_left_model++;
+                continue;
+            }
+            // iteration over sources and receivers
+            auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
+                             max_stacking_distance);
+            // TODO remove this check
+            if (not isfinite(tmp)) {
+                throw(std::runtime_error(impl::Formatter()
+                                         << "(" << fracture_spacing.index() << ", "
+                                         << fracture_orientation.index() << ") = " << tmp));
+            }
+            result(fracture_spacing.index(), fracture_orientation.index()) += tmp;
+        }
+    }
+    fmt::print("{}/{} receiver beams left the model.\n", number_of_rec_beams_that_left_model,
+               fracture_info.spacings.size() * fracture_info.orientations.size());
     return result;
 }
