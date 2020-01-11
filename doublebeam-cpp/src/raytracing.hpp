@@ -1,6 +1,8 @@
 #ifndef DOUBLEBEAM_CPP_RAYTRACING_HPP
 #define DOUBLEBEAM_CPP_RAYTRACING_HPP
 
+#include <string_view>
+
 #include "beam.hpp"
 #include "model.hpp"
 #include "ray.hpp"
@@ -119,6 +121,15 @@ public:
      */
     RayTracingResult<Beam> trace_beam(const RayState& initial_state, Meter beam_width,
                                       AngularFrequency beam_frequency, const std::string& ray_code,
+                                      std::optional<Meter> stop_depth = {});
+
+    /**
+     * Overload taking position and slowness and creating initial state from that.
+     */
+    RayTracingResult<Beam> trace_beam(const Position& start_position,
+                                      const Slowness& start_slowness, Meter beam_width,
+                                      AngularFrequency beam_frequency,
+                                      std::string_view ray_code = {},
                                       std::optional<Meter> stop_depth = {});
 
 private:
