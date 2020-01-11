@@ -20,7 +20,7 @@ execute_process(COMMAND git submodule update --init -- external/nanoflann
 add_subdirectory(external/nanoflann EXCLUDE_FROM_ALL)
 
 set(WARNINGS_GCC -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
-        -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation -Weffc++
+        -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation
         -Wshadow -Wextra-semi)
 
 set(WARNINGS_CLANG -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
