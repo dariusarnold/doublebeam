@@ -28,8 +28,8 @@ RayState init_state(Meter x, Meter y, Meter z, const VelocityModel& model, Radia
 /**
  * Overload for init_state taking tuple of x, y, z coordinate.
  */
-RayState init_state(std::tuple<double, double, double> position, const VelocityModel& model, Radian theta, Radian phi,
-                    TravelTime T = TravelTime(0_second));
+RayState init_state(std::tuple<double, double, double> position, const VelocityModel& model,
+                    Radian theta, Radian phi, TravelTime T = TravelTime(0_second));
 
 /**
  * Create state type instance.
@@ -135,8 +135,9 @@ public:
 private:
     /**
      * Use analytic ray tracing equation for a constant velocity layer.
-     * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system: Introducing
-     * art, a C-library designed for seismic applications" (Miqueles et al., 2013).
+     * The equations used are eq. 4 and eq. A.1 from "Analytical ray tracing system:
+     * Introducing art, a C-library designed for seismic applications" (Miqueles et al.,
+     * 2013).
      * @param initial_state State of ray tracing when the ray enters the layer.
      * @param layer Layer which is traced.
      * @return RaySegment for this layer.

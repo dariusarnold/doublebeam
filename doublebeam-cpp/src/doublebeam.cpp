@@ -263,8 +263,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
     for (const auto& source_beam_center : source_geometry) {
-        fmt::print("{}/{} source beam centers\n", source_beam_index++,
-                   source_geometry.size());
+        fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
         Slowness slowness = twopoint.trace(target, source_beam_center);
         // TODO add overload so declaring initial state is not required for ray tracing
         auto initial_state = make_state(target, slowness);
