@@ -265,11 +265,9 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     for (const auto& source_beam_center : source_geometry) {
         fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
         Slowness slowness = twopoint.trace(target, source_beam_center);
-        // TODO add overload so declaring initial state is not required for ray tracing
-        auto initial_state = make_state(target, slowness);
         auto a = std::chrono::high_resolution_clock::now();
         auto source_beam =
-            tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code, {});
+            tracer.trace_beam(target, slowness, beam_width, beam_frequency, ray_code);
         auto b = std::chrono::high_resolution_clock::now();
         beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
         if (source_beam.status == Status::OutOfBounds) {
@@ -289,11 +287,10 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                 Slowness new_slowness = calculate_new_slowness(
                     slowness, fracture_orientation.value(), fracture_spacing.value(),
                     angular_to_hertz(beam_frequency));
-                initial_state = make_state(target, new_slowness);
                 // reuse ray code since beam should pass through the same layers
                 a = std::chrono::high_resolution_clock::now();
                 auto receiver_beam =
-                    tracer.trace_beam(initial_state, beam_width, beam_frequency, ray_code);
+                    tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
                 b = std::chrono::high_resolution_clock::now();
                 beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
                 if (receiver_beam.status == Status::OutOfBounds) {

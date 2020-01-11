@@ -283,3 +283,12 @@ RayTracingResult<Beam> RayTracer::trace_beam(const Position& start_position,
     return trace_beam(initial_state, beam_width, beam_frequency, seismo::make_ray_code(ray_code),
                       stop_depth);
 }
+
+RayTracingResult<Beam> RayTracer::trace_beam(const Position& start_position,
+                                             const Slowness& start_slowness, Meter beam_width,
+                                             AngularFrequency beam_frequency,
+                                             const std::vector<WaveType>& ray_code,
+                                             std::optional<Meter> stop_depth) {
+    auto initial_state = make_state(start_position, start_slowness, TravelTime(0_second));
+    return trace_beam(initial_state, beam_width, beam_frequency, ray_code, stop_depth);
+}

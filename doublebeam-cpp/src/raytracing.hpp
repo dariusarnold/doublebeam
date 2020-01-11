@@ -132,6 +132,15 @@ public:
                                       std::string_view ray_code = {},
                                       std::optional<Meter> stop_depth = {});
 
+    /**
+     * Overload taking position and slowness and creating initial state from that.
+     */
+    RayTracingResult<Beam> trace_beam(const Position& start_position,
+                                      const Slowness& start_slowness, Meter beam_width,
+                                      AngularFrequency beam_frequency,
+                                      const std::vector<WaveType>& ray_code = {},
+                                      std::optional<Meter> stop_depth = {});
+
 private:
     /**
      * Use analytic ray tracing equation for a constant velocity layer.
