@@ -1,4 +1,5 @@
 #include <complex>
+#include <execution>
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <fmt/format.h>
@@ -232,17 +233,12 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                                                         total_traveltime + window_length / 2);
             b = std::chrono::high_resolution_clock::now();
             cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
-            auto it = fft_cache.find(seismogram);
-            if (it == fft_cache.end()) {
-                auto seismogram_freq = math::fft_closest_frequency(
-                    seismogram.data, receiver_beam.frequency(), data.sampling_frequency());
-                fft_cache[seismogram] = seismogram_freq;
-            }
+            auto seismogram_freq = math::fft_closest_frequency(
+                seismogram.data, receiver_beam.frequency(), data.sampling_frequency());
             auto c = std::chrono::high_resolution_clock::now();
             fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
             stacking_result += source_beam_values[source.index()].gb_value *
-                               receiver_beam_values[receiver.index()].gb_value *
-                               fft_cache[seismogram];
+                               receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
         }
     }
     return stacking_result;
@@ -261,12 +257,13 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
-    for (const auto& source_beam_center : source_geometry) {
-        fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
-        result.data +=
-            calc_sigma_for_sbc(source_beam_center, target, fracture_info, data, beam_width,
-                               beam_frequency, ray_code, window_length, max_stacking_distance);
-    }
+    std::for_each(
+        std::execution::par_unseq, source_geometry.begin(), source_geometry.end(),
+        [&](const Position& sbc) {
+            fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
+            result.data += calc_sigma_for_sbc(sbc, target, fracture_info, data, beam_width, beam_frequency,
+                               ray_code, window_length, max_stacking_distance);
+        });
     fmt::print(
         "Beams: {} s\nFFT: {} s\nBeam eval: {} s\ncuting seismograms: {} s\nGB amplitude: {} "
         "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",

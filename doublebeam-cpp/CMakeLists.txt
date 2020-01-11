@@ -101,3 +101,5 @@ if (FALSE)
         unset(DID_HEADER_BUILD CACHE)
     endforeach ()
 endif ()
+
+target_link_libraries(doublebeam_lib PUBLIC pthread tbb)
