@@ -257,13 +257,20 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 1;
-    std::for_each(
-        std::execution::par_unseq, source_geometry.begin(), source_geometry.end(),
-        [&](const Position& sbc) {
-            fmt::print("{}/{} source beam centers\n", source_beam_index++, source_geometry.size());
-            result.data += calc_sigma_for_sbc(sbc, target, fracture_info, data, beam_width, beam_frequency,
-                               ray_code, window_length, max_stacking_distance);
-        });
+    Eigen::ArrayXXcd temp;
+    #pragma omp declare reduction(+:Eigen::ArrayXXcd:omp_out=omp_out+omp_in) initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
+    #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
+    shared(source_geometry, data, fracture_info, source_beam_index)\
+    firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code)
+    for (auto it = source_geometry.begin(); it != source_geometry.end(); ++it) {
+        #pragma omp atomic
+        ++source_beam_index;
+        #pragma omp critical
+        fmt::print("{}/{} source beam centers\n", source_beam_index, source_geometry.size());
+        temp += calc_sigma_for_sbc(*it, target, fracture_info, data, beam_width, beam_frequency,
+                                   ray_code, window_length, max_stacking_distance);
+    }
+    result.data = temp;
     fmt::print(
         "Beams: {} s\nFFT: {} s\nBeam eval: {} s\ncuting seismograms: {} s\nGB amplitude: {} "
         "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",

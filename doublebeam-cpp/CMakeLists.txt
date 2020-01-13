@@ -12,6 +12,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
+find_package(OpenMP REQUIRED)
 
 message("-- Setting up nanoflann.")
 execute_process(COMMAND git submodule update --init -- external/nanoflann
@@ -36,7 +37,7 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
         src/seismodata.cpp src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp
         src/raytracing_types.cpp src/kdtree.cpp src/kdtree.hpp)
 target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt)
-target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost)
+target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
@@ -101,5 +102,3 @@ if (FALSE)
         unset(DID_HEADER_BUILD CACHE)
     endforeach ()
 endif ()
-
-target_link_libraries(doublebeam_lib PUBLIC pthread tbb)
