@@ -58,7 +58,7 @@ struct DoubleBeamResult {
 
 class DoubleBeam {
 public:
-    DoubleBeam(const VelocityModel& model);
+    explicit DoubleBeam(const VelocityModel& model);
 
     /**
      * Performs doublebeam algorithm and calculates scattering coefficient sigma
