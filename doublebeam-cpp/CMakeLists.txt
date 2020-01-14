@@ -38,7 +38,6 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
 target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt nanoflann::nanoflann)
 target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost)
 target_include_directories(doublebeam_lib PUBLIC src)
-target_include_directories(doublebeam_lib PRIVATE FFTW_INCLUDE_DIRS)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
