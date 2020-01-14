@@ -35,7 +35,7 @@ endif()
 add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/twopoint.cpp
         src/raytracing_helpers.cpp src/ray.cpp src/beam.cpp src/printing.cpp src/io.cpp src/seismodata.cpp
         src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp src/raytracing_types.cpp src/kdtree.cpp src/kdtree.hpp)
-target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt nanoflann::nanoflann)
+target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt)
 target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
