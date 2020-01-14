@@ -1,5 +1,4 @@
 #include <complex>
-#include <execution>
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <fmt/format.h>
