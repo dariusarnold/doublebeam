@@ -1,7 +1,6 @@
 #include <complex>
 
 #include <boost/range/adaptor/indexed.hpp>
-#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include "doublebeam.hpp"
