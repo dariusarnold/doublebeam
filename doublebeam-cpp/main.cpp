@@ -41,5 +41,6 @@ int main(int argc, char* argv[]) {
         file << "\n[result]\n";
         file << result.data;
     }
+    fmt::print("Saved result in {}\n", result_path.string());
     return 0;
 }
