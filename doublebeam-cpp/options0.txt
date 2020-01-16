@@ -7,14 +7,14 @@ x = 500
 y = 500
 z = 500
 
-[source beam centers]
+[source_beam_centers]
 x0 = 0
 x1 = 1000
 y0 = 0
 y1 = 1000
 z = 0
-num_x = 10
-num_y = 10
+num_x = 20
+num_y = 20
 
 [fractures]
 num_orientations = 61

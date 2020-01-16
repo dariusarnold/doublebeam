@@ -1,5 +1,8 @@
 #include <chrono>
 
+#include <boost/program_options.hpp>
+#include <fmt/format.h>
+
 #include "doublebeam.hpp"
 #include "io.hpp"
 
@@ -21,36 +24,144 @@ std::filesystem::path find_unused_result_filename() {
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        throw std::runtime_error("Specify config file path as positional argument");
+    namespace po = boost::program_options;
+    namespace fs = std::filesystem;
+    try {
+        // positional options for config file
+        po::positional_options_description positional;
+        positional.add("config_file", 1);
+
+        // store config file on own description so the keyword argument is not shown in usage
+        po::options_description hidden("Hidden options");
+        // clang-format off
+        hidden.add_options()
+            ("config_file,c", po::value<fs::path>()->value_name("PATH"), "Path to config file.");
+        // clang-format on
+
+        // options only allowed on command line
+        po::options_description cmd("Commandline options");
+        // clang-format off
+        cmd.add_options()
+            ("help,h", "Produce help message.");
+        // clang-format on
+
+        // add general options, can be specified on command line and/or in config file
+        po::options_description general("Config/keyword arguments");
+        // clang-format off
+        general.add_options()
+            ("data.model,m", po::value<fs::path>()->value_name("PATH")->required(),
+                "Path to velocity model file")
+            ("data.path,d", po::value<fs::path>()->value_name("PATH")->required(),
+                "Path to folder containing seismic data.")
+            ("target.x", po::value<Meter>()->required(), "x (meter) coordinate of target position.")
+            ("target.y", po::value<Meter>()->required(), "y (meter) coordinate of target position.")
+            ("target.z", po::value<Meter>()->required(), "z (meter) coordinate of target position.")
+            ("source_beam_centers.x0", po::value<Meter>()->required(),
+                "Min x coordinate of source beam center rectangle.")
+            ("source_beam_centers.x1", po::value<Meter>()->required(),
+                "Max x coordinate of source beam center rectangle.")
+            ("source_beam_centers.y0", po::value<Meter>()->required(),
+                "Min y coordinate of source beam center rectangle.")
+            ("source_beam_centers.y1", po::value<Meter>()->required(),
+                "Max y coordinate of source beam center rectangle.")
+            ("source_beam_centers.z", po::value<Meter>()->default_value(0_meter),
+                "Depth in meter of source beam centers. Usually at surface.")
+            ("source_beam_centers.num_x", po::value<int>()->value_name("NX")->required(),
+                "Number of source beam centers along x axis.")
+            ("source_beam_centers.num_y", po::value<int>()->value_name("NY")->required(),
+                "Number of source beam centers along y axis.")
+            ("fractures.spacing_min", po::value<Meter>()->required(),
+                "Min fracture spacing in meter.")
+            ("fractures.spacing_max", po::value<Meter>()->required(),
+                "Max fracture spacing in meter.")
+            ("fractures.num_spacings", po::value<int>()->required(),
+                "Number of fracture spacings to scan between spacing_min and spacing_max..")
+            ("fractures.num_orientations", po::value<int>()->required(),
+                "Number of fracture orientations to scan.")
+            ("beam.width,w", po::value<Meter>()->required(),
+                "Initial width of Gauss beam in meter.")
+            ("beam.frequency,f", po::value<Frequency>()->required(),
+                "Initial frequency of Gauss beam in hertz.")
+            ("beam.window_length,l", po::value<Second>()->required(),
+                "Window length (seconds) of cut window around traveltime of beam.")
+            ("beam.max_stacking_distance", po::value<Meter>()->required(),
+                "Maximum stacking distance at beam end point at the surface. Only sources/receivers"
+                " within this distance will be used for stacking.")
+            ;
+        // clang-format on
+
+        po::options_description all_options, options_shown_in_usage;
+        all_options.add(cmd).add(general).add(hidden);
+        options_shown_in_usage.add(cmd).add(general);
+        po::variables_map options;
+        po::store(
+            po::command_line_parser(argc, argv).options(all_options).positional(positional).run(),
+            options);
+        // if help is given, ignore other options, print help and
+        if (options.count("help")) {
+            fmt::print("Gaussian double beam fracture parameter determination.\n\n");
+            fmt::print("Usage:\n{} [config_file_path] [keyword_arguments]\n\n",
+                       fs::path(argv[0]).filename().string());
+            // TODO this should have the same width as the options description (80 columns)
+            fmt::print("config_file_path can give a text file in the ini-like Boost.program_options"
+                       " format. In this file options for the program can be specified. Command "
+                       "line options override the values in the config file.\n\n");
+            fmt::print("{}\n", options_shown_in_usage);
+            exit(0);
+        }
+        if (options.count("config_file")) {
+            auto config_path = options["config_file"].as<fs::path>();
+            std::ifstream config_file{config_path};
+            if (config_file) {
+                po::store(po::parse_config_file(config_file, all_options), options);
+            } else {
+                throw po::error(fmt::format("Failed to open config file {}", config_path));
+            }
+        }
+        po::notify(options);
+
+        auto vm = read_velocity_file(options["data.model"].as<fs::path>());
+        auto db = DoubleBeam(vm);
+        auto source_beam_centres =
+            seismo::grid_coordinates(options["source_beam_centers.x0"].as<Meter>(),
+                                     options["source_beam_centers.x1"].as<Meter>(),
+                                     options["source_beam_centers.y0"].as<Meter>(),
+                                     options["source_beam_centers.y1"].as<Meter>(),
+                                     options["source_beam_centers.z"].as<Meter>(),
+                                     options["source_beam_centers.num_x"].as<int>(),
+                                     options["source_beam_centers.num_y"].as<int>());
+        FractureParameters fractures(math::Vector2{1, 0},
+                                     options["fractures.num_orientations"].as<int>(),
+                                     options["fractures.spacing_min"].as<Meter>(),
+                                     options["fractures.spacing_max"].as<Meter>(),
+                                     options["fractures.num_spacings"].as<int>());
+        auto data = SeismoData(options["data.path"].as<fs::path>());
+        auto a = std::chrono::high_resolution_clock::now();
+        Position target(options["target.x"].as<Meter>(), options["target.y"].as<Meter>(),
+                        options["target.z"].as<Meter>());
+        auto result = db.algorithm(source_beam_centres, target, data, fractures,
+                                   options["beam.width"].as<Meter>(),
+                                   hertz_to_angular(options["beam.frequency"].as<Frequency>()),
+                                   options["beam.window_length"].as<Second>(),
+                                   options["beam.max_stacking_distance"].as<Meter>());
+        auto b = std::chrono::high_resolution_clock::now();
+        std::cout << "Runtime db : "
+                  << std::chrono::duration_cast<std::chrono::seconds>(b - a).count() << " s"
+                  << std::endl;
+        auto result_path = find_unused_result_filename();
+        std::ofstream file{result_path};
+        std::ifstream config_file{options["config_file"].as<fs::path>()};
+        std::stringstream config_content;
+        config_content << config_file.rdbuf();
+        if (file.is_open()) {
+            file << config_content.str();
+            file << "\n[result]\n";
+            file << result.data;
+        }
+        fmt::print("Saved result in {}\n", result_path.string());
+        return 0;
+    } catch (const po::error& er) {
+        fmt::print(std::cerr, "{}\n", er.what());
+        exit(-1);
     }
-    auto options = read_config_file(std::filesystem::path(argv[1]));
-    std::ios_base::sync_with_stdio(false);
-    auto vm = read_velocity_file(options.seismo_data_params.velocity_model_path);
-    auto db = DoubleBeam(vm);
-    auto source_beam_centres = seismo::grid_coordinates(
-        options.sbc_params.x0, options.sbc_params.x1, options.sbc_params.y0, options.sbc_params.y1,
-        options.sbc_params.z, options.sbc_params.num_x, options.sbc_params.num_y);
-    FractureParameters fractures(
-        options.fracture_params.phi_hat, options.fracture_params.num_orientations,
-        options.fracture_params.spacings_min, options.fracture_params.spacings_max,
-        options.fracture_params.num_spacings);
-    auto data = SeismoData(options.seismo_data_params.data_path);
-    auto a = std::chrono::high_resolution_clock::now();
-    auto result =
-        db.algorithm(source_beam_centres, options.target.position, data, fractures,
-                     options.beam_params.width, options.beam_params.frequency,
-                     options.beam_params.window_length, options.beam_params.max_stacking_distance);
-    auto b = std::chrono::high_resolution_clock::now();
-    std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
-              << " s" << std::endl;
-    auto result_path = find_unused_result_filename();
-    std::ofstream file{result_path};
-    if (file.is_open()) {
-        file << options;
-        file << "\n[result]\n";
-        file << result.data;
-    }
-    fmt::print("Saved result in {}\n", result_path.string());
-    return 0;
 }

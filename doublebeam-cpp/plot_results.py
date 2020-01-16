@@ -82,7 +82,7 @@ def extract_data(config: configparser.ConfigParser) -> DataParameters:
 
 
 def extract_source_beam_center_params(config: configparser.ConfigParser) -> SourceBeamCenters:
-    sbc_config_part = config["source beam centers"]
+    sbc_config_part = config["source_beam_centers"]
     x0 = sbc_config_part.getfloat("x0")
     x1 = sbc_config_part.getfloat("x1")
     y0 = sbc_config_part.getfloat("y0")

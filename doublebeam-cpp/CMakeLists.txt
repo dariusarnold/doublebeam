@@ -7,14 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/findFFTW")
 
-
 # set boost path with BOOST_ROOT if not globally installed
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
 
-message("Setting up nanoflann.")
+message("-- Setting up nanoflann.")
 execute_process(COMMAND git submodule update --init -- external/nanoflann
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(external/nanoflann EXCLUDE_FROM_ALL)
@@ -44,7 +43,7 @@ target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 
 add_executable(doublebeam main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE ${WARNINGS})
-target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Eigen3::Eigen cnpy)
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen cnpy)
 
 add_executable(convert_to_binary convert_to_binary.cpp)
 target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
