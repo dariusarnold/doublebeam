@@ -4,6 +4,22 @@
 #include "io.hpp"
 
 
+/**
+ * Find first unused filename with the scheme "resultX.txt" where X is an increasing integer
+ * starting at 0.
+ */
+std::filesystem::path find_unused_result_filename() {
+    std::string result_filename = "result";
+    std::filesystem::path result_path(result_filename + "0.txt");
+    int index = 0;
+    while (std::filesystem::exists(result_path)) {
+        ++index;
+        result_path = std::filesystem::path(result_filename + (std::to_string(index)) + ".txt");
+    }
+    return result_path;
+}
+
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         throw std::runtime_error("Specify config file path as positional argument");
@@ -28,13 +44,7 @@ int main(int argc, char* argv[]) {
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Runtime db : " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s" << std::endl;
-    std::string result_filename = "result";
-    std::filesystem::path result_path(result_filename + "0.txt");
-    int index = 0;
-    while (std::filesystem::exists(result_path)) {
-        ++index;
-        result_path = std::filesystem::path(result_filename + (std::to_string(index)) + ".txt");
-    }
+    auto result_path = find_unused_result_filename();
     std::ofstream file{result_path};
     if (file.is_open()) {
         file << options;
