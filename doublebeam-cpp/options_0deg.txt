@@ -1,0 +1,29 @@
+[data]
+path = /home/darius/masterarbeit/output_0degrees/
+model = /home/darius/masterarbeit/output_0degrees/velocity_model.txt
+
+[target]
+x = 5600
+y = 5600
+z = 2400
+
+[source_beam_centers]
+x0 = 1
+x1 = 11199
+y0 = 1
+y1 = 11199
+z = 0
+num_x = 15
+num_y = 15
+
+[fractures]
+num_orientations = 61
+spacing_min = 100
+spacing_max = 300
+num_spacings = 41
+
+[beam]
+width = 250
+frequency = 30
+window_length = 0.12
+max_stacking_distance = 1500

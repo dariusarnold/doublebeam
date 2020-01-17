@@ -23,7 +23,7 @@ spacing_max = 300
 num_spacings = 41
 
 [beam]
-width = 100
-frequency = 10
-window_length = 0.06
+width = 250
+frequency = 50
+window_length = 0.01
 max_stacking_distance = 150
