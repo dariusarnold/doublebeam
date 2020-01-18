@@ -172,7 +172,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     # create inner "cutout" by setting origin and min/max for radial axis
     ax.set_rorigin(10)
     ax.set_ylim(options.fracture_params.spacing_min, options.fracture_params.spacing_max)
-    cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15, format="%.1E")
+    cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15)
     cbar.set_label(r"$|\sigma|$")
     textbox_content = "\n".join((fr"$\omega = {options.beam_params.frequency}$ Hz",
                                  fr"$w = {options.beam_params.width} $ m",
