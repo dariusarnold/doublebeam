@@ -298,8 +298,6 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
     namespace ba = boost::adaptors;
     for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed()) {
         for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed()) {
-            //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
-            //                    orientations_index);
             // trace receiver beam in scattered direction
             Slowness new_slowness =
                 calculate_new_slowness(slowness, fracture_orientation.value(),
@@ -315,10 +313,9 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
                 number_of_rec_beams_that_left_model++;
                 continue;
             }
-            // iteration over sources and receivers
-            auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
-                             max_stacking_distance);
-            result(fracture_spacing.index(), fracture_orientation.index()) += tmp;
+            result(fracture_spacing.index(), fracture_orientation.index()) +=
+                stack(source_beam.value(), receiver_beam.value(), data, window_length,
+                      max_stacking_distance);
         }
     }
     fmt::print("{}/{} receiver beams left the model.\n", number_of_rec_beams_that_left_model,
