@@ -296,8 +296,8 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
     slowness.flip_direction();
     int number_of_rec_beams_that_left_model = 0;
     namespace ba = boost::adaptors;
-    for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed(0)) {
-        for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed(0)) {
+    for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed()) {
+        for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed()) {
             //                    fmt::print("Spacing {}, orientation {}\n", spacing_index,
             //                    orientations_index);
             // trace receiver beam in scattered direction
