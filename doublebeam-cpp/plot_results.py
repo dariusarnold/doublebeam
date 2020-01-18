@@ -202,7 +202,7 @@ def main():
         # no arguments, open file picker
         import tkinter.filedialog, tkinter
         tkinter.Tk().withdraw()
-        fname = tkinter.filedialog.askopenfilename()
+        fname = Path(tkinter.filedialog.askopenfilename())
     else:
         # pathname as argument
         fname = Path(sys.argv[1])
