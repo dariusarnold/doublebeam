@@ -76,7 +76,7 @@ public:
      * @return
      */
     DoubleBeamResult algorithm(const std::vector<Position>& source_geometry, Position target,
-                               const SeismoData& data, FractureParameters fracture_info,
+                               const SeismoData& data, const FractureParameters& fracture_info,
                                Meter beam_width, AngularFrequency beam_frequency,
                                Second window_length, Meter max_stacking_distance);
 

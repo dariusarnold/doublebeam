@@ -245,7 +245,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
 
 DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
                                        Position target, const SeismoData& data,
-                                       FractureParameters fracture_info, Meter beam_width,
+                                       const FractureParameters& fracture_info, Meter beam_width,
                                        AngularFrequency beam_frequency, Second window_length,
                                        Meter max_stacking_distance) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
