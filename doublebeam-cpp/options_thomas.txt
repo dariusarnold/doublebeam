@@ -3,18 +3,18 @@ path = /home/darius/masterarbeit/thomas/
 model = /home/darius/masterarbeit/thomas/velocity_model.txt
 
 [target]
-x = 500
-y = 500
+x = 600
+y = 600
 z = 420
 
-[source beam centers]
+[source_beam_centers]
 x0 = 0
 x1 = 1200
 y0 = 0
 y1 = 1200
 z = 0
-num_x = 10
-num_y = 10
+num_x = 20
+num_y = 20
 
 [fractures]
 num_orientations = 61
@@ -24,6 +24,6 @@ num_spacings = 41
 
 [beam]
 width = 150
-frequency = 30
+frequency = 25
 window_length = 0.12
-max_stacking_distance = 250
+max_stacking_distance = 200
