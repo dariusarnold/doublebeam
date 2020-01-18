@@ -254,11 +254,14 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     Eigen::ArrayXXcd temp(result.data);
     #pragma omp declare reduction(+:Eigen::ArrayXXcd:omp_out=omp_out+omp_in) initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
     #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
-    shared(source_geometry, data, fracture_info, source_beam_index)\
+    shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
     firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code)
     for (auto sbc = source_geometry.begin(); sbc != source_geometry.end(); ++sbc) {
-        #pragma omp critical
-        fmt::print("{}/{} source beam centers\n", ++source_beam_index, source_geometry.size());
+    #pragma omp critical
+        {
+            fmt::print("\r{}/{} source beam centers", ++source_beam_index, source_geometry.size());
+            std::cout.flush();
+        }
         temp += calc_sigma_for_sbc(*sbc, target, fracture_info, data, beam_width, beam_frequency,
                                    ray_code, window_length, max_stacking_distance);
     }
@@ -268,6 +271,8 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
         "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",
         beamt * 1E-9, fftt * 1E-9, evalt * 1E-9, cutt * 1E-9, amplt * 1E-9, expt * 1E-9,
         unit_vect * 1E-9, restt * 1E-9);
+    // Add newline after the loop progress output
+    fmt::print("\n");
     return result;
 }
 
@@ -316,7 +321,5 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
                       max_stacking_distance);
         }
     }
-    fmt::print("{}/{} receiver beams left the model.\n", number_of_rec_beams_that_left_model,
-               fracture_info.spacings.size() * fracture_info.orientations.size());
     return result;
 }
