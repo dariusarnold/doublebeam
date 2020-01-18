@@ -12,16 +12,18 @@ Required libraries and their Debian package names if applicable.
 - Microsoft Guideline Support Library (libmsgsl-dev)
 - Boost (libboost-dev)
 
+OpenMP is optional. If it is found, parallel processing will be enabled. 
+
 ## Inputs
 
 If not specified otherwise, values should be given in SI-units, e.g. meter for length, radians for
-degree, seconds for time and kg for mass. The output will be in SI-units as well.
+degree, seconds for time and Hertz for frequency. The output will be in SI-units as well.
 
 Waveform data formatting
  - every line gives one time, amplitude pair
- - TODO unit of time, amplitude
  - the order of values in a line is 1: time, 2: amplitude
- - TODO meaning of amplitude. Can displacement, velocity and acceleration be used?
+ - Time unit should be seconds
+ - Amplitude can be displacement, velocity or acceleration
  - values are separated by whitespace, multiple spaces are treated as one
  - the decimal separator is a dot, and scientific notation (1.2E-2) is understood
   
