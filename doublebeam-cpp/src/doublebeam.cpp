@@ -243,11 +243,6 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     return stacking_result;
 }
 
-bool isfinite(const std::complex<double>& c) {
-    return std::isfinite(c.real()) and std::isfinite(c.imag());
-}
-
-
 DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
                                        Position target, const SeismoData& data,
                                        FractureParameters fracture_info, Meter beam_width,
@@ -323,12 +318,6 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
             // iteration over sources and receivers
             auto tmp = stack(source_beam.value(), receiver_beam.value(), data, window_length,
                              max_stacking_distance);
-            // TODO remove this check
-            if (not isfinite(tmp)) {
-                throw(std::runtime_error(impl::Formatter()
-                                         << "(" << fracture_spacing.index() << ", "
-                                         << fracture_orientation.index() << ") = " << tmp));
-            }
             result(fracture_spacing.index(), fracture_orientation.index()) += tmp;
         }
     }
