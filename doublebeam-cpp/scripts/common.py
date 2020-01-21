@@ -60,10 +60,11 @@ class FractureParameters:
 
 class BeamParameters:
 
-    def __init__(self, width: float, frequency_hz: float, window_length: float,
-                 max_stacking_distance: float):
+    def __init__(self, width: float, reference_frequency_hz: float, source_frequency_hz: float,
+                 window_length: float, max_stacking_distance: float):
         self.width = width
-        self.frequency = frequency_hz
+        self.reference_frequency = reference_frequency_hz
+        self.source_frequency = source_frequency_hz
         self.window_length = window_length
         self.max_stacking_distance = max_stacking_distance
 
@@ -118,10 +119,11 @@ def extract_fracture_params(config: configparser.ConfigParser) -> FractureParame
 
 def extract_beam_params(config: configparser.ConfigParser) -> BeamParameters:
     width = config["beam"].getfloat("width")
-    freq = config["beam"].getfloat("frequency")
+    source_freq = config["beam"].getfloat("source_frequency")
+    reference_freq = config["beam"].getfloat("reference_frequency")
     window_length = config["beam"].getfloat("window_length")
     max_stacking_distance = config["beam"].getfloat("max_stacking_distance")
-    return BeamParameters(width, freq, window_length, max_stacking_distance)
+    return BeamParameters(width, reference_freq, source_freq, window_length, max_stacking_distance)
 
 
 def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
@@ -138,7 +140,7 @@ def parse_file(filename: Path) -> Tuple[Options, np.ndarray]:
     values = []
     for line in data[result_index + len("[result]\n"):].split("\n"):
         row = [to_complex(x) for x in line.split()]
-        values.append(row)
+        if len(row): values.append(row)
     return options, np.array(values, dtype=np.complex128)
 
 

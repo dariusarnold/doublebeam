@@ -40,7 +40,8 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     ax.set_ylim(options.fracture_params.spacing_min, options.fracture_params.spacing_max)
     cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15)
     cbar.set_label(r"$|\sigma|$")
-    textbox_content = "\n".join((fr"$\omega = {options.beam_params.frequency}$ Hz",
+    textbox_content = "\n".join((fr"$\omega_s = {options.beam_params.source_frequency}$ Hz",
+                                 fr"$\omega_r = {options.beam_params.reference_frequency}$ Hz",
                                  fr"$w = {options.beam_params.width} $ m",
                                  fr"window $= {options.beam_params.window_length}$ s",
                                  fr"max stack. dist. $= {options.beam_params.max_stacking_distance:.0f}$ m",
