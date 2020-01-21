@@ -84,13 +84,15 @@ int main(int argc, char* argv[]) {
                 "Number of fracture orientations to scan.")
             ("beam.width,w", po::value(&opts.beam_params.width)->required(),
                 "Initial width of Gauss beam in meter.")
-            ("beam.frequency,f", po::value(&opts.beam_params.frequency)->required(),
+            ("beam.reference_frequency,f", po::value(&opts.beam_params.reference_frequency)->required(),
                 "Initial frequency of Gauss beam in hertz.")
             ("beam.window_length,l", po::value(&opts.beam_params.window_length)->required(),
                 "Window length (seconds) of cut window around traveltime of beam.")
             ("beam.max_stacking_distance", po::value(&opts.beam_params.max_stacking_distance)->required(),
                 "Maximum stacking distance at beam end point at the surface. Only sources/receivers"
                 " within this distance will be used for stacking.")
+            ("beam.source_frequency", po::value(&opts.beam_params.source_frequency)->required(),
+                "Frequncy of seismic data in hertz.")
             ;
         // clang-format on
 
@@ -137,10 +139,12 @@ int main(int argc, char* argv[]) {
                                      opts.fracture_params.num_spacings);
         auto data = SeismoData(opts.seismo_data_params.data_path);
         auto a = std::chrono::high_resolution_clock::now();
-        auto result =
-            db.algorithm(source_beam_centres, opts.target.position, data, fractures,
-                         opts.beam_params.width, hertz_to_angular(opts.beam_params.frequency),
-                         opts.beam_params.window_length, opts.beam_params.max_stacking_distance);
+        // TODO just pass beam params instead of all the options
+        auto result = db.algorithm(
+            source_beam_centres, opts.target.position, data, fractures, opts.beam_params.width,
+            hertz_to_angular(opts.beam_params.reference_frequency), opts.beam_params.window_length,
+            opts.beam_params.max_stacking_distance,
+            hertz_to_angular(opts.beam_params.source_frequency));
         auto b = std::chrono::high_resolution_clock::now();
         std::cout << "Runtime db : "
                   << std::chrono::duration_cast<std::chrono::seconds>(b - a).count() << " s"

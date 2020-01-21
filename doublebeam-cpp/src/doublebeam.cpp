@@ -132,6 +132,12 @@ std::complex<double> gb_amplitude(const Beam& beam, Arclength s) {
     return std::sqrt((vs.get() * det_Q_s0) / (vs0.get() * det_Q_s));
 }
 
+std::complex<double> complex_traveltime(const Beam& beam, double q1, double q2, Arclength s) {
+    Eigen::Vector2d q{q1, q2};
+    Eigen::Matrix2cd Q = beam.get_Q(s);
+    return beam.traveltime().get() + 0.5 * (q.transpose() * beam.get_P(s) * Q.inverse() * q)[0];
+}
+
 std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,
                             std::complex<double>& complex_traveltime) {
     using namespace std::complex_literals;
@@ -156,7 +162,7 @@ Eigen::Vector3d make_vector(const Position& position) {
     return {position.x.get(), position.y.get(), position.z.get()};
 }
 
-BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
+BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position, AngularFrequency omega) {
     using namespace std::complex_literals;
     auto [e1, e2] = get_ray_centred_unit_vectors(beam);
     UnitVectors::vector_t e3 = e1.cross(e2);
@@ -171,9 +177,9 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position) {
         throw std::runtime_error("Negative arclength");
     }
     auto amp = gb_amplitude(beam, Arclength(total_arclength));
-    std::complex<double> complex_traveltime;
-    auto exp = gb_exp(beam, q[0], q[1], Arclength(total_arclength), complex_traveltime);
-    return {std::conj(amp * exp), complex_traveltime};
+    std::complex<double> traveltime =
+        complex_traveltime(beam, q[0], q[1], Arclength(total_arclength));
+    return {std::conj(amp * std::exp(1i * omega.get() * traveltime)), traveltime};
 }
 
 
@@ -184,7 +190,8 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
 }
 
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
-                           const SeismoData& data, Second window_length, Meter max_eval_distance) {
+                           const SeismoData& data, Second window_length, Meter max_eval_distance,
+                           AngularFrequency source_frequency) {
     std::complex<double> stacking_result(0, 0);
     std::vector<BeamEvalResult> source_beam_values, receiver_beam_values;
     // get all sources/receivers within max eval distance around surface point
@@ -194,11 +201,12 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     receiver_beam_values.reserve(std::size(receivers_in_range));
     // pre compute gauss beam for sources/receivers to avoid multiple evaluation
     std::transform(sources_in_range.begin(), sources_in_range.end(),
-                   std::back_inserter(source_beam_values),
-                   [&](const Source& source) { return eval_gauss_beam(source_beam, source); });
+                   std::back_inserter(source_beam_values), [&](const Source& source) {
+                       return eval_gauss_beam(source_beam, source, source_frequency);
+                   });
     std::transform(receivers_in_range.begin(), receivers_in_range.end(),
                    std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
-                       return eval_gauss_beam(receiver_beam, receiver);
+                       return eval_gauss_beam(receiver_beam, receiver, source_frequency);
                    });
     namespace ba = boost::adaptors;
     for (const auto& source : sources_in_range | ba::indexed()) {
@@ -226,7 +234,8 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                                        Position target, const SeismoData& data,
                                        const FractureParameters& fracture_info, Meter beam_width,
                                        AngularFrequency beam_frequency, Second window_length,
-                                       Meter max_stacking_distance) {
+                                       Meter max_stacking_distance,
+                                       AngularFrequency source_frequency) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 0;
@@ -235,15 +244,16 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
     #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
     shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
-    firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code)
+    firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code, source_frequency)
     for (auto sbc = source_geometry.begin(); sbc != source_geometry.end(); ++sbc) {
     #pragma omp critical
         {
             fmt::print("\r{}/{} source beam centers", ++source_beam_index, source_geometry.size());
             std::cout.flush();
         }
-        temp += calc_sigma_for_sbc(*sbc, target, fracture_info, data, beam_width, beam_frequency,
-                                   ray_code, window_length, max_stacking_distance);
+        temp +=
+            calc_sigma_for_sbc(*sbc, target, fracture_info, data, beam_width, beam_frequency,
+                               ray_code, window_length, max_stacking_distance, source_frequency);
     }
     result.data = temp;
     // Add newline after the loop progress output
@@ -251,13 +261,12 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     return result;
 }
 
-Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center,
-                                                const Position& target,
-                                                const FractureParameters& fracture_info,
-                                                const SeismoData& data, Meter beam_width,
-                                                AngularFrequency beam_frequency,
-                                                const std::vector<WaveType>& ray_code,
-                                                Second window_length, Meter max_stacking_distance) {
+Eigen::ArrayXXcd
+DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Position& target,
+                               const FractureParameters& fracture_info, const SeismoData& data,
+                               Meter beam_width, AngularFrequency beam_frequency,
+                               const std::vector<WaveType>& ray_code, Second window_length,
+                               Meter max_stacking_distance, AngularFrequency source_frequency) {
     Eigen::ArrayXXcd result =
         Eigen::ArrayXXcd::Zero(fracture_info.spacings.size(), fracture_info.orientations.size());
     Slowness slowness = twopoint.trace(target, source_beam_center);
@@ -285,7 +294,7 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
             }
             result(fracture_spacing.index(), fracture_orientation.index()) +=
                 stack(source_beam.value(), receiver_beam.value(), data, window_length,
-                      max_stacking_distance);
+                      max_stacking_distance, source_frequency);
         }
     }
     return result;

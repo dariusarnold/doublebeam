@@ -24,6 +24,7 @@ num_spacings = 41
 
 [beam]
 width = 150
-frequency = 25
+reference_frequency = 35
 window_length = 0.12
 max_stacking_distance = 200
+source_frequency = 20

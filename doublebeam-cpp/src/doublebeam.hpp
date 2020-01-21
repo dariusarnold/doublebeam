@@ -78,7 +78,8 @@ public:
     DoubleBeamResult algorithm(const std::vector<Position>& source_geometry, Position target,
                                const SeismoData& data, const FractureParameters& fracture_info,
                                Meter beam_width, AngularFrequency beam_frequency,
-                               Second window_length, Meter max_stacking_distance);
+                               Second window_length, Meter max_stacking_distance,
+                               AngularFrequency source_frequency);
 
 private:
     Eigen::ArrayXXcd calc_sigma_for_sbc(const Position& source_beam_center, const Position& target,
@@ -86,7 +87,8 @@ private:
                                         const SeismoData& data, Meter beam_width,
                                         AngularFrequency beam_frequency,
                                         const std::vector<WaveType>& ray_code, Second window_length,
-                                        Meter max_stacking_distance);
+                                        Meter max_stacking_distance,
+                                        AngularFrequency source_frequency);
 
     const VelocityModel& model;
     TwoPointRayTracing twopoint;

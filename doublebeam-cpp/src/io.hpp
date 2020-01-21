@@ -5,9 +5,9 @@
 #include <fstream>
 #include <vector>
 
-#include <gsl/span>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <gsl/span>
 
 #include "raytracing_types.hpp"
 #include "seismodata.hpp"
@@ -183,16 +183,19 @@ struct FractureParams {
 
 struct BeamParams {
     Meter width;
-    Frequency frequency;
+    Frequency reference_frequency;
+    Frequency source_frequency;
     Second window_length;
     Meter max_stacking_distance;
 
     friend std::ostream& operator<<(std::ostream& os, const BeamParams& beam_params) {
         fmt::print(os, "[beam]\n");
         fmt::print(os,
-                   "width = {}\nfrequency = {}\nwindow_length = {}\nmax_stacking_distance = {}\n\n",
-                   beam_params.width.get(), beam_params.frequency.get(),
-                   beam_params.window_length.get(), beam_params.max_stacking_distance.get());
+                   "width = {}\nreference_frequency = {}\nwindow_length = "
+                   "{}\nmax_stacking_distance = {}\nsource_frequency={}\n\n",
+                   beam_params.width.get(), beam_params.reference_frequency.get(),
+                   beam_params.window_length.get(), beam_params.max_stacking_distance.get(),
+                   beam_params.source_frequency.get());
         return os;
     }
 };
@@ -229,8 +232,8 @@ struct DoubleBeamOptions {
     BeamParams beam_params{};
 
     inline friend std::ostream& operator<<(std::ostream& os, const DoubleBeamOptions& options) {
-        os << options.seismo_data_params << options.target
-           << options.sbc_params << options.fracture_params << options.beam_params;
+        os << options.seismo_data_params << options.target << options.sbc_params
+           << options.fracture_params << options.beam_params;
         return os;
     }
 };
