@@ -142,10 +142,6 @@ std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,
     return std::exp(1i * beam.frequency().get() * complex_traveltime);
 }
 
-double unit_vect{0};
-double amplt{0};
-double expt{0};
-double restt{0};
 
 struct BeamEvalResult {
     std::complex<double> gb_value;
@@ -187,21 +183,11 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
     data.setZero();
 }
 
-double cutt = 0.;
-double fftt = 0;
-double evalt = 0;
-double beamt = 0;
-
-std::unordered_map<Seismogram<const double>, std::complex<double>,
-                   boost::hash<Seismogram<const double>>>
-    fft_cache;
-
 std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                            const SeismoData& data, Second window_length, Meter max_eval_distance) {
     std::complex<double> stacking_result(0, 0);
     std::vector<BeamEvalResult> source_beam_values, receiver_beam_values;
     // get all sources/receivers within max eval distance around surface point
-    auto a = std::chrono::high_resolution_clock::now();
     auto sources_in_range = data.get_sources(source_beam.last_position(), max_eval_distance);
     auto receivers_in_range = data.get_receivers(receiver_beam.last_position(), max_eval_distance);
     source_beam_values.reserve(std::size(sources_in_range));
@@ -214,8 +200,6 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                    std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
                        return eval_gauss_beam(receiver_beam, receiver);
                    });
-    auto b = std::chrono::high_resolution_clock::now();
-    evalt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
     namespace ba = boost::adaptors;
     for (const auto& source : sources_in_range | ba::indexed()) {
         for (const auto& receiver : receivers_in_range | ba::indexed()) {
@@ -226,16 +210,11 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                 // evaluation position to far away from beam surface point
                 continue;
             }
-            a = std::chrono::high_resolution_clock::now();
             Seismogram seismogram = data.get_seismogram(source.value(), receiver.value(),
                                                         total_traveltime - window_length / 2,
                                                         total_traveltime + window_length / 2);
-            b = std::chrono::high_resolution_clock::now();
-            cutt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             auto seismogram_freq = math::fft_closest_frequency(
                 seismogram.data, receiver_beam.frequency(), data.sampling_frequency());
-            auto c = std::chrono::high_resolution_clock::now();
-            fftt += std::chrono::duration_cast<std::chrono::nanoseconds>(c - b).count();
             stacking_result += source_beam_values[source.index()].gb_value *
                                receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
         }
@@ -267,11 +246,6 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                                    ray_code, window_length, max_stacking_distance);
     }
     result.data = temp;
-    fmt::print(
-        "Beams: {} s\nFFT: {} s\nBeam eval: {} s\ncuting seismograms: {} s\nGB amplitude: {} "
-        "s\nGB exp: {} s\nUnit vectors: {} s\nRest: {} s\n",
-        beamt * 1E-9, fftt * 1E-9, evalt * 1E-9, cutt * 1E-9, amplt * 1E-9, expt * 1E-9,
-        unit_vect * 1E-9, restt * 1E-9);
     // Add newline after the loop progress output
     fmt::print("\n");
     return result;
@@ -287,10 +261,7 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
     Eigen::ArrayXXcd result =
         Eigen::ArrayXXcd::Zero(fracture_info.spacings.size(), fracture_info.orientations.size());
     Slowness slowness = twopoint.trace(target, source_beam_center);
-    auto a = std::chrono::high_resolution_clock::now();
     auto source_beam = tracer.trace_beam(target, slowness, beam_width, beam_frequency, ray_code);
-    auto b = std::chrono::high_resolution_clock::now();
-    beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
     if (source_beam.status == Status::OutOfBounds) {
         throw std::logic_error("Source beam left model.\n");
     }
@@ -307,11 +278,8 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
                 calculate_new_slowness(slowness, fracture_orientation.value(),
                                        fracture_spacing.value(), angular_to_hertz(beam_frequency));
             // reuse ray code since beam should pass through the same layers
-            a = std::chrono::high_resolution_clock::now();
             auto receiver_beam =
                 tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
-            b = std::chrono::high_resolution_clock::now();
-            beamt += std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count();
             if (receiver_beam.status == Status::OutOfBounds) {
                 // beam didn't reach surface, skip
                 number_of_rec_beams_that_left_model++;
