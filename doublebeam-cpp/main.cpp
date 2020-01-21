@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         po::store(
             po::command_line_parser(argc, argv).options(all_options).positional(positional).run(),
             options);
-        // if help is given, ignore other options, print help and
+        // if help is given, ignore other options, print help and exit
         if (options.count("help")) {
             fmt::print("Gaussian double beam fracture parameter determination.\n\n");
             fmt::print("Usage:\n{} [config_file_path] [keyword_arguments]\n\n",
@@ -113,6 +113,8 @@ int main(int argc, char* argv[]) {
             fmt::print("{}\n", options_shown_in_usage);
             exit(0);
         }
+        // if path to config file is given, read options from it. Since options given first are
+        // preferred, this means cmd options override the config file parameters.
         if (options.count("config_file")) {
             auto config_path = options["config_file"].as<fs::path>();
             std::ifstream config_file{config_path};
@@ -152,6 +154,8 @@ int main(int argc, char* argv[]) {
         }
         fmt::print("Saved result in {}\n", result_path.string());
         return 0;
+    } catch (const po::unknown_option& er) {
+        fmt::print(std::cerr, "{}\nMaybe a typo?", er.what());
     } catch (const po::error& er) {
         fmt::print(std::cerr, "{}\n", er.what());
         exit(-1);
