@@ -252,7 +252,8 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     auto ray_code = direct_ray_code(target, source_geometry[0], model);
     int source_beam_index = 0;
     Eigen::ArrayXXcd temp(result.data);
-    #pragma omp declare reduction(+:Eigen::ArrayXXcd:omp_out=omp_out+omp_in) initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
+    #pragma omp declare reduction(+:Eigen::ArrayXXcd:omp_out=omp_out+omp_in) \
+    initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
     #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
     shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
     firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code)
