@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
         fmt::print("Saved result in {}\n", result_path.string());
         return 0;
     } catch (const po::unknown_option& er) {
-        fmt::print(std::cerr, "{}\nMaybe a typo?", er.what());
+        fmt::print(std::cerr, "{}\nMaybe a typo?\n", er.what());
     } catch (const po::error& er) {
         fmt::print(std::cerr, "{}\n", er.what());
         exit(-1);
