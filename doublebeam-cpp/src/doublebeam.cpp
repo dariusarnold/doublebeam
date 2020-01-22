@@ -151,6 +151,7 @@ std::complex<double> gb_exp(const Beam& beam, double q1, double q2, Arclength s,
 
 struct BeamEvalResult {
     std::complex<double> gb_value;
+    std::complex<double> amplitude;
     std::complex<double> complex_traveltime;
 };
 
@@ -179,7 +180,7 @@ BeamEvalResult eval_gauss_beam(const Beam& beam, const Position& position, Angul
     auto amp = gb_amplitude(beam, Arclength(total_arclength));
     std::complex<double> traveltime =
         complex_traveltime(beam, q[0], q[1], Arclength(total_arclength));
-    return {std::conj(amp * std::exp(1i * omega.get() * traveltime)), traveltime};
+    return {std::conj(amp * std::exp(1i * omega.get() * traveltime)), amp, traveltime};
 }
 
 
@@ -227,7 +228,11 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                                receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
         }
     }
-    return stacking_result;
+    std::complex<double> value{0, 0};
+    for (const auto& receiver : receivers_in_range | ba::indexed()) {
+        value += std::pow(std::abs(receiver_beam_values[receiver.index()].amplitude), 2);
+    }
+    return stacking_result / value;
 }
 
 DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geometry,
@@ -258,6 +263,8 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     result.data = temp;
     // Add newline after the loop progress output
     fmt::print("\n");
+    using namespace std::complex_literals;
+    result.data *= 2i * source_frequency.get();
     return result;
 }
 
@@ -297,5 +304,6 @@ DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Positio
                       max_stacking_distance, source_frequency);
         }
     }
+    result *= source_beam.value().last_slowness().pz.get();
     return result;
 }
