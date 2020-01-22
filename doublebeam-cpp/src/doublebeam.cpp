@@ -269,7 +269,6 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
     // the direction of the slowness to be able to treat it as the incoming direction of the
     // beam at the fractures and then scatter.
     slowness.flip_direction();
-    int number_of_rec_beams_that_left_model = 0;
     namespace ba = boost::adaptors;
     for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed()) {
         for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed()) {
@@ -282,7 +281,6 @@ Eigen::ArrayXXcd DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_cent
                 tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
             if (receiver_beam.status == Status::OutOfBounds) {
                 // beam didn't reach surface, skip
-                number_of_rec_beams_that_left_model++;
                 continue;
             }
             result(fracture_spacing.index(), fracture_orientation.index()) +=
