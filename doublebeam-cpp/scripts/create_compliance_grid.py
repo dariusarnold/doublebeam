@@ -30,5 +30,10 @@ for ix, x in enumerate(x_values):
         max_result[ix, iy] = np.max(result)
 
 np.save("result_grid", max_result)
-plt.imshow(np.abs(max_result))
+im = plt.imshow(np.abs(max_result).T, extent=(target_x0, target_x1, target_y0, target_y1), origin="lower")
+plt.xlabel("x axis (m)")
+plt.ylabel("y axis (m)")
+cb = plt.colorbar(im, format="%.2e")
+cb.set_label(r"$|\sigma|$")
+plt.title(r"Inverted compliance field ($|max(\sigma)|$)")
 plt.show()
