@@ -232,6 +232,9 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     for (const auto& receiver : receivers_in_range | ba::indexed()) {
         value += std::pow(std::abs(receiver_beam_values[receiver.index()].amplitude), 2);
     }
+    if (receivers_in_range.size() == 0) {
+        return stacking_result;
+    }
     return stacking_result / value;
 }
 
