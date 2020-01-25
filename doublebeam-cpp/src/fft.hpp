@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <fftw3.h>
+#include <gsl/span>
 
 
 /**
