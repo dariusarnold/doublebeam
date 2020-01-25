@@ -61,7 +61,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     ax.text(-0.1, 1, path_textbox_content, transform=ax.transAxes, fontsize=7)
     ticks = list(cbar.get_ticks())
     # cbar.set_ticks([np.min(data), np.max(data)] + ticks)
-    title = ax.set_title(f"Target x = {options.target.x} m, y = {options.target.y} m")
+    title = ax.set_title(f"Target ({options.target.x} m, {options.target.y} m, {options.target.z} m)")
     title.set_position((.5, .85))
     # plt.show()
     # plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
