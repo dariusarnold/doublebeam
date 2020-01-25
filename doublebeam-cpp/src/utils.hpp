@@ -3,10 +3,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <vector>
-#include <string_view>
 
 #include "raytracing_types.hpp"
 #include "seismodata.hpp"
@@ -79,16 +79,16 @@ namespace impl {
 
     template <typename T>
     struct is_container<T, std::conditional_t<false,
-        std::void_t<decltype(std::declval<T>().begin()),
-            decltype(std::declval<T>().end())>,
-        void>> : public std::true_type {};
+                                              std::void_t<decltype(std::declval<T>().begin()),
+                                                          decltype(std::declval<T>().end())>,
+                                              void>> : public std::true_type {};
 
     template <typename T, typename = void>
     struct is_iterator : std::false_type {};
 
     template <typename T>
     struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
-        : std::true_type {};
+            : std::true_type {};
 
 } // namespace impl
 
@@ -256,7 +256,6 @@ namespace math {
      * @param z2 Z component of second vector.
      */
     double dot(double x1, double y1, double z1, double x2, double y2, double z2);
-
 
 
     /**
