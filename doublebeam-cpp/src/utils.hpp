@@ -442,7 +442,7 @@ namespace math {
      */
     template <typename Iter>
     std::complex<typename std::iterator_traits<Iter>::value_type>
-    goertzel(Iter begin, Iter end, long long target_frequency_bin) {
+    goertzel(Iter begin, Iter end, double target_frequency_bin) {
         const auto N = std::distance(begin, end);
         if (N == 0) {
             throw std::invalid_argument("Data for Goertzel algorithm is empty.");
@@ -456,21 +456,19 @@ namespace math {
             throw std::invalid_argument(impl::Formatter()
                                         << "Invalid input bin " << target_frequency_bin << ".");
         }
-        const type N_float(N);
-        const type pi{M_PI};
-        const type target_frequency = 2. * pi * (target_frequency_bin / N_float);
+        const type target_frequency = 2. * M_PI * target_frequency_bin / static_cast<type>(N);
         // Initialize intermediate sequence. Since s[-2]=s[-1] = 0 skip those terms and start at
         // s[2]. This means s_prev_prev starts as s[0], and s_prev as s[1].
         type s_prev_prev = *begin;
         type s_prev = *(begin + 1) + 2 * std::cos(target_frequency) * s_prev_prev;
         for (auto i = 2U; i < N; ++i) {
-            type s = *(begin + i) + type{2.} * std::cos(target_frequency) * s_prev - s_prev_prev;
+            type s = *(begin + i) + 2. * std::cos(target_frequency) * s_prev - s_prev_prev;
             s_prev_prev = s_prev;
             s_prev = s;
         }
         // calculate last term of output sequence
-        return std::exp(std::complex<type>(0, 2) * pi * (target_frequency_bin / N_float)) * s_prev -
-               s_prev_prev;
+        using namespace std::complex_literals;
+        return std::exp(2i * M_PI * (target_frequency_bin / static_cast<type>(N))) * s_prev - s_prev_prev;
     }
 
     /**
@@ -482,7 +480,7 @@ namespace math {
      */
     template <typename Container>
     std::complex<typename Container::value_type> goertzel(const Container& data,
-                                                          long long target_frequency_bin) {
+                                                          double target_frequency_bin) {
         return goertzel(data.begin(), data.end(), target_frequency_bin);
     }
     /**
@@ -520,6 +518,24 @@ namespace math {
         auto bin = calc_frequency_bin(std::distance(begin, end), frequency, sampling_frequency);
         return goertzel(begin, end, bin);
     }
+
+    /**
+     * Calculate fft value at arbitrary frequency.
+     * @param frequency FFT value at this frequency is calculated.
+     */
+    template <typename Iterator>
+    std::complex<typename Iterator::value_type> fft(Iterator begin, Iterator end, AngularFrequency frequency,
+                                           AngularFrequency sampling_frequency) {
+        double bin = std::distance(begin, end) * frequency.get() / sampling_frequency.get();
+        return goertzel(begin, end, bin);
+    }
+
+    template <typename Container>
+    std::complex<typename Container::value_type> fft(const Container& c, AngularFrequency frequency,
+                                                     AngularFrequency sampling_frequency) {
+        return fft(c.begin(), c.end(), frequency, sampling_frequency);
+    }
+
 
     /**
      * Calculate one frequency bin from fft of values in Container.
