@@ -397,6 +397,15 @@ namespace math {
     };
 
     /**
+     * Since config library cant depend on doublebeam library, it has its own vector type,
+     * the UnitVector2. This also strongly models the requirement of phi_hat to be a unit vector,
+     * but the doublebeam code expects a math::Vector2.
+     * This is the helper conversion function.
+     * @return
+     */
+    Vector2 to_vector2(config::UnitVector2 vector_2);
+
+    /**
      * Generate num_values of unit vectors in a 180° arc around the central direction.
      * The first vector of the returned range will have a clockwise angle of -90° of the central
      * direction, the last vector will have a 90° clockwise angle to the central direction.

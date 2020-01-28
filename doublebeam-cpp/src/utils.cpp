@@ -133,6 +133,10 @@ namespace math {
         return std::llround(N * target_frequency.get() / sampling_frequency.get());
     }
 
+    Vector2 to_vector2(config::UnitVector2 vector_2) {
+        return Vector2{vector_2.x, vector_2.y};
+    }
+
 } // namespace math
 
 namespace impl {

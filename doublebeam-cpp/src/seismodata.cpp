@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iterator>
+#include <regex>
 
 #include "config.hpp"
 #include "io.hpp"
@@ -77,7 +78,8 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
  */
 std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& source_path) {
     for (const auto& p : std::filesystem::directory_iterator(source_path)) {
-        if (std::filesystem::is_regular_file(p) and p.path().extension() != ".bin") {
+        if (std::filesystem::is_regular_file(p) and
+            p.path().extension() != config::get_binary_seismogram_extension()) {
             return read_timesteps(p);
         }
     }
@@ -117,8 +119,10 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
         } else {
             std::vector<fs::path> seismo_files;
             std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
-                         std::back_inserter(seismo_files),
-                         [](const auto& dir_entry) { return fs::is_regular_file(dir_entry); });
+                         std::back_inserter(seismo_files), [](const auto& dir_entry) {
+                             return fs::is_regular_file(dir_entry) and
+                                    std::regex_search(dir_entry.path().filename().string(), config::get_seismogram_file_regex());
+                         });
             std::sort(seismo_files.begin(), seismo_files.end());
             auto receiver_index = 0;
             for (const auto& seismo_file : seismo_files) {

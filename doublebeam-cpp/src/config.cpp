@@ -21,4 +21,17 @@ namespace config {
     std::string_view get_binary_seismogram_filename() {
         return "data.bin";
     }
+
+    std::string_view get_binary_seismogram_extension() {
+        auto index_of_dot = get_binary_seismogram_filename().rfind('.');
+        return get_binary_seismogram_filename().substr(index_of_dot);
+    }
+
+    std::regex get_seismogram_file_regex() {
+        return std::regex{R"(seismo.z.*.sdu)"};
+    }
+
+    UnitVector2 get_phi_hat() {
+        return UnitVector2(1, 0);
+    }
 } // namespace config

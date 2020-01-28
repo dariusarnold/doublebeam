@@ -133,10 +133,10 @@ int main(int argc, char* argv[]) {
         auto source_beam_centres = seismo::grid_coordinates(
             opts.sbc_params.x0, opts.sbc_params.x1, opts.sbc_params.y0, opts.sbc_params.y1,
             opts.sbc_params.z, opts.sbc_params.num_x, opts.sbc_params.num_y);
-        FractureParameters fractures(math::Vector2{1, 0}, opts.fracture_params.num_orientations,
-                                     opts.fracture_params.spacings_min,
-                                     opts.fracture_params.spacings_max,
-                                     opts.fracture_params.num_spacings);
+        FractureParameters fractures(
+            math::to_vector2(config::get_phi_hat()), opts.fracture_params.num_orientations,
+            opts.fracture_params.spacings_min, opts.fracture_params.spacings_max,
+            opts.fracture_params.num_spacings);
         auto data = SeismoData(opts.seismo_data_params.data_path);
         auto a = std::chrono::high_resolution_clock::now();
         // TODO just pass beam params instead of all the options
