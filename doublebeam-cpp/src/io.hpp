@@ -52,15 +52,6 @@ void save_binary_seismograms(
     const std::vector<std::pair<std::vector<double>, std::vector<double>>>& seismograms,
     const std::filesystem::path& path);
 
-/**
- *
- * @param N Number of seismograms in file.
- * @param path
- * @return
- */
-std::vector<std::pair<std::vector<double>, std::vector<double>>>
-load_binary_seismograms(size_t N, const std::filesystem::path& path);
-
 
 /**
  * Loads only amplitude data, not timesteps from binary file.
@@ -68,7 +59,7 @@ load_binary_seismograms(size_t N, const std::filesystem::path& path);
  * @param path
  * @return
  */
-void load_binary_seismograms2(const std::filesystem::path& path, size_t number_of_seismograms,
+void load_binary_seismograms(const std::filesystem::path& path, size_t number_of_seismograms,
                               gsl::span<double> amplitudes);
 
 
@@ -110,46 +101,6 @@ std::vector<double> read_timesteps(std::filesystem::path path);
  */
 std::pair<std::vector<double>, std::vector<double>> read_seismogram(std::filesystem::path path);
 
-/**
- * Extract number from string after equal sign.
- * @tparam Number int, double
- * @param string String with format a = N where a is any identifier (name) and N is a number.
- * @return Number that comes after the equal sign.
- */
-template <typename Number>
-Number extract_number(const std::string& string) {
-    // +1 to exclude = from substring
-    auto equal_position = string.find('=') + 1;
-    char* end;
-    if constexpr (std::is_floating_point_v<Number>) {
-        Number res = std::strtod(string.data() + equal_position, &end);
-        return res;
-    }
-    if constexpr (std::is_integral_v<Number>) {
-        const int base = 10;
-        Number res = std::strtol(string.data() + equal_position, &end, base);
-        return res;
-    }
-}
-
-const auto extract_double = extract_number<double>;
-const auto extract_int = extract_number<int>;
-
-inline std::filesystem::path extract_path(const std::string& string) {
-    // +1 to exclude = from substring
-    auto equal_position = string.find('=') + 1;
-    // could be made more efficient, doesnt matter for parsing the file.
-    auto part_after_equal = string.substr(equal_position);
-    auto first_not_whitespace = part_after_equal.find_first_not_of(' ');
-    auto path_string = part_after_equal.substr(first_not_whitespace);
-    std::filesystem::path p(path_string);
-    return p;
-}
-
-inline bool contains(const std::string& string, std::string_view search_term) {
-    auto n = string.find(search_term);
-    return n != std::string::npos;
-}
 
 struct SourceBeamCenterParams {
     Meter x0, x1, y0, y1, z;

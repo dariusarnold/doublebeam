@@ -109,7 +109,7 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
         // read binary data if it exists, else fall back to text data
         if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
             fs::exists(binary_file)) {
-            load_binary_seismograms2(
+            load_binary_seismograms(
                 binary_file, receivers.size(),
                 gsl::span<double>(data.data() + source_index * timesteps.size() * receivers.size(),
                                   data.data() +
