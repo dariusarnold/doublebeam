@@ -1,12 +1,14 @@
 #include <algorithm>
 #include <iterator>
 
+#include "config.hpp"
 #include "io.hpp"
 #include "seismodata.hpp"
 #include "utils.hpp"
 
+
 SeismoData::SeismoData(const std::filesystem::path& project_folder,
-                       const std::string& source_file_name, const std::string& receiver_file_name) :
+                       std::string_view source_file_name, std::string_view receiver_file_name) :
         seismograms(project_folder, source_file_name, receiver_file_name) {}
 
 bool PositionWithIndex::operator==(const PositionWithIndex& other) const {
@@ -55,8 +57,7 @@ const std::vector<Receiver>& SeismoData::receivers() const {
 }
 
 Seismograms::Seismograms(const std::filesystem::path& project_folder,
-                         const std::string& source_file_name,
-                         const std::string& receiver_file_name) :
+                         std::string_view source_file_name, std::string_view receiver_file_name) :
         sources(read_sourcefile(project_folder / source_file_name)),
         receivers(read_receiverfile(project_folder / receiver_file_name)),
         source_kd_tree(sources),
@@ -86,7 +87,7 @@ std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& s
 
 void Seismograms::read_all_seismograms(const std::filesystem::path& project_folder) {
     namespace fs = std::filesystem;
-    auto p = project_folder / "shotdata";
+    auto p = project_folder / config::shotdata_foldername();
     // error if shotdata folder missing
     if (not fs::is_directory(p) or not fs::exists(p)) {
         throw std::runtime_error(impl::Formatter()
@@ -106,7 +107,8 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
     auto source_index = 0;
     for (const auto& sourcepath : source_paths) {
         // read binary data if it exists, else fall back to text data
-        if (auto binary_file = sourcepath / "data.bin"; fs::exists(binary_file)) {
+        if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
+            fs::exists(binary_file)) {
             load_binary_seismograms2(
                 binary_file, receivers.size(),
                 gsl::span<double>(data.data() + source_index * timesteps.size() * receivers.size(),

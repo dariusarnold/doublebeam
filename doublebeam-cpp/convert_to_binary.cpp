@@ -38,7 +38,7 @@ void convert_content_to_binary(const fs::path& source_dir,
     }
     std::sort(files.begin(), files.end());
     std::transform(files.begin(), files.end(), std::back_inserter(seismograms), read_seismogram);
-    save_binary_seismograms(seismograms, source_dir / "data.bin");
+    save_binary_seismograms(seismograms, source_dir / config::get_binary_seismogram_filename());
 }
 
 

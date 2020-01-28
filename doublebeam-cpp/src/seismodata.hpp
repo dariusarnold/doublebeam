@@ -4,11 +4,13 @@
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <string_view>
 #include <vector>
 
 #include <gsl/span>
 #include <boost/container_hash/hash.hpp>
 
+#include "config.hpp"
 #include "kdtree.hpp"
 #include "units.hpp"
 
@@ -87,9 +89,8 @@ struct Seismograms {
      * Read all seismograms, sources and receivers from folder.
      * @param project_folder
      */
-    Seismograms(const std::filesystem::path& project_folder,
-                const std::string& source_file_name = "sources.txt",
-                const std::string& receiver_file_name = "receivers.txt");
+    Seismograms(const std::filesystem::path& project_folder, std::string_view source_file_name,
+                std::string_view receiver_file_name);
 
     // Vector of all source positions read from source file
     std::vector<Source> sources;
@@ -124,8 +125,8 @@ private:
 class SeismoData {
 public:
     SeismoData(const std::filesystem::path& project_folder,
-               const std::string& source_file_name = "sources.txt",
-               const std::string& receiver_file_name = "receivers.txt");
+               std::string_view source_file_name = config::get_source_filename(),
+               std::string_view receiver_file_name = config::get_receiver_filename());
 
     /**
      * Return specific seismogram given from shot at source recorded at receiver.

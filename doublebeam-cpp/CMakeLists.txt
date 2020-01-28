@@ -36,7 +36,9 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
         src/raytracing_helpers.cpp src/ray.cpp src/beam.cpp src/printing.cpp src/io.cpp
         src/seismodata.cpp src/fft.cpp src/eigen_helpers.cpp src/strong_types.hpp src/units.hpp
         src/raytracing_types.cpp src/kdtree.cpp src/kdtree.hpp)
-target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt)
+add_library(doublebeam_config src/config.cpp src/config.hpp)
+target_include_directories(doublebeam_config PUBLIC src)
+target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt doublebeam_config)
 target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
