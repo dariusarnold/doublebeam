@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
                 "Maximum stacking distance at beam end point at the surface. Only sources/receivers"
                 " within this distance will be used for stacking.")
             ("beam.source_frequency", po::value(&opts.beam_params.source_frequency)->required(),
-                "Frequncy of seismic data in hertz.")
+                "Frequency of seismic data in hertz.")
             ;
         // clang-format on
 
