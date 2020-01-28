@@ -1,7 +1,9 @@
-#include "io.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
+#include <regex>
+
+#include "io.hpp"
 
 
 namespace fs = std::filesystem;
@@ -17,11 +19,11 @@ std::vector<fs::path> get_all_directories(const fs::path& path) {
 }
 
 
-std::vector<fs::path> get_all_files(const fs::path& path, const std::string& file_extension = "") {
+std::vector<fs::path> get_all_files(const fs::path& path, const std::regex& seismogram_file) {
     std::vector<fs::path> files;
     auto filter = [&](auto& dir_entry) {
         return (dir_entry.is_regular_file() and
-                (file_extension.empty() ? true : dir_entry.path().extension() == file_extension));
+                std::regex_search(dir_entry.path().filename().string(), seismogram_file));
     };
     std::copy_if(fs::directory_iterator(path), fs::directory_iterator(), std::back_inserter(files),
                  filter);
@@ -29,21 +31,23 @@ std::vector<fs::path> get_all_files(const fs::path& path, const std::string& fil
 }
 
 
-void convert_content_to_binary(const fs::path& source_dir,
-                               const std::string& seismogram_file_extension) {
+void convert_content_to_binary(const fs::path& source_dir, const std::regex& seismogram_file) {
     std::vector<SeismogramFileContent> seismograms;
-    auto files = get_all_files(source_dir, seismogram_file_extension);
+    auto files = get_all_files(source_dir, seismogram_file);
     if (files.empty()) {
         throw std::length_error("Found no seismogram files in " + source_dir.string());
     }
     std::sort(files.begin(), files.end());
+    std::cout << "Converting " << files.front().string() << " to " << files.back().string() << "\n";
     std::transform(files.begin(), files.end(), std::back_inserter(seismograms), read_seismogram);
+    std::cout << "Saved " << (source_dir / config::get_binary_seismogram_filename()).string()
+              << "\n";
     save_binary_seismograms(seismograms, source_dir / config::get_binary_seismogram_filename());
 }
 
 
 void convert_all_to_binary(const std::filesystem::path& shotdata_path,
-                           const std::string& seismogram_file_extension) {
+                           const std::regex& seismogram_file) {
     if (not std::filesystem::exists(shotdata_path)) {
         throw std::invalid_argument("Could not find shotdata folder " + shotdata_path.string() +
                                     ".");
@@ -57,7 +61,7 @@ void convert_all_to_binary(const std::filesystem::path& shotdata_path,
     auto i = 0;
     for (const auto& source_dir : paths) {
         std::cout << ++i << "/" << paths.size() << ": " << source_dir << std::endl;
-        convert_content_to_binary(source_dir, seismogram_file_extension);
+        convert_content_to_binary(source_dir, seismogram_file);
     }
 }
 
@@ -65,14 +69,14 @@ void convert_all_to_binary(const std::filesystem::path& shotdata_path,
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         std::cerr << "Specify path to shotdata folder as first positional argument and seismogram "
-                     "file extension (with leading dot) as second positional argument.\n";
+                     "file regex as second positional argument.\n";
         exit(-1);
     }
     std::ios::sync_with_stdio(false);
     std::filesystem::path p(argv[1]);
-    std::string seismogram_file_extension(argv[2]);
+    std::regex seismogram_file(argv[2]);
     auto a = std::chrono::high_resolution_clock::now();
-    convert_all_to_binary(p, seismogram_file_extension);
+    convert_all_to_binary(p, seismogram_file);
     auto b = std::chrono::high_resolution_clock::now();
     std::cout << "Took " << std::chrono::duration_cast<std::chrono::seconds>(b - a).count()
               << " s\n";
