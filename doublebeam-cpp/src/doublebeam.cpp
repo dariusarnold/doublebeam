@@ -219,13 +219,24 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                 // evaluation position to far away from beam surface point
                 continue;
             }
-            Seismogram seismogram = data.get_seismogram(source.value(), receiver.value(),
-                                                        total_traveltime - window_length / 2,
-                                                        total_traveltime + window_length / 2);
-            auto seismogram_freq =
-                math::fft(seismogram.data, receiver_beam.frequency(), data.sampling_frequency());
+            Seismogram seismogram_x = data.get_seismogram<Component::X>(
+                source.value(), receiver.value(), total_traveltime - window_length / 2,
+                total_traveltime + window_length / 2);
+            Seismogram seismogram_y = data.get_seismogram<Component::Y>(
+                source.value(), receiver.value(), total_traveltime - window_length / 2,
+                total_traveltime + window_length / 2);
+            Seismogram seismogram_z = data.get_seismogram<Component::Z>(
+                source.value(), receiver.value(), total_traveltime - window_length / 2,
+                total_traveltime + window_length / 2);
+            auto seismogram_freq_x =
+                math::fft(seismogram_x.data, receiver_beam.frequency(), data.sampling_frequency());
+            auto seismogram_freq_y =
+                math::fft(seismogram_y.data, receiver_beam.frequency(), data.sampling_frequency());
+            auto seismogram_freq_z =
+                math::fft(seismogram_z.data, receiver_beam.frequency(), data.sampling_frequency());
             stacking_result += source_beam_values[source.index()].gb_value *
-                               receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
+                               receiver_beam_values[receiver.index()].gb_value *
+                               (seismogram_freq_x + seismogram_freq_y + seismogram_freq_z) / 3.;
         }
     }
     std::complex<double> value{0, 0};

@@ -7,8 +7,8 @@
 #include <string_view>
 #include <vector>
 
-#include <gsl/span>
 #include <boost/container_hash/hash.hpp>
+#include <gsl/span>
 
 #include "config.hpp"
 #include "kdtree.hpp"
@@ -79,6 +79,7 @@ public:
     }
 };
 
+enum class Component { X, Y, Z };
 
 /**
  * Holds all seismic data.
@@ -138,7 +139,24 @@ public:
      * @param r
      * @return
      */
-    [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r) const;
+    template <Component component>
+    [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s,
+                                                          const Receiver& r) const {
+        // subtract 1 since files use 1 based indexing while vector uses zero based indexing
+        auto seismogram_index = (s.index - 1) * num_receivers() + (r.index - 1);
+        if constexpr (component == Component::X) {
+            return Seismogram(seismograms.datax.data() + seismogram_index * num_samples(),
+                              num_samples(), seismograms.timesteps.data(), num_samples());
+        }
+        if constexpr (component == Component::Y) {
+            return Seismogram(seismograms.datay.data() + seismogram_index * num_samples(),
+                              num_samples(), seismograms.timesteps.data(), num_samples());
+        }
+        if constexpr (component == Component::Z) {
+            return Seismogram(seismograms.dataz.data() + seismogram_index * num_samples(),
+                              num_samples(), seismograms.timesteps.data(), num_samples());
+        }
+    }
 
     /**
      * Cut seismogram to time samples between time t0 and time t1.
@@ -149,8 +167,22 @@ public:
      * @param t1 end time
      * @return Part of seismogram containing only the amplitude samples between t0 and t1.
      */
+    template <Component component>
     [[nodiscard]] Seismogram<const double> get_seismogram(const Source& s, const Receiver& r,
-                                                          Second t0, Second t1) const;
+                                                          Second t0, Second t1) const {
+        auto seismo = get_seismogram<component>(s, r);
+        ptrdiff_t begin_offset = std::ceil(t0.get() / timestep().get());
+        if (begin_offset > static_cast<ptrdiff_t>(seismo.size())) {
+            return Seismogram(seismo.data.data(), 0UL, seismo.timesteps.data(), 0UL);
+        }
+        // +1 because end should point to one past the end.
+        ptrdiff_t end_offset = std::floor(t1.get() / timestep().get()) + 1;
+        begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
+        end_offset = std::clamp(end_offset, 0L, static_cast<ptrdiff_t>(seismo.size()));
+        return Seismogram(seismo.data.data() + begin_offset, seismo.data.data() + end_offset,
+                          seismo.timesteps.data() + begin_offset,
+                          seismo.timesteps.data() + end_offset);
+    }
 
     /**
      * Get access to list of sources.
