@@ -162,7 +162,7 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
             sourcepath.value(), receivers.size(),
             gsl::span<double>(dataz.data() + sourcepath.index() * number_of_datapoints_per_source,
                               number_of_datapoints_per_source),
-            config::get_seismogram_file_regex_y(), config::get_binary_seismogram_filename_y());
+            config::get_seismogram_file_regex_y(), config::get_binary_seismogram_filename_z());
     }
 }
 
