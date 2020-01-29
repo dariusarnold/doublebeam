@@ -28,29 +28,6 @@ std::ostream& operator<<(std::ostream& os, const Receiver& r) {
     return os;
 }
 
-Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Receiver& r) const {
-    // subtract 1 since files use 1 based indexing while vector uses zero based indexing
-    auto seismogram_index = (s.index - 1) * num_receivers() + (r.index - 1);
-    return Seismogram(seismograms.data.data() + seismogram_index * num_samples(), num_samples(),
-                      seismograms.timesteps.data(), num_samples());
-}
-
-Seismogram<const double> SeismoData::get_seismogram(const Source& s, const Receiver& r, Second t0,
-                                                    Second t1) const {
-    auto seismo = get_seismogram(s, r);
-    ptrdiff_t begin_offset = std::ceil(t0.get() / timestep().get());
-    if (begin_offset > static_cast<ptrdiff_t>(seismo.size())) {
-        return Seismogram(seismo.data.data(), 0UL, seismo.timesteps.data(), 0UL);
-    }
-    // +1 because end should point to one past the end.
-    ptrdiff_t end_offset = std::floor(t1.get() / timestep().get()) + 1;
-    begin_offset = std::clamp(begin_offset, 0L, static_cast<ptrdiff_t>(seismo.size()) - 1);
-    end_offset = std::clamp(end_offset, 0L, static_cast<ptrdiff_t>(seismo.size()));
-    return Seismogram(seismo.data.data() + begin_offset, seismo.data.data() + end_offset,
-                      seismo.timesteps.data() + begin_offset, seismo.timesteps.data() + end_offset);
-}
-
-
 const std::vector<Source>& SeismoData::sources() const {
     return seismograms.sources;
 }
@@ -65,7 +42,9 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
         receivers(read_receiverfile(project_folder / receiver_file_name)),
         source_kd_tree(sources),
         receiver_kd_tree(receivers),
-        data(),
+        datax(),
+        datay(),
+        dataz(),
         timesteps(),
         common_timestep(-1) {
     read_all_seismograms(project_folder);
