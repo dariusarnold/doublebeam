@@ -105,7 +105,9 @@ struct Seismograms {
     // For S sources and R receivers, will contain S*R seismograms.
     // First R seismograms will belong to source 1, the following R seismograms to source 2 and so
     // on.
-    std::vector<double> data;
+    std::vector<double> datax;
+    std::vector<double> datay;
+    std::vector<double> dataz;
     // Common timesteps of all seismograms.
     std::vector<double> timesteps;
 

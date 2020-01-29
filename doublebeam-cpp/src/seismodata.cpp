@@ -93,14 +93,15 @@ std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& s
  * Get sorted vector of seismograms in a folder.
  */
 std::vector<std::filesystem::path>
-get_sorted_seismogram_files(const std::filesystem::path& sourcepath) {
+get_sorted_seismogram_files(const std::filesystem::path& sourcepath,
+                            const std::regex& seismo_file_regex) {
     namespace fs = std::filesystem;
     std::vector<fs::path> seismo_files;
     std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
-                 std::back_inserter(seismo_files), [](const auto& dir_entry) {
+                 std::back_inserter(seismo_files), [&](const auto& dir_entry) {
                      return fs::is_regular_file(dir_entry) and
                             std::regex_search(dir_entry.path().filename().string(),
-                                              config::get_seismogram_file_regex());
+                                              seismo_file_regex);
                  });
     std::sort(seismo_files.begin(), seismo_files.end());
     return seismo_files;
@@ -116,15 +117,16 @@ get_sorted_seismogram_files(const std::filesystem::path& sourcepath) {
  * Should be part of the larger seismogram array, where data for all sources is stored.
  */
 void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_receivers,
-                          const gsl::span<double> subarray) {
+                          const gsl::span<double> subarray, const std::regex& seismo_file_regex,
+                          std::string_view binary_seismo_filename) {
     namespace fs = std::filesystem;
-    if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
+    if (auto binary_file = sourcepath / binary_seismo_filename;
         // read binary data if it exists,
         fs::exists(binary_file)) {
         load_binary_seismograms(binary_file, num_receivers, subarray);
     } else {
         // fall back to text data
-        auto seismo_files = get_sorted_seismogram_files(sourcepath);
+        auto seismo_files = get_sorted_seismogram_files(sourcepath, seismo_file_regex);
         for (const auto& seismo_file : seismo_files | boost::adaptors::indexed()) {
             auto ampl = read_amplitude(seismo_file.value());
             std::copy(ampl.begin(), ampl.end(),
@@ -161,14 +163,27 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
     namespace fs = std::filesystem;
     auto source_paths = get_sorted_source_folders(project_folder);
     timesteps = read_timesteps_from_some_seismogram(source_paths[0]);
-    data.resize(sources.size() * receivers.size() * timesteps.size());
+    datax.resize(sources.size() * receivers.size() * timesteps.size());
+    datay.resize(sources.size() * receivers.size() * timesteps.size());
+    dataz.resize(sources.size() * receivers.size() * timesteps.size());
     const size_t number_of_datapoints_per_source = receivers.size() * timesteps.size();
     // iterate over source directories and read seismograms
     for (const auto& sourcepath : source_paths | boost::adaptors::indexed()) {
         load_seismogram_data(
             sourcepath.value(), receivers.size(),
-            gsl::span<double>(data.data() + sourcepath.index() * number_of_datapoints_per_source,
-                              number_of_datapoints_per_source));
+            gsl::span<double>(datax.data() + sourcepath.index() * number_of_datapoints_per_source,
+                              number_of_datapoints_per_source),
+            config::get_seismogram_file_regex_x(), config::get_binary_seismogram_filename_x());
+        load_seismogram_data(
+            sourcepath.value(), receivers.size(),
+            gsl::span<double>(datay.data() + sourcepath.index() * number_of_datapoints_per_source,
+                              number_of_datapoints_per_source),
+            config::get_seismogram_file_regex_y(), config::get_binary_seismogram_filename_y());
+        load_seismogram_data(
+            sourcepath.value(), receivers.size(),
+            gsl::span<double>(dataz.data() + sourcepath.index() * number_of_datapoints_per_source,
+                              number_of_datapoints_per_source),
+            config::get_seismogram_file_regex_y(), config::get_binary_seismogram_filename_y());
     }
 }
 
