@@ -2,8 +2,8 @@
 #define DOUBLEBEAM_CPP_CONFIG_HPP
 
 #include <cmath>
-#include <string_view>
 #include <regex>
+#include <string_view>
 
 /**
  * This file contains constants, filenames, paths which are used by the main
@@ -25,10 +25,26 @@ namespace config {
     std::string_view get_receiver_filename();
 
     /**
-     * Filename for binary seismograms.
-     * WITH file ending, eg. data.bin
+     * Filename for binary seismograms WITH file ending, eg. data.bin.
+     * Binary seismograms are loaded before text files, since they are a lot
+     * faster. This means if the source folder contains a file with this name,
+     * seismograms will be loaded from it instead of the text files.
+     * These three versions are for the three components (x, y, z).
      */
-    std::string_view get_binary_seismogram_filename();
+    std::string_view get_binary_seismogram_filename_x();
+    std::string_view get_binary_seismogram_filename_y();
+    std::string_view get_binary_seismogram_filename_z();
+
+    /**
+     * Regular expression used to find/select seismogram files.
+     * All files in a source folder matching this expression will be loaded. This expression
+     * therefore should only match files of one component (x, y, z), since only one component
+     * can be used by the doublebeam algorithm.
+     * @return
+     */
+    std::regex get_seismogram_file_regex_x();
+    std::regex get_seismogram_file_regex_y();
+    std::regex get_seismogram_file_regex_z();
 
     /**
      * Extension for binary seismograms.
@@ -64,8 +80,12 @@ namespace config {
      * The function returning std::regex is autocreated by the function returning std::string,
      * so only the string function has to be changed.
      */
-    std::regex get_seismogram_file_regex();
-    std::string get_seismogram_file_regex_str();
+    std::regex get_seismogram_file_regex_x();
+    std::regex get_seismogram_file_regex_y();
+    std::regex get_seismogram_file_regex_z();
+    std::string get_seismogram_file_regex_str_x();
+    std::string get_seismogram_file_regex_str_y();
+    std::string get_seismogram_file_regex_str_z();
 
 } // namespace config
 
