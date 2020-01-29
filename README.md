@@ -63,8 +63,11 @@ all in a common velocity model.
      - shotdata, directory containing seismograms.
        - source_0001, directory containing recordings from all seismograms for the shot.
          - receiver_001.txt, text file, format as given under Waveform data formatting, giving data recorded at this receiver.
-         ...
+         - The receivers index in the filename should be zero padded, and the receivers should have the same order as given in
+         the receiver file, eg. index 1 in receiver file should correspond to receiver_001.txt. 
        - source_n
+     - It is assumed that all seismograms share their timesteps, eg. all receiver files will have the same time values.
+       It is also assumed, that this timestep is constant for one seismogram. 
      
    
 ## Literature/References
