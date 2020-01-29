@@ -154,6 +154,7 @@ get_sorted_source_folders(const std::filesystem::path& project_folder) {
                  std::back_inserter(source_paths),
                  [](const auto& dir_entry) { return dir_entry.is_directory(); });
     std::sort(source_paths.begin(), source_paths.end());
+    return source_paths;
 }
 
 
