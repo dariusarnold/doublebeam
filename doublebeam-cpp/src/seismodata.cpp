@@ -2,6 +2,8 @@
 #include <iterator>
 #include <regex>
 
+#include <boost/range/adaptor/indexed.hpp>
+
 #include "config.hpp"
 #include "io.hpp"
 #include "seismodata.hpp"
@@ -87,7 +89,56 @@ std::vector<double> read_timesteps_from_some_seismogram(std::filesystem::path& s
 }
 
 
-void Seismograms::read_all_seismograms(const std::filesystem::path& project_folder) {
+/**
+ * Get sorted vector of seismograms in a folder.
+ */
+std::vector<std::filesystem::path>
+get_sorted_seismogram_files(const std::filesystem::path& sourcepath) {
+    namespace fs = std::filesystem;
+    std::vector<fs::path> seismo_files;
+    std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
+                 std::back_inserter(seismo_files), [](const auto& dir_entry) {
+                     return fs::is_regular_file(dir_entry) and
+                            std::regex_search(dir_entry.path().filename().string(),
+                                              config::get_seismogram_file_regex());
+                 });
+    std::sort(seismo_files.begin(), seismo_files.end());
+    return seismo_files;
+}
+
+
+/**
+ * Check if binary data is available for source folder and load that first,
+ * else load data from text seismograms.
+ * @param sourcepath Path to source folder.
+ * @param num_receivers Number of receivers per source.
+ * @param subarray Array large enough to hold num_receivers * timesteps values.
+ * Should be part of the larger seismogram array, where data for all sources is stored.
+ */
+void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_receivers,
+                          const gsl::span<double> subarray) {
+    namespace fs = std::filesystem;
+    if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
+        // read binary data if it exists,
+        fs::exists(binary_file)) {
+        load_binary_seismograms(binary_file, num_receivers, subarray);
+    } else {
+        // fall back to text data
+        auto seismo_files = get_sorted_seismogram_files(sourcepath);
+        for (const auto& seismo_file : seismo_files | boost::adaptors::indexed()) {
+            auto ampl = read_amplitude(seismo_file.value());
+            std::copy(ampl.begin(), ampl.end(),
+                      subarray.data() + seismo_file.index() * ampl.size());
+        }
+    }
+}
+
+
+/**
+ * Finds shotdata folder and builds a sorted vector of all source folders.
+ */
+std::vector<std::filesystem::path>
+get_sorted_source_folders(const std::filesystem::path& project_folder) {
     namespace fs = std::filesystem;
     auto p = project_folder / config::shotdata_foldername();
     // error if shotdata folder missing
@@ -103,37 +154,21 @@ void Seismograms::read_all_seismograms(const std::filesystem::path& project_fold
                  std::back_inserter(source_paths),
                  [](const auto& dir_entry) { return dir_entry.is_directory(); });
     std::sort(source_paths.begin(), source_paths.end());
+}
+
+
+void Seismograms::read_all_seismograms(const std::filesystem::path& project_folder) {
+    namespace fs = std::filesystem;
+    auto source_paths = get_sorted_source_folders(project_folder);
     timesteps = read_timesteps_from_some_seismogram(source_paths[0]);
     data.resize(sources.size() * receivers.size() * timesteps.size());
+    const size_t number_of_datapoints_per_source = receivers.size() * timesteps.size();
     // iterate over source directories and read seismograms
-    auto source_index = 0;
-    for (const auto& sourcepath : source_paths) {
-        // read binary data if it exists, else fall back to text data
-        if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
-            fs::exists(binary_file)) {
-            load_binary_seismograms(
-                binary_file, receivers.size(),
-                gsl::span<double>(data.data() + source_index * timesteps.size() * receivers.size(),
-                                  data.data() +
-                                      (source_index + 1) * timesteps.size() * receivers.size()));
-        } else {
-            std::vector<fs::path> seismo_files;
-            std::copy_if(fs::directory_iterator(sourcepath), fs::directory_iterator(),
-                         std::back_inserter(seismo_files), [](const auto& dir_entry) {
-                             return fs::is_regular_file(dir_entry) and
-                                    std::regex_search(dir_entry.path().filename().string(), config::get_seismogram_file_regex());
-                         });
-            std::sort(seismo_files.begin(), seismo_files.end());
-            auto receiver_index = 0;
-            for (const auto& seismo_file : seismo_files) {
-                auto ampl = read_amplitude(seismo_file);
-                std::copy(ampl.begin(), ampl.end(),
-                          data.data() + receiver_index * timesteps.size() +
-                              source_index * receivers.size() * timesteps.size());
-                ++receiver_index;
-            }
-        }
-        ++source_index;
+    for (const auto& sourcepath : source_paths | boost::adaptors::indexed()) {
+        load_seismogram_data(
+            sourcepath.value(), receivers.size(),
+            gsl::span<double>(data.data() + sourcepath.index() * number_of_datapoints_per_source,
+                              number_of_datapoints_per_source));
     }
 }
 
