@@ -10,10 +10,6 @@ namespace config {
         return "receivers.txt";
     }
 
-    std::string_view get_binary_filename() {
-        return "data.bin";
-    }
-
     std::string_view shotdata_foldername() {
         return "shotdata";
     }
