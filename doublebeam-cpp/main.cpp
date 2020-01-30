@@ -129,6 +129,15 @@ int main(int argc, char* argv[]) {
         po::notify(options);
 
         auto vm = read_velocity_file(opts.seismo_data_params.velocity_model_path);
+        Velocity vel_at_frac_depth = vm.eval_at(opts.target.position).value();
+        double min_resolvable_frac_spacing =
+            vel_at_frac_depth.get() / opts.beam_params.source_frequency.get() / 2;
+        if (opts.fracture_params.spacings_min.get() < min_resolvable_frac_spacing) {
+            fmt::print(
+                std::cerr,
+                "Minimum fracture spacing ({}) below minimum resolvable fracture spacing ({}).",
+                opts.fracture_params.spacings_min.get(), min_resolvable_frac_spacing);
+        }
         auto db = DoubleBeam(vm);
         auto source_beam_centres = seismo::grid_coordinates(
             opts.sbc_params.x0, opts.sbc_params.x1, opts.sbc_params.y0, opts.sbc_params.y1,
