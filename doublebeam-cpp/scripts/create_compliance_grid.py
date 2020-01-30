@@ -12,10 +12,10 @@ OPTIONS_PATH = Path("/home/darius/git/doublebeam/doublebeam-cpp/options_thomas.t
 
 # create grid from target_x0 to target_x1 in x direction and from target_y0 to target_y1 in
 # y direction with num_x*num_y points.
-target_x0 = 0
-target_x1 = 1200
-target_y0 = 0
-target_y1 = 1200
+target_x0 = 200
+target_x1 = 1000
+target_y0 = 200
+target_y1 = 1000
 num_x = 20
 num_y = 20
 
