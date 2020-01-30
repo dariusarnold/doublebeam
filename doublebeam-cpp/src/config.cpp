@@ -15,7 +15,7 @@ namespace config {
     }
 
     std::string_view get_binary_seismogram_filename() {
-        return "data.bin";
+        return "dataz.bin";
     }
 
     std::string_view get_binary_seismogram_extension() {
