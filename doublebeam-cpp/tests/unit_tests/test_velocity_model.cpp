@@ -117,15 +117,6 @@ TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     EXPECT_EQ(vm, expected);
 }
 
-TEST(TestCreateVelocityModel, TestThrowOnInvalidWidths) {
-    std::vector<Layer> l{{0_meter, 1_meter, 2_meter_per_second}};
-    EXPECT_THROW(VelocityModel(l, 100_meter, 50_meter), std::invalid_argument)
-        << "Not throwing for model creation with different width along x and y axis when using "
-           "default values for x0 and y0.";
-    EXPECT_THROW(VelocityModel(l, 100_meter, 100_meter, 0_meter, 1_meter), std::invalid_argument)
-        << "Not throwing for model creation with different width along x and y axis.";
-}
-
 TEST(TestCreateVelocityModel, TestThrowOnEmptyListOfLayers) {
     EXPECT_THROW(VelocityModel({}, 1_meter, 1_meter), std::invalid_argument)
         << "Not throwing when constructing from empty list of layers.";
