@@ -95,6 +95,9 @@ namespace math {
     }
 
     std::vector<Vector2> generate_vector_arc(int num_values, math::Vector2 central_direction) {
+        if (num_values == 1) {
+            return {central_direction};
+        }
         auto angle_against_xaxis =
             math::angle_clockwise(1., 0., central_direction.x, central_direction.y);
         auto angles = math::linspace(angle_against_xaxis - radians(90_deg).get(),

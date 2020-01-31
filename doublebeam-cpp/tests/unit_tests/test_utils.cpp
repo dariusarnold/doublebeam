@@ -502,6 +502,15 @@ TEST(TestBetween, TestNormalInclusivityBothSides) {
     EXPECT_TRUE(result);
 }
 
+TEST(CreateVectorArc, TestOneVectorShouldBeCentralDirection) {
+    math::Vector2 central_direction{1, 0};
+    const auto num_of_vectors_to_generate = 1;
+    auto vectors = math::generate_vector_arc(num_of_vectors_to_generate, central_direction);
+    ASSERT_EQ(vectors.size(), num_of_vectors_to_generate);
+    EXPECT_DOUBLE_EQ(vectors[0].x, central_direction.x);
+    EXPECT_DOUBLE_EQ(vectors[0].y, central_direction.y);
+}
+
 TEST(CreateVectorArc, TestSimpleThreeVectorCase) {
     math::Vector2 central_direction{1, 1};
     auto number_of_vectors_to_generate = 3;
