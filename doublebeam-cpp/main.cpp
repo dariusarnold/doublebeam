@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
         if (opts.fracture_params.spacings_min.get() < min_resolvable_frac_spacing) {
             fmt::print(
                 std::cerr,
-                "Minimum fracture spacing ({}) below minimum resolvable fracture spacing ({}).",
+                "Minimum fracture spacing ({}) below minimum resolvable fracture spacing ({}).\n",
                 opts.fracture_params.spacings_min.get(), min_resolvable_frac_spacing);
         }
         auto db = DoubleBeam(vm);
