@@ -70,6 +70,13 @@ Seismograms::Seismograms(const std::filesystem::path& project_folder,
         common_timestep(-1) {
     read_all_seismograms(project_folder);
     common_timestep = Second(timesteps[1] - timesteps[0]);
+    std::for_each(
+        sources.begin(), sources.end(),
+        [start_index = sources[0].index - 1](Source& source) { source.index -= start_index; });
+    std::for_each(receivers.begin(), receivers.end(),
+                  [start_index = receivers[0].index - 1](Receiver& receiver) {
+                      receiver.index -= start_index;
+                  });
 }
 
 
