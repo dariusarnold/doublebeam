@@ -68,6 +68,39 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
 
 
+def plot_2d_results(data: np.array, options: Options, fname):
+    fig, ax = plt.subplots(figsize=(6, 6), dpi=210)
+    # +1 otherwise last column of data will be ignored
+    im = ax.imshow(data.T, vmin=0, extent=(options.fracture_params.spacing_min, options.fracture_params.spacing_max, 0, 5))
+    ax.get_yaxis().set_visible(False)
+    cbar_format = ticker.ScalarFormatter()
+    # force scientific notation with exponent at top
+    cbar_format.set_powerlimits((-1, 1))
+    cbar = fig.colorbar(im, ax=ax, shrink=.5, pad=.08, aspect=15, format=cbar_format)
+    cbar.set_label(r"$|\sigma|$")
+    textbox_content = "\n".join((fr"$\omega_s = {options.beam_params.source_frequency}$ Hz",
+                                 fr"$\omega_r = {options.beam_params.reference_frequency}$ Hz",
+                                 fr"$w = {options.beam_params.width} $ m",
+                                 fr"window $= {options.beam_params.window_length}$ s",
+                                 fr"max stack. dist. $= {options.beam_params.max_stacking_distance:.0f}$ m",
+                                 f"{options.source_beam_centers.num_x}x{options.source_beam_centers.num_y} source beam centers:",
+                                 fr"    $x = {options.source_beam_centers.x0:.0f}$ ... ${options.source_beam_centers.x1:.0f}$ m",
+                                 fr"    $y = {options.source_beam_centers.y0:.0f}$ ... ${options.source_beam_centers.y1:.0f}$ m"
+                                 ))
+    path_textbox_content = "\n".join((f"{options.data.model_path}",
+                                      f"{options.data.data_path}"))
+    box_properties = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    # add box with parameters used
+    ax.text(0.0, 0.4, textbox_content, transform=fig.transFigure, fontsize=10, verticalalignment="top",
+            bbox=box_properties)
+    # add data path to plot
+    ax.text(0, 0.65, path_textbox_content, transform=fig.transFigure, fontsize=7)
+    title = ax.set_title(f"Target ({options.target.x} m, {options.target.y} m, {options.target.z} m)")
+    # plt.show()
+    # plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
+    plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
+
+
 def main():
     if len(sys.argv) == 1:
         # no arguments, open file picker
@@ -82,7 +115,10 @@ def main():
         fname = find_last_result(fname)
         print(f"Plotting {fname}")
     options, data = parse_file(fname)
-    plot_scattering_coefficient(np.abs(data), options, fname)
+    if data.shape[-1] == 1:
+        plot_2d_results(np.abs(data), options, fname)
+    else:
+        plot_scattering_coefficient(np.abs(data), options, fname)
 
 
 if __name__ == '__main__':
