@@ -29,14 +29,7 @@ VelocityModel::VelocityModel(const std::vector<Layer>& layers, Meter x1, Meter y
         x0_(x0),
         x1_(x1),
         y0_(y0),
-        y1_(y1) {
-    if (x_width() != y_width()) {
-        throw std::invalid_argument(
-            impl::Formatter()
-            << "Different model widths along x and y axis not allowed. Widths are: x " << x_width()
-            << " y " << y_width());
-    }
-}
+        y1_(y1) {}
 
 VelocityModel read_velocity_file(const fs::path& filepath) {
     if (filepath.empty()) {
