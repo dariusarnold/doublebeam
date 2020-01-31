@@ -362,22 +362,6 @@ TEST(TestGridCoordinates, TestNormalUseCaseWithReversedGridExtent) {
 }
 
 
-TEST(TestGoertzel, TestFloatNumbers) {
-    std::vector<float> input{0, 1, 2, 3, 2, 1, 0};
-    using namespace std::complex_literals;
-    std::vector<std::complex<float>> expected_result{9.f + 0.if,
-                                                     -4.5489173f - 2.190643if,
-                                                     0.19202155f + 0.24078733if,
-                                                     -0.14310412f - 0.6269801if,
-                                                     -0.14310412f + 0.6269801if,
-                                                     0.19202155f - 0.24078733if,
-                                                     -4.5489173f + 2.190643if};
-    for (auto bin = 0; bin < input.size(); ++bin) {
-        EXPECT_TRUE(Close(math::goertzel(input, bin), expected_result[bin], {1E-5, 1E-5}))
-            << "Different result in bin " << bin << ".";
-    }
-}
-
 /**
  * Test if the correct frequency bin is returned
  */
