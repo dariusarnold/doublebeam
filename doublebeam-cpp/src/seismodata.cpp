@@ -130,6 +130,7 @@ void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_re
     if (auto binary_file = sourcepath / config::get_binary_seismogram_filename();
         // read binary data if it exists,
         fs::exists(binary_file)) {
+        fmt::print("Loading {} (binary)\n", sourcepath.string());
         load_binary_seismograms(binary_file, num_receivers, subarray);
     } else {
         // fall back to text data
@@ -140,6 +141,7 @@ void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_re
                                                     sourcepath,
                                                     config::get_seismogram_file_regex_str()));
         }
+        fmt::print("Loading {} (text)\n", sourcepath.string());
         for (const auto& seismo_file : seismo_files | boost::adaptors::indexed()) {
             auto ampl = read_amplitude(seismo_file.value());
             std::copy(ampl.begin(), ampl.end(),
