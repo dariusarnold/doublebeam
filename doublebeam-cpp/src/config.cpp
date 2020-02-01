@@ -32,15 +32,15 @@ namespace config {
     }
 
     std::regex get_seismogram_file_regex_x() {
-        return std::regex{get_seismogram_file_regex_x()};
+        return std::regex{get_seismogram_file_regex_str_x()};
     }
 
      std::regex get_seismogram_file_regex_y() {
-        return std::regex{get_seismogram_file_regex_y()};
+        return std::regex{get_seismogram_file_regex_str_y()};
     }
 
      std::regex get_seismogram_file_regex_z() {
-        return std::regex{get_seismogram_file_regex_z()};
+        return std::regex{get_seismogram_file_regex_str_z()};
     }
 
     std::string get_seismogram_file_regex_str_x() {
