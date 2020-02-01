@@ -118,9 +118,10 @@ void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_re
         auto seismo_files = get_sorted_seismogram_files(sourcepath, seismo_file_regex);
         if (seismo_files.empty()) {
             throw std::invalid_argument(fmt::format("Found no seismograms in {}\n"
-                                                    "Was searching for {}.\n",
-                                                    sourcepath,
-                                                    config::get_seismogram_file_regex_str()));
+//                                                    "Was searching for {}.\n",
+//                                                    sourcepath,
+//                                                    config::get_seismogram_file_regex_str()
+                                                    ));
         }
         fmt::print("Loading {} (text)\n", sourcepath.string());
         for (const auto& seismo_file : seismo_files | boost::adaptors::indexed()) {
