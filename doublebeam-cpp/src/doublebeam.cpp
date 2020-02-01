@@ -2,6 +2,7 @@
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "doublebeam.hpp"
 #include "eigen_helpers.hpp"
@@ -195,58 +196,79 @@ DoubleBeamResult::DoubleBeamResult(size_t num_of_fracture_spacings,
     data.setZero();
 }
 
-std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
+std::complex<double> stack(const Beam& source_beam_p, const Beam& receiver_beam_p,
+                           const Beam& source_beam_s, const Beam& receiver_beam_s,
                            const SeismoData& data, Second window_length, Meter max_eval_distance,
                            AngularFrequency source_frequency) {
     std::complex<double> stacking_result(0, 0);
-    std::vector<BeamEvalResult> source_beam_values, receiver_beam_values;
+    std::vector<BeamEvalResult> source_beam_values_p, source_beam_values_s, receiver_beam_values_p,
+        receiver_beam_values_s;
     // get all sources/receivers within max eval distance around surface point
-    auto sources_in_range = data.get_sources(source_beam.last_position(), max_eval_distance);
-    auto receivers_in_range = data.get_receivers(receiver_beam.last_position(), max_eval_distance);
-    source_beam_values.reserve(std::size(sources_in_range));
-    receiver_beam_values.reserve(std::size(receivers_in_range));
+    auto sources_in_range = data.get_sources(source_beam_p.last_position(), max_eval_distance);
+    auto receivers_in_range =
+        data.get_receivers(receiver_beam_p.last_position(), max_eval_distance);
+    source_beam_values_p.reserve(std::size(sources_in_range));
+    source_beam_values_s.reserve(std::size(sources_in_range));
+    receiver_beam_values_p.reserve(std::size(receivers_in_range));
+    receiver_beam_values_s.reserve(std::size(receivers_in_range));
     // pre compute gauss beam for sources/receivers to avoid multiple evaluation
     std::transform(sources_in_range.begin(), sources_in_range.end(),
-                   std::back_inserter(source_beam_values), [&](const Source& source) {
-                       return eval_gauss_beam(source_beam, source, source_frequency);
+                   std::back_inserter(source_beam_values_p), [&](const Source& source) {
+                       return eval_gauss_beam(source_beam_p, source, source_frequency);
                    });
     std::transform(receivers_in_range.begin(), receivers_in_range.end(),
-                   std::back_inserter(receiver_beam_values), [&](const Receiver& receiver) {
-                       return eval_gauss_beam(receiver_beam, receiver, source_frequency);
+                   std::back_inserter(receiver_beam_values_p), [&](const Receiver& receiver) {
+                       return eval_gauss_beam(receiver_beam_p, receiver, source_frequency);
+                   });
+    std::transform(sources_in_range.begin(), sources_in_range.end(),
+                   std::back_inserter(source_beam_values_s), [&](const Source& source) {
+                       return eval_gauss_beam(source_beam_s, source, source_frequency);
+                   });
+    std::transform(receivers_in_range.begin(), receivers_in_range.end(),
+                   std::back_inserter(receiver_beam_values_s), [&](const Receiver& receiver) {
+                       return eval_gauss_beam(receiver_beam_s, receiver, source_frequency);
                    });
     namespace ba = boost::adaptors;
     for (const auto& source : sources_in_range | ba::indexed()) {
         for (const auto& receiver : receivers_in_range | ba::indexed()) {
-            Second total_traveltime(
-                std::real(source_beam_values[source.index()].complex_traveltime +
-                          receiver_beam_values[receiver.index()].complex_traveltime));
-            if (total_traveltime - window_length / 2 > data.time_length()) {
+            Second total_traveltime_p(
+                std::real(source_beam_values_p[source.index()].complex_traveltime +
+                          receiver_beam_values_p[receiver.index()].complex_traveltime));
+            Second total_traveltime_s(
+                std::real(source_beam_values_s[source.index()].complex_traveltime +
+                          receiver_beam_values_s[receiver.index()].complex_traveltime));
+            if (total_traveltime_p - window_length / 2 > data.time_length() or
+                total_traveltime_s - window_length / 2 > data.time_length()) {
                 // evaluation position to far away from beam surface point
                 continue;
             }
             Seismogram seismogram_x = data.get_seismogram<Component::X>(
-                source.value(), receiver.value(), total_traveltime - window_length / 2,
-                total_traveltime + window_length / 2);
+                source.value(), receiver.value(), total_traveltime_p - window_length / 2,
+                total_traveltime_p + window_length / 2);
             Seismogram seismogram_y = data.get_seismogram<Component::Y>(
-                source.value(), receiver.value(), total_traveltime - window_length / 2,
-                total_traveltime + window_length / 2);
+                source.value(), receiver.value(), total_traveltime_s - window_length / 2,
+                total_traveltime_s + window_length / 2);
             Seismogram seismogram_z = data.get_seismogram<Component::Z>(
-                source.value(), receiver.value(), total_traveltime - window_length / 2,
-                total_traveltime + window_length / 2);
-            auto seismogram_freq_x =
-                math::fft(seismogram_x.data, receiver_beam.frequency(), data.sampling_frequency());
-            auto seismogram_freq_y =
-                math::fft(seismogram_y.data, receiver_beam.frequency(), data.sampling_frequency());
-            auto seismogram_freq_z =
-                math::fft(seismogram_z.data, receiver_beam.frequency(), data.sampling_frequency());
-            stacking_result += source_beam_values[source.index()].gb_value *
-                               receiver_beam_values[receiver.index()].gb_value *
-                               (seismogram_freq_x + seismogram_freq_y + seismogram_freq_z) / 3.;
+                source.value(), receiver.value(), total_traveltime_s - window_length / 2,
+                total_traveltime_s + window_length / 2);
+            auto seismogram_freq_x = math::fft(seismogram_x.data, receiver_beam_p.frequency(),
+                                               data.sampling_frequency());
+            auto seismogram_freq_y = math::fft(seismogram_y.data, receiver_beam_p.frequency(),
+                                               data.sampling_frequency());
+            auto seismogram_freq_z = math::fft(seismogram_z.data, receiver_beam_p.frequency(),
+                                               data.sampling_frequency());
+            stacking_result += source_beam_values_p[source.index()].gb_value *
+                                   receiver_beam_values_p[receiver.index()].gb_value *
+                                   seismogram_freq_x +
+                               source_beam_values_s[source.index()].gb_value *
+                                   receiver_beam_values_s[receiver.index()].gb_value *
+                                   (seismogram_freq_y + seismogram_freq_z);
         }
     }
     std::complex<double> value{0, 0};
     for (const auto& receiver : receivers_in_range | ba::indexed()) {
-        value += std::pow(std::abs(receiver_beam_values[receiver.index()].amplitude), 2);
+        value += std::pow(std::abs(receiver_beam_values_p[receiver.index()].amplitude), 2);
+        value += std::pow(std::abs(receiver_beam_values_s[receiver.index()].amplitude), 2);
     }
     if (receivers_in_range.size() == 0) {
         return stacking_result;
@@ -307,6 +329,8 @@ DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Positio
         source_beam_s.status == Status::OutOfBounds) {
         throw std::logic_error("Source beam left model.\n");
     }
+    fmt::print("{} = {}\n", source_beam_p.value().last_position(),
+               source_beam_s.value().last_position());
     // Since we traced the beam from the target upwards to the surface, we will have to flip
     // the direction of the slowness to be able to treat it as the incoming direction of the
     // beam at the fractures and then scatter.
@@ -332,12 +356,12 @@ DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Positio
                 // beam didn't reach surface, skip
                 continue;
             }
+            fmt::print("{} = {}\n", receiver_beam_p.value().last_position(),
+                       receiver_beam_s.value().last_position());
             result(fracture_spacing.index(), fracture_orientation.index()) +=
-                stack(source_beam_p.value(), receiver_beam_p.value(), data, window_length,
-                      max_stacking_distance, source_frequency);
-            result(fracture_spacing.index(), fracture_orientation.index()) +=
-                stack(source_beam_s.value(), receiver_beam_s.value(), data, window_length,
-                      max_stacking_distance, source_frequency);
+                stack(source_beam_p.value(), receiver_beam_p.value(), source_beam_s.value(),
+                      receiver_beam_s.value(), data, window_length, max_stacking_distance,
+                      source_frequency);
         }
     }
     result *= source_beam_p.value().last_slowness().pz.get();
