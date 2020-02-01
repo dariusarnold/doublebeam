@@ -21,7 +21,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     # +1 otherwise last column of data will be ignored
     radii = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max,
                         data.shape[0] + 1)
-    im = ax.pcolormesh(angles, radii, data)
+    im = ax.pcolormesh(angles, radii, data, vmin=0)
     # add grid
     major_ticks_radius = np.linspace(options.fracture_params.spacing_min,
                                      options.fracture_params.spacing_max, 5)
