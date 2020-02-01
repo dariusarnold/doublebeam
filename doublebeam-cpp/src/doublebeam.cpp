@@ -326,7 +326,7 @@ DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Positio
             auto receiver_beam_p =
                 tracer_p.trace_beam(target, new_slowness_p, beam_width, beam_frequency, ray_code);
             auto receiver_beam_s =
-                tracer_p.trace_beam(target, new_slowness_p, beam_width, beam_frequency, ray_code);
+                tracer_p.trace_beam(target, new_slowness_s, beam_width, beam_frequency, ray_code);
             if (receiver_beam_p.status == Status::OutOfBounds or
                 receiver_beam_s.status == Status::OutOfBounds) {
                 // beam didn't reach surface, skip
