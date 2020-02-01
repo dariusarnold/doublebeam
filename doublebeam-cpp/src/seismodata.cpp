@@ -176,7 +176,6 @@ get_sorted_source_folders(const std::filesystem::path& project_folder) {
 
 
 void Seismograms::read_all_seismograms(const std::filesystem::path& project_folder) {
-    namespace fs = std::filesystem;
     auto source_paths = get_sorted_source_folders(project_folder);
     timesteps = read_timesteps_from_some_seismogram(source_paths[0]);
     data.resize(sources.size() * receivers.size() * timesteps.size());
