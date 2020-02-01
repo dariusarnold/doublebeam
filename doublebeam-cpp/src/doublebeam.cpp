@@ -70,8 +70,13 @@ std::vector<WaveType> direct_ray_code(Position source, Position receiver,
     return std::vector<WaveType>(n, WaveType::Transmitted);
 }
 
-DoubleBeam::DoubleBeam(const VelocityModel& model_) :
-        model(model_), twopoint(model_), tracer(model_) {}
+DoubleBeam::DoubleBeam(VelocityModel the_model_p, VelocityModel the_model_s) :
+        model_p(std::move(the_model_p)),
+        model_s(std::move(the_model_s)),
+        twopoint_p(model_p),
+        twopoint_s(model_s),
+        tracer_p(model_p),
+        tracer_s(model_s) {}
 
 #define USEDEBUG false
 #if USEDEBUG
@@ -256,7 +261,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
                                        Meter max_stacking_distance,
                                        AngularFrequency source_frequency) {
     DoubleBeamResult result(fracture_info.spacings.size(), fracture_info.orientations.size());
-    auto ray_code = direct_ray_code(target, source_geometry[0], model);
+    auto ray_code = direct_ray_code(target, source_geometry[0], model_p);
     int source_beam_index = 0;
     Eigen::ArrayXXcd temp(result.data);
     // clang-format off
@@ -292,34 +297,50 @@ DoubleBeam::calc_sigma_for_sbc(const Position& source_beam_center, const Positio
                                Meter max_stacking_distance, AngularFrequency source_frequency) {
     Eigen::ArrayXXcd result =
         Eigen::ArrayXXcd::Zero(fracture_info.spacings.size(), fracture_info.orientations.size());
-    Slowness slowness = twopoint.trace(target, source_beam_center);
-    auto source_beam = tracer.trace_beam(target, slowness, beam_width, beam_frequency, ray_code);
-    if (source_beam.status == Status::OutOfBounds) {
+    Slowness slowness_p = twopoint_p.trace(target, source_beam_center);
+    Slowness slowness_s = twopoint_s.trace(target, source_beam_center);
+    auto source_beam_p =
+        tracer_p.trace_beam(target, slowness_p, beam_width, beam_frequency, ray_code);
+    auto source_beam_s =
+        tracer_s.trace_beam(target, slowness_s, beam_width, beam_frequency, ray_code);
+    if (source_beam_p.status == Status::OutOfBounds or
+        source_beam_s.status == Status::OutOfBounds) {
         throw std::logic_error("Source beam left model.\n");
     }
     // Since we traced the beam from the target upwards to the surface, we will have to flip
     // the direction of the slowness to be able to treat it as the incoming direction of the
     // beam at the fractures and then scatter.
-    slowness.flip_direction();
+    slowness_p.flip_direction();
+    slowness_s.flip_direction();
     namespace ba = boost::adaptors;
     for (const auto& fracture_spacing : fracture_info.spacings | ba::indexed()) {
         for (const auto& fracture_orientation : fracture_info.orientations | ba::indexed()) {
             // trace receiver beam in scattered direction
-            Slowness new_slowness =
-                calculate_new_slowness(slowness, fracture_orientation.value(),
+            Slowness new_slowness_p =
+                calculate_new_slowness(slowness_p, fracture_orientation.value(),
+                                       fracture_spacing.value(), angular_to_hertz(beam_frequency));
+            Slowness new_slowness_s =
+                calculate_new_slowness(slowness_s, fracture_orientation.value(),
                                        fracture_spacing.value(), angular_to_hertz(beam_frequency));
             // reuse ray code since beam should pass through the same layers
-            auto receiver_beam =
-                tracer.trace_beam(target, new_slowness, beam_width, beam_frequency, ray_code);
-            if (receiver_beam.status == Status::OutOfBounds) {
+            auto receiver_beam_p =
+                tracer_p.trace_beam(target, new_slowness_p, beam_width, beam_frequency, ray_code);
+            auto receiver_beam_s =
+                tracer_p.trace_beam(target, new_slowness_p, beam_width, beam_frequency, ray_code);
+            if (receiver_beam_p.status == Status::OutOfBounds or
+                receiver_beam_s.status == Status::OutOfBounds) {
                 // beam didn't reach surface, skip
                 continue;
             }
             result(fracture_spacing.index(), fracture_orientation.index()) +=
-                stack(source_beam.value(), receiver_beam.value(), data, window_length,
+                stack(source_beam_p.value(), receiver_beam_p.value(), data, window_length,
+                      max_stacking_distance, source_frequency);
+            result(fracture_spacing.index(), fracture_orientation.index()) +=
+                stack(source_beam_s.value(), receiver_beam_s.value(), data, window_length,
                       max_stacking_distance, source_frequency);
         }
     }
-    result *= source_beam.value().last_slowness().pz.get();
+    result *= source_beam_p.value().last_slowness().pz.get();
+    result *= source_beam_s.value().last_slowness().pz.get();
     return result;
 }
