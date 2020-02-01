@@ -3,6 +3,8 @@
 #include <regex>
 
 #include <boost/range/adaptor/indexed.hpp>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "config.hpp"
 #include "io.hpp"
@@ -132,6 +134,12 @@ void load_seismogram_data(const std::filesystem::path& sourcepath, size_t num_re
     } else {
         // fall back to text data
         auto seismo_files = get_sorted_seismogram_files(sourcepath);
+        if (seismo_files.empty()) {
+            throw std::invalid_argument(fmt::format("Found no seismograms in {}\n"
+                                                    "Was searching for {}.\n",
+                                                    sourcepath,
+                                                    config::get_seismogram_file_regex_str()));
+        }
         for (const auto& seismo_file : seismo_files | boost::adaptors::indexed()) {
             auto ampl = read_amplitude(seismo_file.value());
             std::copy(ampl.begin(), ampl.end(),

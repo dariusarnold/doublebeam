@@ -61,9 +61,11 @@ namespace config {
      * All files in a source folder matching this expression will be loaded. This expression
      * therefore should only match files of one component (x, y, z), since only one component
      * can be used by the doublebeam algorithm.
-     * @return
+     * The function returning std::regex is autocreated by the function returning std::string,
+     * so only the string function has to be changed.
      */
     std::regex get_seismogram_file_regex();
+    std::string get_seismogram_file_regex_str();
 
 } // namespace config
 
