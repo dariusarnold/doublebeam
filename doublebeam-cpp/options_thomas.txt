@@ -1,6 +1,7 @@
 [data]
 path = /home/darius/masterarbeit/thomas/
-model = /home/darius/masterarbeit/thomas/velocity_model.txt
+modelp = /home/darius/masterarbeit/thomas/velocity_model_p.txt
+models = /home/darius/masterarbeit/thomas/velocity_model_s.txt
 
 [target]
 x = 600

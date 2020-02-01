@@ -58,7 +58,7 @@ struct DoubleBeamResult {
 
 class DoubleBeam {
 public:
-    explicit DoubleBeam(const VelocityModel& model);
+    explicit DoubleBeam(VelocityModel the_model_p, VelocityModel the_model_s);
 
     /**
      * Performs doublebeam algorithm and calculates scattering coefficient sigma
@@ -90,9 +90,12 @@ private:
                                         Meter max_stacking_distance,
                                         AngularFrequency source_frequency);
 
-    const VelocityModel& model;
-    TwoPointRayTracing twopoint;
-    RayTracer tracer;
+    VelocityModel model_p;
+    VelocityModel model_s;
+    TwoPointRayTracing twopoint_p;
+    TwoPointRayTracing twopoint_s;
+    RayTracer tracer_p;
+    RayTracer tracer_s;
 };
 
 #endif // DOUBLEBEAM_CPP_DOUBLEBEAM_H

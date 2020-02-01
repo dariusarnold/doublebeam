@@ -153,12 +153,14 @@ struct BeamParams {
 
 struct SeismoDataParams {
     std::filesystem::path data_path;
-    std::filesystem::path velocity_model_path;
+    std::filesystem::path velocity_model_p_path;
+    std::filesystem::path velocity_model_s_path;
 
     friend std::ostream& operator<<(std::ostream& os, const SeismoDataParams& data_params) {
         fmt::print(os, "[data]\n");
         fmt::print(os, "path = {}\n", data_params.data_path.string());
-        fmt::print(os, "model = {}\n\n", data_params.velocity_model_path.string());
+        fmt::print(os, "modelp = {}\n", data_params.velocity_model_p_path.string());
+        fmt::print(os, "models = {}\n\n", data_params.velocity_model_s_path.string());
         return os;
     }
 };
