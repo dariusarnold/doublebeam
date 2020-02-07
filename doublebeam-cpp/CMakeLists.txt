@@ -13,6 +13,7 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(CXXGSL REQUIRED)
 
 message("-- Setting up nanoflann.")
 execute_process(COMMAND git submodule update --init -- external/nanoflann
