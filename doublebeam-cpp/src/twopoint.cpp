@@ -55,7 +55,7 @@ TwoPointRayTracing::array_t X_tilde_prime(double q, const A& epsilon_tilde, cons
 template <typename A>
 TwoPointRayTracing::array_t X_tilde_double_prime(double q, const A& epsilon_tilde,
                                                  const A& h_tilde) {
-    return -3 * h_tilde * epsilon_tilde * q / std::pow(1 + epsilon_tilde * q * q, 2.5);
+    return -3. * h_tilde * epsilon_tilde * q / std::pow(1 + epsilon_tilde * q * q, 2.5);
 }
 
 
@@ -201,9 +201,9 @@ Slowness TwoPointRayTracing::trace(Position source, Position receiver, double ac
     msg(epsilon_tilde);
     double d1 = h_tilde.sum();
     // TODO find better way for sum, nansum evaluates into temporary array
-    double c0 = nansum((h_tilde / sqrt(epsilon_tilde))[epsilon_tilde != 0]);
-    double c1 = nansum(h_tilde[epsilon_tilde == 0]);
-    double cn2 = -0.5 * nansum((h_tilde / pow(epsilon_tilde, 1.5))[epsilon_tilde != 0]);
+    double c0 = nansum((h_tilde / sqrt(epsilon_tilde))[epsilon_tilde != 0.]);
+    double c1 = nansum(h_tilde[epsilon_tilde == 0.]);
+    double cn2 = -0.5 * nansum((h_tilde / pow(epsilon_tilde, 1.5))[epsilon_tilde != 0.]);
     msg(d1);
     msg(c0);
     msg(c1);
