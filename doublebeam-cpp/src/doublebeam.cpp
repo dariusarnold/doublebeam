@@ -254,7 +254,7 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
     shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
     firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code, source_frequency)
-    for (auto sbc = source_geometry.begin(); sbc != source_geometry.end(); ++sbc) {
+    for (size_t sbc_index = 0; sbc_index < source_geometry.size(); ++sbc_index) {
     #pragma omp critical
         // clang-format on
         {
@@ -262,7 +262,8 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
             std::cout.flush();
         }
         temp +=
-            calc_sigma_for_sbc(*sbc, target, fracture_info, data, beam_width, beam_frequency,
+            calc_sigma_for_sbc(source_geometry[sbc_index
+            ], target, fracture_info, data, beam_width, beam_frequency,
                                ray_code, window_length, max_stacking_distance, source_frequency);
     }
     result.data = temp;
