@@ -88,7 +88,7 @@ def main():
     if fname.is_dir():
         # if directory, find last result and plot that
         fname = find_last_result(fname)
-        print(f"Plotting {fname}")
+    print(f"Plotting {fname}")
     options, data = parse_file(fname)
 
     # only use abs value since that is whats plotted by Zheng2013 too
