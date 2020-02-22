@@ -72,7 +72,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     title = ax.set_title(f"Target ({options.target.x} m, {options.target.y} m, {options.target.z} m)")
     title.set_position((.5, .85))
     # plt.show()
-    # plt.savefig("{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
+    plt.savefig(f"{str(fname).split('.')[0]}.pdf", bbox_inches="tight")
     plt.savefig(f"{str(fname).split('.')[0]}.png", bbox_inches="tight")
 
 
