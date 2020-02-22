@@ -8,4 +8,4 @@ if (NOT EXISTS ${CNPY_DIR})
 endif()
 
 add_subdirectory(${CNPY_DIR})
-target_include_directories(cnpy INTERFACE cnpy)
+target_include_directories(cnpy SYSTEM INTERFACE cnpy)
