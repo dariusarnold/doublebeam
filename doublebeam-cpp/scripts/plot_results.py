@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+from scipy.interpolate import interp2d
 
 from common import Options, find_last_result, parse_file
 
@@ -82,7 +83,20 @@ def main():
         fname = find_last_result(fname)
         print(f"Plotting {fname}")
     options, data = parse_file(fname)
-    plot_scattering_coefficient(np.abs(data), options, fname)
+
+    # only use abs value since that is whats plotted by Zheng2013 too
+    data = np.abs(data)
+
+    interpolate = True
+    scale_factor = 5
+    if interpolate:
+        y = np.arange(0, data.shape[0])
+        x = np.arange(0, data.shape[1])
+        interpolator = interp2d(x, y, data)
+        x_dense = np.linspace(0, x[-1], int(len(x)*scale_factor))
+        y_dense = np.linspace(0, y[-1], int(len(y)*scale_factor))
+        data = interpolator(x_dense, y_dense)
+    plot_scattering_coefficient(data, options, fname)
 
 
 if __name__ == '__main__':
