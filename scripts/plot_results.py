@@ -24,7 +24,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     radii = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max,
                         data.shape[0] + 1)
     # vmin = 0 to force full color scale from 0 to max
-    im = ax.pcolormesh(angles, radii, data, vmin=0)
+    im = ax.pcolormesh(angles, radii, data, rasterized=True, vmin=0)
     # set radial ticks to fracture spacings
     num_of_ticks = 5
     major_ticks_radius = np.linspace(options.fracture_params.spacing_min,
