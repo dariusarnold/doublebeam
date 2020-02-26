@@ -6,11 +6,12 @@ Find out fracture orientation and spacing from seismic data.
 
 Installation on Debian 10:
 
-- Clone the repository at https://github.com/dariusarnold/double-beam
 - Install g++, gcc, cmake and git
-- Change into double-beam/doublebeam-cpp folder
-- Create a build directory and change to it
 - Install libboost-program-options1.67-dev, libeigen3-dev, libfmt-dev, libfftw3-dev, libmsgsl-dev
+- Clone the repository at https://github.com/dariusarnold/double-beam
+- Change into double-beam folder
+- Create a build directory and change to it
+- Call cmake .. to create the Makefile and check if all required libraries are installed
 - If you get the error 
   CMake Error at /usr/share/cmake-3.13/Modules/FindPackageHandleStandardArgs.cmake:137 (message):
   Could NOT find ZLIB (missing: ZLIB_LIBRARY ZLIB_INCLUDE_DIR)
@@ -19,7 +20,7 @@ Installation on Debian 10:
   /usr/share/cmake-3.13/Modules/FindZLIB.cmake:114 (FIND_PACKAGE_HANDLE_STANDARD_ARGS)
   external/cnpy/CMakeLists.txt:12 (find_package)
   Install zlib1g-dev
-- Call cmake .. && make doublebeam
+- Call make doublebeam to create the doublebeam executable
 - For info about how to run the doublebeam program, consult ./doublebeam -h
 
 Required libraries and their Debian package names if applicable.
