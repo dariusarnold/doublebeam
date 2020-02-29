@@ -232,6 +232,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
     for (const auto& receiver : receivers_in_range | ba::indexed()) {
         value += std::pow(std::abs(receiver_beam_values[receiver.index()].amplitude), 2);
     }
+    // avoid division by zero in case there were no receivers in range
     if (receivers_in_range.size() == 0) {
         return stacking_result;
     }
@@ -261,10 +262,9 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
             fmt::print("\r{}/{} source beam centers", ++source_beam_index, source_geometry.size());
             std::cout.flush();
         }
-        temp +=
-            calc_sigma_for_sbc(source_geometry[sbc_index
-            ], target, fracture_info, data, beam_width, beam_frequency,
-                               ray_code, window_length, max_stacking_distance, source_frequency);
+        temp += calc_sigma_for_sbc(source_geometry[sbc_index], target, fracture_info, data,
+                                   beam_width, beam_frequency, ray_code, window_length,
+                                   max_stacking_distance, source_frequency);
     }
     result.data = temp;
     // Add newline after the loop progress output
