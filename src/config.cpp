@@ -28,7 +28,7 @@ namespace config {
     }
 
     std::string get_seismogram_file_regex_str() {
-        return R"(seismo.z.*.sdu)";
+        return R"(seismo.z.[0-9]*.sdu)";
     }
 
     UnitVector2 get_phi_hat() {
