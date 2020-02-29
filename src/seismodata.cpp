@@ -111,6 +111,11 @@ get_sorted_seismogram_files(const std::filesystem::path& sourcepath) {
                             std::regex_search(dir_entry.path().filename().string(),
                                               config::get_seismogram_file_regex());
                  });
+    if (seismo_files.empty()) {
+        throw std::logic_error(fmt::format(
+            "No seismogram files found in {}. Check the seismogram regex {} for correctness.\n",
+            sourcepath.string(), config::get_seismogram_file_regex_str()));
+    }
     std::sort(seismo_files.begin(), seismo_files.end());
     return seismo_files;
 }
