@@ -223,7 +223,7 @@ std::complex<double> stack(const Beam& source_beam, const Beam& receiver_beam,
                                                         total_traveltime - window_length / 2,
                                                         total_traveltime + window_length / 2);
             auto seismogram_freq =
-                math::fft(seismogram.data, receiver_beam.frequency(), data.sampling_frequency());
+                math::fft(seismogram.data, source_frequency, data.sampling_frequency());
             stacking_result += source_beam_values[source.index()].gb_value *
                                receiver_beam_values[receiver.index()].gb_value * seismogram_freq;
         }
