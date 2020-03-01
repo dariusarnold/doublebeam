@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019-2020  Darius Arnold
+ *
+ * This file is part of doublebeam.
+ *
+ * This program is free software: you can redistribute it and/or modify  
+ * it under the terms of the GNU General Public License as published by  
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 import sys
 from pathlib import Path
 
@@ -24,7 +41,7 @@ def plot_scattering_coefficient(data: np.ndarray, options: Options, fname):
     radii = np.linspace(options.fracture_params.spacing_min, options.fracture_params.spacing_max,
                         data.shape[0] + 1)
     # vmin = 0 to force full color scale from 0 to max
-    im = ax.pcolormesh(angles, radii, data, rasterized=True, vmin=0)
+    im = ax.pcolormesh(angles, radii, data, rasterized=True)#, cmap="jet")
     # set radial ticks to fracture spacings
     num_of_ticks = 5
     major_ticks_radius = np.linspace(options.fracture_params.spacing_min,
@@ -94,7 +111,7 @@ def main():
     # only use abs value since that is whats plotted by Zheng2013 too
     data = np.abs(data)
 
-    interpolate = True
+    interpolate = False
     scale_factor = 5
     if interpolate:
         y = np.arange(0, data.shape[0])

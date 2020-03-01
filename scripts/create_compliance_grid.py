@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019-2020  Darius Arnold
+ *
+ * This file is part of doublebeam.
+ *
+ * This program is free software: you can redistribute it and/or modify  
+ * it under the terms of the GNU General Public License as published by  
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 from pathlib import Path
 import subprocess
 
@@ -7,8 +24,8 @@ import matplotlib.pyplot as plt
 from common import read_last_result, parse_file
 
 
-PROGRAM_PATH = Path("/home/darius/git/doublebeam/doublebeam-cpp/cmake-build-release/doublebeam")
-OPTIONS_PATH = Path("/home/darius/git/doublebeam/doublebeam-cpp/options_thomas.txt")
+PROGRAM_PATH = Path("/home/darius/git/doublebeam/cmake-build-release/doublebeam")
+OPTIONS_PATH = Path("/home/darius/git/doublebeam/options_thomas.txt")
 
 # create grid from target_x0 to target_x1 in x direction and from target_y0 to target_y1 in
 # y direction with num_x*num_y points.
@@ -43,7 +60,7 @@ for ix, x in enumerate(x_values):
     for iy, y in enumerate(y_values):
         subprocess.call(args=(str(PROGRAM_PATH), str(OPTIONS_PATH), f"--target.x={x}", f"--target.y={y}"))
         _, result = read_last_result(PROGRAM_PATH.parent)
-        _, result = parse_file(Path(f"/home/darius/git/doublebeam/doublebeam-cpp/grid/result{ix * num_x + iy}.txt"))
+        _, result = parse_file(Path(f"/home/darius/git/doublebeam/grid/result{ix * num_x + iy}.txt"))
         # first axis of result contains num spacings (41), second axis contains orientation
         max_result_x_parallel[ix, iy] = get_max_x_parallel_result(result)
         max_result_y_parallel[ix, iy] = get_max_y_parallel_result(result)
