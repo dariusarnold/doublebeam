@@ -44,6 +44,7 @@ All configuration with config files is done for algorithm settings, which will b
 runs to find optimal parameters. All These options can be given in two ways: Specified in the 
 config file or on command line. Command line options override config file options, allowing you to 
 use a config file as a base but then change a few key options for between runs. 
+Detailled explanations for all values can be found in the options.pdf file.
 
 ## Inputs
 
