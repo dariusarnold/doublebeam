@@ -33,6 +33,18 @@ Required libraries and their Debian package names if applicable.
 
 OpenMP is optional. If it is found, parallel processing will be enabled. 
 
+## Configuration
+
+There are two configuration settings: ``config.cpp`` and the config file containing parameters for 
+the algorithm. ``config.cpp`` provides customisation towards the general setup such as path names 
+and typical filenames. Typically you would only have to change it once to adapt to your naming
+conventions. The options available are documented in ``config.hpp``.
+
+All configuration with config files is done for algorithm settings, which will be changed between
+runs to find optimal parameters. All These options can be given in two ways: Specified in the 
+config file or on command line. Command line options override config file options, allowing you to 
+use a config file as a base but then change a few key options for between runs. 
+
 ## Inputs
 
 If not specified otherwise, values should be given in SI-units, e.g. meter for length, radians for
