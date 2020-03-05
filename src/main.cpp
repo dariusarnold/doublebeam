@@ -183,6 +183,8 @@ int main(int argc, char* argv[]) {
             file << result.data;
         }
         fmt::print("Saved result in {}\n", result_path.string());
+        file.close();
+        system("python /home/darius/git/doublebeam/scripts/plot_results.py /home/darius/git/doublebeam/cmake-build-release");
         return 0;
     } catch (const po::unknown_option& er) {
         fmt::print(std::cerr, "{}\nMaybe a typo?\n", er.what());

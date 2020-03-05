@@ -44,7 +44,7 @@ target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
-add_executable(doublebeam main.cpp src/doublebeam.cpp src/doublebeam.hpp)
+add_executable(doublebeam src/main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE ${WARNINGS})
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen cnpy)
 
