@@ -1,7 +1,0 @@
-#depth top, depth bottom, p velocity top, p velocity bottom
-# model from Fang2019 fig.3
-x0 0
-x1 11200
-y0 0
-y1 11200
-0, 3000, 4800
