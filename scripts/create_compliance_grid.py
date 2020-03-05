@@ -25,7 +25,7 @@ from common import read_last_result, parse_file
 
 
 PROGRAM_PATH = Path("/home/darius/git/doublebeam/cmake-build-release/doublebeam")
-OPTIONS_PATH = Path("/home/darius/git/doublebeam/options_thomas.txt")
+OPTIONS_PATH = Path("/home/darius/git/doublebeam/options_nexd.txt")
 
 # create grid from target_x0 to target_x1 in x direction and from target_y0 to target_y1 in
 # y direction with num_x*num_y points.

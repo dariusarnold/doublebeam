@@ -8,13 +8,13 @@ y = 5600
 z = 2400
 
 [source_beam_centers]
-x0 = 1
-x1 = 11199
-y0 = 1
-y1 = 11199
+x0 = 2800
+x1 = 8400
+y0 = 2800
+y1 = 8400
 z = 0
-num_x = 15
-num_y = 15
+num_x = 20
+num_y = 20
 
 [fractures]
 num_orientations = 61
@@ -23,8 +23,8 @@ spacing_max = 300
 num_spacings = 41
 
 [beam]
-width = 250
-source_frequency = 30
-reference_frequency = 30
+width = 80
+source_frequency = 50
+reference_frequency = 50
 window_length = 0.12
 max_stacking_distance = 1500
