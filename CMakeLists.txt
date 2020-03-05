@@ -48,7 +48,7 @@ add_executable(doublebeam src/main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE ${WARNINGS})
 target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen cnpy)
 
-add_executable(convert_to_binary convert_to_binary.cpp)
+add_executable(convert_to_binary scripts/convert_to_binary.cpp)
 target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
 
 # Set ENABLE_LTO to false to disable link time optimization, disabling the compiler

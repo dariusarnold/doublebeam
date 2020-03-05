@@ -66,8 +66,7 @@ void convert_content_to_binary(const fs::path& source_dir, const std::regex& sei
 void convert_all_to_binary(const std::filesystem::path& shotdata_path,
                            const std::regex& seismogram_file) {
     if (not std::filesystem::exists(shotdata_path)) {
-        throw std::invalid_argument("Could not find shotdata folder " + shotdata_path.string() +
-                                    ".");
+        throw std::invalid_argument("Could not find shotdata folder " + shotdata_path.string());
     }
     if (not std::filesystem::is_directory(shotdata_path)) {
         throw std::invalid_argument(shotdata_path.string() + " is not a directory.");
@@ -91,7 +90,8 @@ int main(int argc, char* argv[]) {
     }
     std::ios::sync_with_stdio(false);
     std::filesystem::path p(argv[1]);
-    std::regex seismogram_file(argv[2]);
+    std::cout << "Using regex " << argv[2] << std::endl;
+    std::regex seismogram_file("");
     auto a = std::chrono::high_resolution_clock::now();
     convert_all_to_binary(p, seismogram_file);
     auto b = std::chrono::high_resolution_clock::now();
