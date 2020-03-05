@@ -2,6 +2,12 @@
 
 Find out fracture orientation and spacing from seismic data.
 
+<img src="images/example-result.png" width="400" /> 
+
+Example of a plot created by the program, showing two orthogonal fractures with a spacing of 
+roughly 100 meter.
+
+
 ## Setup
 
 Installation on Debian 10:
