@@ -1,0 +1,25 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: "debian:stretch"
+    steps:
+      - checkout
+      - run:
+          name: install sudo
+          command: 'apt update && apt install -y sudo'
+      - run:
+          name: install gcc
+          command: 'apt update && apt install -y gcc'
+      - run:
+          name: install make
+          command: 'apt update && apt install -y make'
+      - run:
+          name: install cmake
+          command: 'apt update && apt install -y cmake'
+      - run:
+          name: run cmake
+          command: 'cmake .'
+      - run:
+          name: run make
+          command: 'make doublebeam'
