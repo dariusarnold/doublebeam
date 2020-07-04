@@ -1,3 +1,5 @@
+![CircleCI](https://img.shields.io/circleci/build/gh/dariusarnold/doublebeam/circleci-project-setup)
+
 # Double gaussian beam
 
 Find out fracture orientation and spacing from seismic data.
