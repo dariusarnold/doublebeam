@@ -1,4 +1,5 @@
 ![CircleCI](https://img.shields.io/circleci/build/gh/dariusarnold/doublebeam/circleci-project-setup)
+![GitHub](https://img.shields.io/github/license/dariusarnold/doublebeam)
 
 # Double gaussian beam
 
