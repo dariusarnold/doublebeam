@@ -56,3 +56,29 @@ jobs:
       - run:
           name: run make
           command: 'make -j $(nproc) doublebeam'
+  test:
+    docker:
+      - image: "debian:buster"
+    steps:
+      - setup-tools
+      - setup-build
+      - checkout
+      - run:
+          name: run cmake
+          command: 'cmake .'
+      - run:
+          name: run make
+          command: 'make -j $(nproc) Unit_Tests_run'
+      - run:
+          name: run unit tests
+          command: './tests/unit_tests/Unit_Tests_run --gtest_output=xml:test-results/googletest/results.xml'
+      - store_test_results:
+          path: test-results
+  reformat:
+    docker:
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build
+      - test
