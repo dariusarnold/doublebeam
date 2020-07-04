@@ -266,5 +266,5 @@ TEST_P(TestPositionReached, TestIfDynamicRayTracingReachesTargetPosition) {
 // end point is just outside of model (by 10e-15 or so).
 INSTANTIATE_TEST_SUITE_P(TestPointsAtSurface, TestPositionReached,
                          testing::ValuesIn(seismo::grid_coordinates(1_meter, 9999_meter, 1_meter,
-                                                                    9999_meter, 0_meter, 100,
-                                                                    100)));
+                                                                    9999_meter, 0_meter, 10,
+                                                                    10)));
