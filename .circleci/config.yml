@@ -47,7 +47,8 @@ jobs:
     docker:
       - image: "debian:buster"
     steps:
-      - setup
+      - setup-tools
+      - setup-build
       - checkout
       - run:
           name: run cmake
