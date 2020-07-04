@@ -8,3 +8,9 @@ add_executable(Unit_Tests_run
 target_link_libraries(Unit_Tests_run gtest)
 target_link_libraries(Unit_Tests_run UtilitiesForTesting)
 target_link_libraries(Unit_Tests_run doublebeam_lib Boost::boost)
+
+# copy data for tests into the build folder so relative paths can be used
+add_custom_command(TARGET Unit_Tests_run POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/
+        $<TARGET_FILE_DIR:Unit_Tests_run>/data)
