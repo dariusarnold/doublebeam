@@ -55,4 +55,4 @@ jobs:
           command: 'cmake .'
       - run:
           name: run make
-          command: 'make doublebeam'
+          command: 'make -j $(nproc) doublebeam'
