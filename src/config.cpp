@@ -32,7 +32,7 @@ namespace config {
     }
 
     std::string_view get_binary_seismogram_filename() {
-        return "dataz.bin";
+        return "data.bin";
     }
 
     std::string_view get_binary_seismogram_extension() {
@@ -45,7 +45,7 @@ namespace config {
     }
 
     std::string get_seismogram_file_regex_str() {
-        return R"(seismo.z.[0-9]*.sdu)";
+        return R"(receiver_[0-9]*.txt)";
     }
 
     UnitVector2 get_phi_hat() {
