@@ -1,6 +1,6 @@
 ![Build status badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fpeaceful-oasis-43695.herokuapp.com%2Fbuild)
 ![Unit tests status badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fpeaceful-oasis-43695.herokuapp.com%2Ftest)
-![GitHub](https://img.shields.io/github/license/dariusarnold/doublebeam)
+![License badge](https://img.shields.io/github/license/dariusarnold/doublebeam?color=blue)
 
 # Double gaussian beam
 
