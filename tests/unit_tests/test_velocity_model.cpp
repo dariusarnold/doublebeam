@@ -218,6 +218,12 @@ protected:
     VelocityModel model;
 };
 
+TEST_P(TestNumberOfInterfaces, TestName) {
+    auto [z1, z2, correct_num_of_interfaces] = TestNumberOfInterfaces::GetParam();
+    auto num_of_interfaces = model.number_of_interfaces_between(z1, z2);
+    ASSERT_EQ(num_of_interfaces, correct_num_of_interfaces);
+}
+
 std::vector<DepthIntData> values = {{0_meter, 500_meter, 4},
                                     {50_meter, 450_meter, 4},
                                     {50_meter, 150_meter, 1},
