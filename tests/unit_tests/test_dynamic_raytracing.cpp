@@ -220,18 +220,17 @@ TEST(DynamicRayTracing, TestForRegressionMultipleLayers) {
         Eigen::Tensor3cd Q_desired = load_npy<std::complex<double>, 3>(
             current_source_path(__FILE__) / ("data/Q_multilayer" + std::to_string(i) + ".npy"));
         // compare first and last entry of P and Q (value at interface)
-        const double low_precision = 1E-2;
-        const double high_precision = 1E-10;
-        EXPECT_PRED2(matrixCompare(high_precision), beam[i].get_P(), first_element(P_desired))
+        const double precision = 1E-2;
+        EXPECT_PRED2(matrixCompare(precision), beam[i].get_P(), first_element(P_desired))
             << "First value of P different for beam segment index " << i << ".\n"
             << name_and_value(beam[i].get_P()) << name_and_value(first_element(P_desired));
-        EXPECT_PRED2(matrixCompare(low_precision), beam[i].Q_begin(), first_element(Q_desired))
+        EXPECT_PRED2(matrixCompare(precision), beam[i].Q_begin(), first_element(Q_desired))
             << "First value of Q different for beam segment index " << i << ".\n"
             << name_and_value(beam[i].Q_begin()) << name_and_value(first_element(Q_desired));
-        EXPECT_PRED2(matrixCompare(high_precision), beam[i].get_P(), last_element(P_desired))
+        EXPECT_PRED2(matrixCompare(precision), beam[i].get_P(), last_element(P_desired))
             << "Last value of P different for beam segment index " << i << ".\n"
             << name_and_value(beam[i].get_P()) << name_and_value(last_element(P_desired));
-        EXPECT_PRED2(matrixCompare(low_precision), beam[i].Q_end(), last_element(Q_desired))
+        EXPECT_PRED2(matrixCompare(precision), beam[i].Q_end(), last_element(Q_desired))
             << "Last value of Q different for beam segment index " << i << ".\n"
             << name_and_value(beam[i].Q_end()) << name_and_value(last_element(Q_desired));
     }
