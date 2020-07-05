@@ -54,7 +54,7 @@ VelocityModel read_velocity_file(const fs::path& filepath) {
                                     filepath.string());
     }
     if (not fs::exists(filepath)) {
-        throw std::invalid_argument("Can't find file " + fs::absolute(filepath).string());
+        throw std::invalid_argument("Can't find file " + filepath.string());
     }
     std::ifstream file(filepath);
     std::string line;
