@@ -18,6 +18,7 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+#include <testing_utils.hpp>
 #include <utils.hpp>
 
 #include "model.hpp"
@@ -125,8 +126,7 @@ TEST_F(TestLayerIndexReturnsInvalidOptional, TestDepthBelowModel) {
 
 TEST(TestCreateVelocityModelFromFile, TestSuccessfullRead) {
     // TODO better way to specify path, maybe mock file object
-    std::filesystem::path filepath(
-        "data/model.txt");
+    std::filesystem::path filepath = current_source_path(__FILE__) / "data" / "model.txt";
     auto vm = read_velocity_file(filepath);
     VelocityModel expected({{0_meter, 100_meter, 1000_meter_per_second},
                             {100_meter, 200_meter, 1200_meter_per_second}},
