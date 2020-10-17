@@ -19,6 +19,8 @@
 
 #include "testing_utils.hpp"
 #include <gtest/gtest.h>
+#include <gsl/span>
+#include <gsl/span_ext>
 
 #include "io.hpp"
 #include "printing.hpp"

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <gsl/span>
+#include <gsl/span_ext>
 
 #include "fft.hpp"
 #include "printing.hpp"
