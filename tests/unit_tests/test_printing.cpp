@@ -29,3 +29,10 @@ TEST(TestValarray, TestIfPrintedCorrectly) {
     ss << a;
     ASSERT_EQ(ss.str(), "0.5, 1.5, 2.5, 3");
 }
+
+TEST(TestValarray, TestPrintingEmptyArray) {
+    std::valarray<int> a;
+    std::stringstream ss;
+    ss << a;
+    ASSERT_EQ(ss.str(), "");
+}
