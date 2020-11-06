@@ -268,20 +268,21 @@ DoubleBeamResult DoubleBeam::algorithm(const std::vector<Position>& source_geome
     Eigen::ArrayXXcd temp(result.data);
     // clang-format off
     #pragma omp declare reduction(+:Eigen::ArrayXXcd:omp_out=omp_out+omp_in) \
-    initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
+        initializer(omp_priv=Eigen::ArrayXXcd::Zero(omp_orig.rows(), omp_orig.cols()))
     #pragma omp parallel for reduction(+:temp) schedule(dynamic) default(none)\
-    shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
-    firstprivate(beam_width, target, max_stacking_distance, window_length, beam_frequency, ray_code, source_frequency)
+        shared(source_geometry, data, fracture_info, source_beam_index, std::cout)\
+        firstprivate(beam_width, target, max_stacking_distance, window_length,\
+        beam_frequency, ray_code, source_frequency)
     for (size_t sbc_index = 0; sbc_index < source_geometry.size(); ++sbc_index) {
-    #pragma omp critical
+        temp += calc_sigma_for_sbc(source_geometry[sbc_index], target, fracture_info, data,
+                                   beam_width, beam_frequency, ray_code, window_length,
+                                   max_stacking_distance, source_frequency);
+        #pragma omp critical
         // clang-format on
         {
             fmt::print("\r{}/{} source beam centers", ++source_beam_index, source_geometry.size());
             std::cout.flush();
         }
-        temp += calc_sigma_for_sbc(source_geometry[sbc_index], target, fracture_info, data,
-                                   beam_width, beam_frequency, ray_code, window_length,
-                                   max_stacking_distance, source_frequency);
     }
     result.data = temp;
     // Add newline after the loop progress output
