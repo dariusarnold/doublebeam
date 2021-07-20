@@ -25,23 +25,11 @@ commands:
           name: install cmake
           command: 'apt install -y cmake'
       - run:
-          name: install libboost-program-options
-          command: 'apt install -y libboost-program-options-dev'
+          name: install python and pip for conan
+          command: 'apt install -y python3 python3-pip'
       - run:
-          name: install libeigen3
-          command: 'apt install -y libeigen3-dev'
-      - run:
-          name: install libfmt
-          command: 'apt install -y libfmt-dev'
-      - run:
-          name: install libfftw3
-          command: 'apt install -y libfftw3-dev'
-      - run:
-          name: install libmsgsl
-          command: 'apt install -y libmsgsl-dev'
-      - run:
-          name: install zlib dependency
-          command: 'apt install zlib1g-dev'
+          name: install conan
+          command: 'pip3 install conan'
 jobs:
   build:
     docker:
@@ -50,6 +38,9 @@ jobs:
       - setup-tools
       - setup-build
       - checkout
+      - run:
+          - name: install dependencies with conan
+            command: 'conan install .'
       - run:
           name: run cmake
           command: 'cmake .'
@@ -63,6 +54,9 @@ jobs:
       - setup-tools
       - setup-build
       - checkout
+      - run:
+          name: install dependencies with conan
+          command: 'conan install .'
       - run:
           name: run cmake
           command: 'cmake .'
