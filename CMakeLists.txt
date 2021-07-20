@@ -12,7 +12,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW3 REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP)
 find_package(Microsoft.GSL REQUIRED)
 
 message("-- Setting up nanoflann.")
