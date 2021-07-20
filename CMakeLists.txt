@@ -14,11 +14,8 @@ find_package(fmt 5 REQUIRED)
 find_package(FFTW3 REQUIRED)
 find_package(OpenMP)
 find_package(Microsoft.GSL REQUIRED)
-
-message("-- Setting up nanoflann.")
-execute_process(COMMAND git submodule update --init -- external/nanoflann
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-add_subdirectory(external/nanoflann EXCLUDE_FROM_ALL)
+find_package(cnpy REQUIRED)
+find_package(nanoflann REQUIRED)
 
 set(WARNINGS_GCC -Wall -Wextra -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
         -Wduplicated-cond -Wuseless-cast -Wdouble-promotion -Wduplicated-branches -Wmisleading-indentation
@@ -40,14 +37,14 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
 add_library(doublebeam_config src/config.cpp src/config.hpp)
 target_include_directories(doublebeam_config PUBLIC src)
 target_link_libraries(doublebeam_lib PRIVATE stdc++fs fmt::fmt doublebeam_config)
-target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen FFTW3::fftw3 cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX Microsoft.GSL::GSL)
+target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen FFTW3::fftw3 cnpy::cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX Microsoft.GSL::GSL)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
 add_executable(doublebeam src/main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE ${WARNINGS})
-target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen fmt::fmt cnpy)
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen fmt::fmt cnpy::cnpy)
 
 add_executable(convert_to_binary scripts/convert_to_binary.cpp)
 target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
@@ -74,8 +71,6 @@ endif ()
 
 # Basic timing library runs one function and gives average runtime.
 #add_subdirectory(src/timing)
-# load vendored in external libraries not installed globally by the package manager
-add_subdirectory(external)
 # load unit tests
 add_subdirectory(tests)
 
@@ -86,7 +81,7 @@ include(CheckIncludeFileCXX)
 set(CMAKE_REQUIRED_QUIET ON)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_REQUIRED_DEFINITIONS -DBOOST_ROOT=/opt/boost_1_71/ -DCMAKE_PREFIX_PATH=/home/darius/.anaconda3/lib/cmake/)
-set(CMAKE_REQUIRED_LIBRARIES stdc++fs Boost::boost Eigen3::Eigen FFTW::Float FFTW::Double cnpy)
+set(CMAKE_REQUIRED_LIBRARIES stdc++fs Boost::boost Eigen3::Eigen FFTW::Float FFTW::Double cnpy::cnpy)
 file(GLOB HEADERS src/*.hpp)
 if (FALSE)
     foreach (HEADER ${HEADERS})
