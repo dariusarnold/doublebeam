@@ -39,8 +39,8 @@ jobs:
       - setup-build
       - checkout
       - run:
-          - name: install dependencies with conan
-            command: 'conan install .'
+          name: install dependencies with conan
+          command: 'conan install .'
       - run:
           name: run cmake
           command: 'cmake .'
