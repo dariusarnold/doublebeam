@@ -4,15 +4,16 @@ project(doublebeam_cpp CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+# To use find_package for libraries installed by conan
+set(CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR};${CMAKE_MODULE_PATH}")
 
 # set boost path with BOOST_ROOT if not globally installed
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(fmt 5 REQUIRED)
-find_package(FFTW COMPONENTS FLOAT_LIB DOUBLE_LIB REQUIRED)
+find_package(FFTW3 REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(Microsoft.GSL CONFIG)
+find_package(Microsoft.GSL REQUIRED)
 
 message("-- Setting up nanoflann.")
 execute_process(COMMAND git submodule update --init -- external/nanoflann
@@ -38,15 +39,15 @@ add_library(doublebeam_lib src/model.cpp src/utils.cpp src/raytracing.cpp src/tw
         src/raytracing_types.cpp src/kdtree.cpp src/kdtree.hpp)
 add_library(doublebeam_config src/config.cpp src/config.hpp)
 target_include_directories(doublebeam_config PUBLIC src)
-target_link_libraries(doublebeam_lib PRIVATE stdc++fs FFTW::Float FFTW::Double fmt::fmt doublebeam_config)
-target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX)
+target_link_libraries(doublebeam_lib PRIVATE stdc++fs fmt::fmt doublebeam_config)
+target_link_libraries(doublebeam_lib PUBLIC Eigen3::Eigen FFTW3::fftw3 cnpy nanoflann::nanoflann Boost::boost OpenMP::OpenMP_CXX Microsoft.GSL::GSL)
 target_include_directories(doublebeam_lib PUBLIC src)
 target_compile_options(doublebeam_lib PRIVATE ${WARNINGS})
 #target_compile_options(doublebeam_lib PUBLIC -ffast-math -march=native)
 
 add_executable(doublebeam src/main.cpp src/doublebeam.cpp src/doublebeam.hpp)
 target_compile_options(doublebeam PRIVATE ${WARNINGS})
-target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen cnpy)
+target_link_libraries(doublebeam PRIVATE doublebeam_lib Boost::boost Boost::program_options Eigen3::Eigen fmt::fmt cnpy)
 
 add_executable(convert_to_binary scripts/convert_to_binary.cpp)
 target_link_libraries(convert_to_binary stdc++fs doublebeam_lib)
