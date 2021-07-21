@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR};${CMAKE_MODULE_PATH}")
 
 # set boost path with BOOST_ROOT if not globally installed
 find_package(Boost REQUIRED COMPONENTS program_options)
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(Eigen3 3.3 REQUIRED)
 find_package(fmt 5 REQUIRED)
 find_package(FFTW3 REQUIRED)
 find_package(OpenMP)

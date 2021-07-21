@@ -16,20 +16,23 @@ commands:
     description: "Setting up the build environment by installing required dependencies."
     steps:
       - run:
-          name: install gcc
-          command: 'apt install -y gcc && apt install -y g++'
+          name: install g++
+          command: 'apt install -y g++'
       - run:
-          name: install make
-          command: 'apt install -y make'
-      - run:
-          name: install cmake
-          command: 'apt install -y cmake'
+          name: install make and cmake
+          command: 'apt install -y make cmake'
       - run:
           name: install python and pip for conan
           command: 'apt install -y python3 python3-pip'
       - run:
           name: install conan
           command: 'pip3 install conan'
+      - run:
+          name: detect settings for conan default profile
+          command: 'conan profile new default --detect '
+      - run:
+          name: set libstdc++11 to use new ABI in gcc
+          command: 'conan profile update settings.compiler.libcxx=libstdc++11 default'
 jobs:
   build:
     docker:
@@ -45,8 +48,8 @@ jobs:
           name: run cmake
           command: 'cmake .'
       - run:
-          name: run make
-          command: 'make -j $(nproc) doublebeam'
+          name: build doublebeam
+          command: 'cmake --build . --target doublebeam -- -j $(nproc)'
   test:
     docker:
       - image: "debian:buster"
@@ -61,8 +64,8 @@ jobs:
           name: run cmake
           command: 'cmake .'
       - run:
-          name: run make
-          command: 'make -j $(nproc) Unit_Tests_run'
+          name: build unit tests make
+          command: 'cmake --build . --target Unit_Tests_run -- -j $(nproc)'
       - run:
           name: run unit tests
           command: './tests/unit_tests/Unit_Tests_run --gtest_output=xml:test-results/googletest/results.xml'
