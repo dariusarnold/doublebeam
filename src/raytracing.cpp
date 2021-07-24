@@ -22,7 +22,6 @@
 #include <boost/numeric/odeint/stepper/generation/generation_runge_kutta_dopri5.hpp>
 #include <boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp>
 #include <cstdint>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "eigen_helpers.hpp"
 #include "model.hpp"

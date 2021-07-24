@@ -20,9 +20,7 @@
 
 #include <complex>
 #include <vector>
-
-#include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <cmath>
 
 #include "eigen_helpers.hpp"
 #include "ray.hpp"
