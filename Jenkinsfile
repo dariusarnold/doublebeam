@@ -6,6 +6,6 @@ node("conan") {
         sh "mkdir -p build && cd build && conan install .."
     }
     stage("Build") {
-        cmakeBuild buildDir: 'build', buildType: 'Debug', generator: 'make', installation: 'InSearchPath'
+        cmakeBuild buildDir: 'build', buildType: 'Debug', generator: 'Unix Makefiles', installation: 'InSearchPath'
     }
 }
