@@ -9,3 +9,10 @@ node("conan") {
         cmakeBuild buildDir: 'build', buildType: 'Debug', generator: 'Ninja', installation: 'InSearchPath', steps: [[args: '--target doublebeam', withCmake: true]]
     }
 }
+
+node("conan") {
+    stage("Clean workspace") {
+        echo "Deleting build artefacts"
+        //cleanWs deleteDirs: true
+    }
+}
