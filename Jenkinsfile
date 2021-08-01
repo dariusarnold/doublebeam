@@ -8,6 +8,14 @@ node("conan") {
     stage("Build") {
         cmakeBuild buildDir: 'build', buildType: 'Debug', generator: 'Ninja', installation: 'InSearchPath', steps: [[args: '--target doublebeam', withCmake: true]]
     }
+    stage("Build tests") {
+        cmakeBuild buildDir: 'build', buildType: 'Debug', generator: 'Ninja', installation: 'InSearchPath', steps: [[args: '--target Unit_Tests_run', withCmake: true]]
+    }
+    stage("Run tests") {
+        dir("build") {
+            sh "pwd && ./tests/unit_tests/Unit_Tests_run"
+        }
+    }
 }
 
 node("conan") {
