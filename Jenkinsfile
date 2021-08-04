@@ -1,6 +1,8 @@
 node("conan") {
     stage("Checking out sources") {
-        git branch: "jenkins-test", url: "https://github.com/dariusarnold/doublebeam/"
+        checkout poll: false, scm: [$class: 'GitSCM', branches: [[name: '*/jenkins-test']],
+        browser: [$class: 'GithubWeb', repoUrl: 'https://github.com/dariusarnold/doublebeam/'],
+        extensions: [[$class: 'CleanCheckout']], userRemoteConfigs: [[url: 'https://github.com/dariusarnold/doublebeam.git']]]
     }
     stage("Install dependencies with Conan") {
         sh "mkdir -p build && cd build && conan install .."
@@ -15,12 +17,5 @@ node("conan") {
         dir("build") {
             sh "pwd && ./tests/unit_tests/Unit_Tests_run"
         }
-    }
-}
-
-node("conan") {
-    stage("Clean workspace") {
-        echo "Deleting build artefacts"
-        //cleanWs deleteDirs: true
     }
 }
