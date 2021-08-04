@@ -22,7 +22,7 @@
 
 TEST(SnellsLaw, CompareWithPython) {
     Velocity v_before(2000);
-    Velocity v_after(2200);
+    Velocity v_after(2100);
     Slowness p_in(0.7248451923249044_second_per_meter, 0.205219943364641_second_per_meter,
                   0.969149611692033_second_per_meter);
     Slowness p_out(0.7248451923249044_second_per_meter, 0.205219943364641_second_per_meter,
